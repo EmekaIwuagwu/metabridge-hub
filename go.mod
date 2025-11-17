@@ -5,14 +5,15 @@ go 1.21
 require (
 	github.com/ethereum/go-ethereum v1.13.8
 	github.com/gagliardetto/solana-go v1.10.0
-	github.com/near/borsh-go v0.3.2
-	github.com/rs/zerolog v1.31.0
-	github.com/spf13/viper v1.18.2
+	github.com/google/uuid v1.5.0
+	github.com/gorilla/mux v1.8.1
 	github.com/lib/pq v1.10.9
 	github.com/nats-io/nats.go v1.31.0
-	github.com/redis/go-redis/v9 v9.4.0
-	github.com/gorilla/mux v1.8.1
+	github.com/near/borsh-go v0.3.2
 	github.com/prometheus/client_golang v1.18.0
+	github.com/redis/go-redis/v9 v9.4.0
+	github.com/rs/zerolog v1.31.0
+	github.com/spf13/viper v1.18.2
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/crypto v0.18.0
 	google.golang.org/grpc v1.60.1

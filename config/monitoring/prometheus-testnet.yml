@@ -1,0 +1,59 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    environment: 'testnet'
+    service: 'metabridge'
+
+scrape_configs:
+  # API Server
+  - job_name: 'metabridge-api'
+    static_configs:
+      - targets: ['api:9092']
+        labels:
+          service: 'api'
+
+  # Listener Service
+  - job_name: 'metabridge-listener'
+    static_configs:
+      - targets: ['listener:9090']
+        labels:
+          service: 'listener'
+
+  # Relayer Service
+  - job_name: 'metabridge-relayer'
+    static_configs:
+      - targets: ['relayer:9091']
+        labels:
+          service: 'relayer'
+
+  # PostgreSQL Exporter
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+        labels:
+          service: 'database'
+
+  # Redis Exporter
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+        labels:
+          service: 'cache'
+
+  # NATS Exporter
+  - job_name: 'nats'
+    static_configs:
+      - targets: ['nats:8222']
+        labels:
+          service: 'queue'
+
+# Alerting rules
+rule_files:
+  - 'alerts.yml'
+
+# Alertmanager configuration (optional)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets: ['alertmanager:9093']
