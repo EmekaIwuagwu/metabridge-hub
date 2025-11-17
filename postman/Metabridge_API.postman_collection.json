@@ -1,0 +1,378 @@
+{
+  "info": {
+    "name": "Metabridge Hub API",
+    "description": "Complete API collection for testing Metabridge cross-chain bridge",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health & Status",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            },
+            "description": "Check if the bridge API is running and healthy"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "GET",
+                "url": "{{base_url}}/health"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"healthy\",\n  \"timestamp\": \"2024-01-15T10:30:00Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/status",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "status"]
+            },
+            "description": "Get detailed system status including all chains"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Chains",
+      "item": [
+        {
+          "name": "List All Chains",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/chains",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "chains"]
+            },
+            "description": "Get list of all supported blockchain chains"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "GET",
+                "url": "{{base_url}}/v1/chains"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"chains\": [\n    {\n      \"name\": \"polygon-amoy\",\n      \"chain_type\": \"EVM\",\n      \"chain_id\": \"80002\",\n      \"enabled\": true,\n      \"bridge_contract\": \"0x...\"\n    },\n    {\n      \"name\": \"bnb-testnet\",\n      \"chain_type\": \"EVM\",\n      \"chain_id\": \"97\",\n      \"enabled\": true,\n      \"bridge_contract\": \"0x...\"\n    },\n    {\n      \"name\": \"avalanche-fuji\",\n      \"chain_type\": \"EVM\",\n      \"chain_id\": \"43113\",\n      \"enabled\": true,\n      \"bridge_contract\": \"0x...\"\n    },\n    {\n      \"name\": \"ethereum-sepolia\",\n      \"chain_type\": \"EVM\",\n      \"chain_id\": \"11155111\",\n      \"enabled\": true,\n      \"bridge_contract\": \"0x...\"\n    }\n  ],\n  \"total\": 4\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Chain Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/chains/:chain_name",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "chains", ":chain_name"],
+              "variable": [
+                {
+                  "key": "chain_name",
+                  "value": "polygon-amoy"
+                }
+              ]
+            },
+            "description": "Get detailed information about a specific chain"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Bridge Operations",
+      "item": [
+        {
+          "name": "Bridge Token Transfer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"source_chain\": \"polygon-amoy\",\n  \"destination_chain\": \"avalanche-fuji\",\n  \"token_address\": \"0x0000000000000000000000000000000000001010\",\n  \"amount\": \"1000000000000000000\",\n  \"sender\": \"0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0\",\n  \"recipient\": \"0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/bridge/token",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "bridge", "token"]
+            },
+            "description": "Initiate a cross-chain token transfer"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"source_chain\": \"polygon-amoy\",\n  \"destination_chain\": \"avalanche-fuji\",\n  \"token_address\": \"0x0000000000000000000000000000000000001010\",\n  \"amount\": \"1000000000000000000\",\n  \"sender\": \"0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0\",\n  \"recipient\": \"0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199\"\n}"
+                },
+                "url": "{{base_url}}/v1/bridge/token"
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"message_id\": \"0x1234567890abcdef\",\n  \"status\": \"pending\",\n  \"source_chain\": \"polygon-amoy\",\n  \"destination_chain\": \"avalanche-fuji\",\n  \"amount\": \"1000000000000000000\",\n  \"nonce\": 1,\n  \"created_at\": \"2024-01-15T10:35:00Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Bridge NFT Transfer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"source_chain\": \"polygon-amoy\",\n  \"destination_chain\": \"ethereum-sepolia\",\n  \"nft_contract\": \"0x1234567890123456789012345678901234567890\",\n  \"token_id\": \"42\",\n  \"sender\": \"0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0\",\n  \"recipient\": \"0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/bridge/nft",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "bridge", "nft"]
+            },
+            "description": "Initiate a cross-chain NFT transfer"
+          },
+          "response": []
+        },
+        {
+          "name": "Estimate Bridge Fees",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"source_chain\": \"polygon-amoy\",\n  \"destination_chain\": \"avalanche-fuji\",\n  \"amount\": \"1000000000000000000\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/bridge/estimate",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "bridge", "estimate"]
+            },
+            "description": "Estimate fees for a bridge transfer"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Messages",
+      "item": [
+        {
+          "name": "Get Message by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/messages/:message_id",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "messages", ":message_id"],
+              "variable": [
+                {
+                  "key": "message_id",
+                  "value": "0x1234567890abcdef",
+                  "description": "Message ID returned from bridge operation"
+                }
+              ]
+            },
+            "description": "Get details of a specific bridge message"
+          },
+          "response": [
+            {
+              "name": "Success - Pending",
+              "originalRequest": {
+                "method": "GET",
+                "url": "{{base_url}}/v1/messages/0x1234567890abcdef"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"0x1234567890abcdef\",\n  \"type\": \"token_transfer\",\n  \"status\": \"pending\",\n  \"source_chain\": \"polygon-amoy\",\n  \"destination_chain\": \"avalanche-fuji\",\n  \"sender\": \"0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0\",\n  \"recipient\": \"0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199\",\n  \"amount\": \"1000000000000000000\",\n  \"token_address\": \"0x0000000000000000000000000000000000001010\",\n  \"nonce\": 1,\n  \"validator_signatures\": [],\n  \"source_tx_hash\": \"0xabcdef...\",\n  \"destination_tx_hash\": null,\n  \"created_at\": \"2024-01-15T10:35:00Z\",\n  \"updated_at\": \"2024-01-15T10:35:00Z\"\n}"
+            },
+            {
+              "name": "Success - Completed",
+              "originalRequest": {
+                "method": "GET",
+                "url": "{{base_url}}/v1/messages/0x1234567890abcdef"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"0x1234567890abcdef\",\n  \"type\": \"token_transfer\",\n  \"status\": \"completed\",\n  \"source_chain\": \"polygon-amoy\",\n  \"destination_chain\": \"avalanche-fuji\",\n  \"sender\": \"0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0\",\n  \"recipient\": \"0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199\",\n  \"amount\": \"1000000000000000000\",\n  \"token_address\": \"0x0000000000000000000000000000000000001010\",\n  \"nonce\": 1,\n  \"validator_signatures\": [\n    {\n      \"validator_address\": \"0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0\",\n      \"signature\": \"0xabcd...\",\n      \"timestamp\": \"2024-01-15T10:36:00Z\"\n    },\n    {\n      \"validator_address\": \"0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199\",\n      \"signature\": \"0xef01...\",\n      \"timestamp\": \"2024-01-15T10:36:05Z\"\n    }\n  ],\n  \"source_tx_hash\": \"0xabcdef...\",\n  \"destination_tx_hash\": \"0x123456...\",\n  \"created_at\": \"2024-01-15T10:35:00Z\",\n  \"updated_at\": \"2024-01-15T10:38:00Z\",\n  \"completed_at\": \"2024-01-15T10:38:00Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "List Messages",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/messages?status=pending&limit=10&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "messages"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "pending",
+                  "description": "Filter by status: pending, completed, failed"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Number of results to return"
+                },
+                {
+                  "key": "offset",
+                  "value": "0",
+                  "description": "Offset for pagination"
+                }
+              ]
+            },
+            "description": "List bridge messages with optional filters"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Message Signatures",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/messages/:message_id/signatures",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "messages", ":message_id", "signatures"],
+              "variable": [
+                {
+                  "key": "message_id",
+                  "value": "0x1234567890abcdef"
+                }
+              ]
+            },
+            "description": "Get validator signatures for a message"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Statistics",
+      "item": [
+        {
+          "name": "Get Bridge Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/stats",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "stats"]
+            },
+            "description": "Get overall bridge statistics"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Chain Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/stats/:chain_name",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "stats", ":chain_name"],
+              "variable": [
+                {
+                  "key": "chain_name",
+                  "value": "polygon-amoy"
+                }
+              ]
+            },
+            "description": "Get statistics for a specific chain"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
