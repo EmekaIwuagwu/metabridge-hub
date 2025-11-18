@@ -533,7 +533,13 @@ abstract contract BridgeBase is
         bytes memory signature
     ) internal pure returns (address) {
         (bytes32 r, bytes32 s, uint8 v) = _splitSignature(signature);
-        return ecrecover(ethSignedMessageHash, v, r, s);
+        address signer = ecrecover(ethSignedMessageHash, v, r, s);
+
+        // SECURITY: ecrecover returns address(0) on error
+        // We must reject this to prevent signature malleability attacks
+        require(signer != address(0), "Invalid signature");
+
+        return signer;
     }
 
     function _splitSignature(bytes memory sig)
