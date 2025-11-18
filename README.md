@@ -37,6 +37,7 @@
 - [Self-Hosted Relayer System](#self-hosted-relayer-system)
 - [Supported Networks](#supported-networks)
 - [Prerequisites](#prerequisites)
+- [🚀 Quick Deploy on Render (Recommended for Testing)](#-quick-deploy-on-render-recommended-for-testing)
 - [Azure Production Deployment](#azure-production-deployment)
 - [Quick Start](#quick-start)
 - [Testnet Deployment](#testnet-deployment)
@@ -443,6 +444,117 @@ signer, _ := hsm.NewHSMSigner(hsmConfig)
 - Alchemy API Key (for EVM chains)
 - Infura API Key (for Ethereum)
 - Helius API Key (for Solana)
+
+---
+
+## 🚀 Quick Deploy on Render (Recommended for Testing)
+
+**Want to test the bridge in 10 minutes without managing servers?** Use Render!
+
+### What is Render Deployment?
+
+- ✅ **No server management**: Deploy with clicks, no SSH or Docker
+- ✅ **Free tier**: Test for free (with 15-min sleep on inactivity)
+- ✅ **Automatic HTTPS**: Free SSL certificates
+- ✅ **Git-based**: Push to GitHub = auto-deploy
+- ✅ **Managed database**: PostgreSQL included
+- ✅ **$0-$21/month**: Much cheaper than Azure ($140/month)
+
+### Quick Start (5 Steps)
+
+1. **Push to GitHub** (if not already)
+   ```bash
+   git remote add origin https://github.com/YOUR_USERNAME/metabridge-engine-hub.git
+   git push origin main
+   ```
+
+2. **Sign up for Render** → https://render.com (free account)
+
+3. **Create PostgreSQL Database**
+   - Click "New +" → "PostgreSQL"
+   - Name: `metabridge-db`
+   - Plan: Free (for testing)
+   - Copy the "Internal Database URL"
+
+4. **Deploy API Server**
+   - Click "New +" → "Web Service"
+   - Connect your GitHub repo
+   - Build Command: `go build -o bin/metabridge-api cmd/api/main.go`
+   - Start Command: `./bin/metabridge-api`
+   - Add environment variables (see full guide)
+
+5. **Test Your Deployment**
+   ```bash
+   curl https://your-app.onrender.com/health
+   # Should return: {"status":"ok","version":"1.0.0"}
+   ```
+
+### Full Render Deployment Guide
+
+👉 **See [RENDER_DEPLOYMENT.md](./RENDER_DEPLOYMENT.md)** for complete step-by-step instructions
+
+This guide includes:
+- Complete environment variable setup
+- Database migration steps
+- API server deployment
+- Relayer (background worker) deployment
+- Testing and monitoring
+- Cost breakdown (free vs paid)
+- Troubleshooting
+
+### When to Use Render vs Azure
+
+| Use Case | Recommended Platform |
+|----------|---------------------|
+| **"I want to test how this works"** | ✅ **Render** (10 min setup, $0) |
+| **"I'm developing/prototyping"** | ✅ **Render** (easy iteration) |
+| **"I need low-cost testnet"** | ✅ **Render** ($0-$21/month) |
+| **"I need production for <1000 users"** | ✅ **Render** ($21-$50/month) |
+| **"I need enterprise production"** | ✅ **Azure** (full control, $140+/month) |
+| **"I need custom infrastructure"** | ✅ **Azure** (VMs, networking, etc.) |
+
+### Cost Comparison
+
+| Tier | Render | Azure |
+|------|--------|-------|
+| **Free Testing** | ✅ $0 (with sleep) | ❌ N/A |
+| **Basic Production** | ✅ $21/month | ❌ ~$140/month |
+| **Professional** | $110/month | $280/month |
+
+### What's Deployed on Render
+
+When you deploy on Render, you get:
+
+1. **API Server** (`https://your-app.onrender.com`)
+   - REST API for bridge operations
+   - Authentication & authorization
+   - Chain status endpoints
+   - Transaction tracking
+
+2. **Relayer** (Background Worker)
+   - Processes cross-chain messages
+   - Validates signatures
+   - Broadcasts transactions
+
+3. **PostgreSQL Database** (Managed)
+   - Message storage
+   - User authentication
+   - Audit logs
+
+4. **Automatic Features**
+   - HTTPS/SSL certificate
+   - Auto-deploy on git push
+   - Built-in monitoring
+   - Log aggregation
+
+### Limitations of Render Free Tier
+
+- **Sleep after 15 min**: First request wakes it up (30-50s delay)
+- **512 MB RAM**: Enough for testing
+- **Shared CPU**: Slower than dedicated
+- **100 GB bandwidth/month**: Plenty for testing
+
+**Solution**: Upgrade to Starter ($7/month) to remove sleep and get more resources
 
 ---
 
