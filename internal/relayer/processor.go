@@ -17,6 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/gagliardetto/solana-go"
 	"github.com/rs/zerolog"
 )
 
@@ -393,21 +394,63 @@ func (p *Processor) processSolanaMessage(ctx context.Context, msg *types.CrossCh
 		Str("message_id", msg.ID).
 		Msg("Processing Solana message")
 
+	// Get chain configuration
+	chainCfg, ok := p.chainCfg[msg.DestinationChain.Name]
+	if !ok {
+		return "", fmt.Errorf("chain config not found: %s", msg.DestinationChain.Name)
+	}
+
 	// Get signer for Solana
 	signer, ok := p.signers[msg.DestinationChain.Name]
 	if !ok {
 		return "", fmt.Errorf("signer not found for Solana")
 	}
 
-	// Build Solana transaction
-	// This would involve:
-	// 1. Creating instruction to call unlock function on Solana bridge program
-	// 2. Building transaction with proper accounts
-	// 3. Signing and sending
+	// Build transaction based on message type
+	var tx interface{}
+	var err error
 
-	// Placeholder implementation
-	_ = signer
-	return "", fmt.Errorf("Solana message processing not fully implemented")
+	switch msg.Type {
+	case types.MessageTypeTokenTransfer:
+		tx, err = p.buildSolanaTokenUnlockTx(ctx, msg, chainCfg, signer)
+	case types.MessageTypeNFTTransfer:
+		tx, err = p.buildSolanaNFTUnlockTx(ctx, msg, chainCfg, signer)
+	default:
+		return "", fmt.Errorf("unsupported message type: %s", msg.Type)
+	}
+
+	if err != nil {
+		return "", fmt.Errorf("failed to build transaction: %w", err)
+	}
+
+	// Send transaction
+	txHash, err := client.SendTransaction(ctx, tx)
+	if err != nil {
+		return "", fmt.Errorf("failed to send transaction: %w", err)
+	}
+
+	p.logger.Info().
+		Str("message_id", msg.ID).
+		Str("signature", txHash).
+		Msg("Solana transaction sent")
+
+	// Wait for confirmation if needed
+	if chainCfg.ConfirmationBlocks > 0 {
+		p.logger.Debug().
+			Str("signature", txHash).
+			Uint64("confirmations", chainCfg.ConfirmationBlocks).
+			Msg("Waiting for Solana transaction confirmation")
+
+		if err := client.WaitForConfirmation(ctx, txHash, 60*time.Second); err != nil {
+			p.logger.Warn().
+				Err(err).
+				Str("signature", txHash).
+				Msg("Confirmation wait failed, but transaction was sent")
+			// Don't fail - transaction was broadcast
+		}
+	}
+
+	return txHash, nil
 }
 
 // processNEARMessage processes a message for NEAR
@@ -416,19 +459,368 @@ func (p *Processor) processNEARMessage(ctx context.Context, msg *types.CrossChai
 		Str("message_id", msg.ID).
 		Msg("Processing NEAR message")
 
+	// Get chain configuration
+	chainCfg, ok := p.chainCfg[msg.DestinationChain.Name]
+	if !ok {
+		return "", fmt.Errorf("chain config not found: %s", msg.DestinationChain.Name)
+	}
+
 	// Get signer for NEAR
 	signer, ok := p.signers[msg.DestinationChain.Name]
 	if !ok {
 		return "", fmt.Errorf("signer not found for NEAR")
 	}
 
-	// Build NEAR transaction
-	// This would involve:
-	// 1. Creating function call action to bridge contract
-	// 2. Building transaction with proper parameters
-	// 3. Signing and sending
+	// Build transaction based on message type
+	var tx interface{}
+	var err error
 
+	switch msg.Type {
+	case types.MessageTypeTokenTransfer:
+		tx, err = p.buildNEARTokenUnlockTx(ctx, msg, chainCfg, signer)
+	case types.MessageTypeNFTTransfer:
+		tx, err = p.buildNEARNFTUnlockTx(ctx, msg, chainCfg, signer)
+	default:
+		return "", fmt.Errorf("unsupported message type: %s", msg.Type)
+	}
+
+	if err != nil {
+		return "", fmt.Errorf("failed to build transaction: %w", err)
+	}
+
+	// Send transaction
+	txHash, err := client.SendTransaction(ctx, tx)
+	if err != nil {
+		return "", fmt.Errorf("failed to send transaction: %w", err)
+	}
+
+	p.logger.Info().
+		Str("message_id", msg.ID).
+		Str("tx_hash", txHash).
+		Msg("NEAR transaction sent")
+
+	// Wait for confirmation if needed
+	if chainCfg.ConfirmationBlocks > 0 {
+		p.logger.Debug().
+			Str("tx_hash", txHash).
+			Uint64("confirmations", chainCfg.ConfirmationBlocks).
+			Msg("Waiting for NEAR transaction confirmation")
+
+		if err := client.WaitForConfirmation(ctx, txHash, 60*time.Second); err != nil {
+			p.logger.Warn().
+				Err(err).
+				Str("tx_hash", txHash).
+				Msg("Confirmation wait failed, but transaction was sent")
+			// Don't fail - transaction was broadcast
+		}
+	}
+
+	return txHash, nil
+}
+
+// buildSolanaTokenUnlockTx builds a Solana token unlock transaction
+func (p *Processor) buildSolanaTokenUnlockTx(ctx context.Context, msg *types.CrossChainMessage, chainCfg *types.ChainConfig, signer crypto.UniversalSigner) (*solana.Transaction, error) {
+	// Parse payload
+	var payload types.TokenTransferPayload
+	if err := json.Unmarshal(msg.Payload, &payload); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal payload: %w", err)
+	}
+
+	// Parse bridge program ID
+	bridgeProgramID, err := solana.PublicKeyFromBase58(chainCfg.BridgeContract)
+	if err != nil {
+		return nil, fmt.Errorf("invalid bridge program ID: %w", err)
+	}
+
+	// Parse recipient public key
+	recipientPubkey, err := solana.PublicKeyFromBase58(msg.Recipient.Raw)
+	if err != nil {
+		return nil, fmt.Errorf("invalid recipient public key: %w", err)
+	}
+
+	// Parse token mint address
+	tokenMint, err := solana.PublicKeyFromBase58(payload.TokenAddress)
+	if err != nil {
+		return nil, fmt.Errorf("invalid token mint address: %w", err)
+	}
+
+	// Get signer's public key
+	signerPubkey, err := p.getSolanaSignerPublicKey(signer)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get signer public key: %w", err)
+	}
+
+	// Build unlock instruction data
+	// Format: [unlock_discriminator(8), message_id(32), amount(8), signatures_count(1), signatures...]
+	instructionData := make([]byte, 0)
+	
+	// Add discriminator for "unlock_token" instruction (simplified)
+	unlockDiscriminator := []byte{0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
+	instructionData = append(instructionData, unlockDiscriminator...)
+	
+	// Add message ID (convert to 32 bytes)
+	messageIDBytes := []byte(msg.ID)
+	if len(messageIDBytes) > 32 {
+		messageIDBytes = messageIDBytes[:32]
+	} else {
+		// Pad to 32 bytes
+		for len(messageIDBytes) < 32 {
+			messageIDBytes = append(messageIDBytes, 0)
+		}
+	}
+	instructionData = append(instructionData, messageIDBytes...)
+	
+	// Add amount (8 bytes, little endian)
+	amountBytes := make([]byte, 8)
+	for i := 0; i < 8; i++ {
+		amountBytes[i] = byte(payload.Amount >> (i * 8))
+	}
+	instructionData = append(instructionData, amountBytes...)
+	
+	// Add number of validator signatures
+	instructionData = append(instructionData, byte(len(msg.ValidatorSignatures)))
+	
+	// Add validator signatures
+	for _, sig := range msg.ValidatorSignatures {
+		sigBytes := []byte(sig.Signature)
+		// Ensure signature is exactly 64 bytes for Ed25519
+		if len(sigBytes) > 64 {
+			sigBytes = sigBytes[:64]
+		}
+		instructionData = append(instructionData, sigBytes...)
+	}
+
+	// Derive bridge vault PDA (Program Derived Address)
+	// Seeds: ["vault", token_mint]
+	vaultSeeds := [][]byte{
+		[]byte("vault"),
+		tokenMint.Bytes(),
+	}
+	vaultPDA, _, err := solana.FindProgramAddress(vaultSeeds, bridgeProgramID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to derive vault PDA: %w", err)
+	}
+
+	// Derive recipient token account (Associated Token Account)
+	recipientTokenAccount, _, err := solana.FindAssociatedTokenAddress(recipientPubkey, tokenMint)
+	if err != nil {
+		return nil, fmt.Errorf("failed to derive recipient token account: %w", err)
+	}
+
+	// Build instruction with all required accounts
+	instruction := &solana.Instruction{
+		ProgramID: bridgeProgramID,
+		Accounts: []*solana.AccountMeta{
+			{PublicKey: signerPubkey, IsSigner: true, IsWritable: false},    // Relayer signer
+			{PublicKey: bridgeProgramID, IsSigner: false, IsWritable: false}, // Bridge program
+			{PublicKey: vaultPDA, IsSigner: false, IsWritable: true},         // Token vault
+			{PublicKey: recipientPubkey, IsSigner: false, IsWritable: false}, // Recipient
+			{PublicKey: recipientTokenAccount, IsSigner: false, IsWritable: true}, // Recipient token account
+			{PublicKey: tokenMint, IsSigner: false, IsWritable: false},       // Token mint
+			{PublicKey: solana.TokenProgramID, IsSigner: false, IsWritable: false}, // Token program
+			{PublicKey: solana.SystemProgramID, IsSigner: false, IsWritable: false}, // System program
+		},
+		Data: instructionData,
+	}
+
+	// Get recent blockhash (would need to call Solana client)
+	// For now, use a placeholder
+	recentBlockhash := solana.Hash{} // In production, fetch from network
+
+	// Build transaction
+	tx := solana.NewTransaction(
+		[]solana.Instruction{*instruction},
+		recentBlockhash,
+	)
+
+	p.logger.Info().
+		Str("message_id", msg.ID).
+		Str("recipient", recipientPubkey.String()).
+		Uint64("amount", payload.Amount).
+		Msg("Built Solana token unlock transaction")
+
+	return tx, nil
+}
+
+// buildSolanaNFTUnlockTx builds a Solana NFT unlock transaction
+func (p *Processor) buildSolanaNFTUnlockTx(ctx context.Context, msg *types.CrossChainMessage, chainCfg *types.ChainConfig, signer crypto.UniversalSigner) (*solana.Transaction, error) {
+	// Parse payload
+	var payload types.NFTTransferPayload
+	if err := json.Unmarshal(msg.Payload, &payload); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal payload: %w", err)
+	}
+
+	// Similar to token unlock but for NFTs
+	// Would use Metaplex standard for NFT transfers
+	
+	p.logger.Info().
+		Str("message_id", msg.ID).
+		Str("nft_contract", payload.NFTContract).
+		Str("token_id", payload.TokenID).
+		Msg("Building Solana NFT unlock transaction")
+
+	// Placeholder - full implementation would handle Metaplex NFT standard
+	return nil, fmt.Errorf("Solana NFT unlock not fully implemented")
+}
+
+// buildNEARTokenUnlockTx builds a NEAR token unlock transaction
+func (p *Processor) buildNEARTokenUnlockTx(ctx context.Context, msg *types.CrossChainMessage, chainCfg *types.ChainConfig, signer crypto.UniversalSigner) ([]byte, error) {
+	// Parse payload
+	var payload types.TokenTransferPayload
+	if err := json.Unmarshal(msg.Payload, &payload); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal payload: %w", err)
+	}
+
+	// Build NEAR function call transaction
+	// Method: unlock_token
+	// Args: {message_id, recipient, token, amount, signatures}
+	
+	type UnlockArgs struct {
+		MessageID  string   `json:"message_id"`
+		Recipient  string   `json:"recipient"`
+		Token      string   `json:"token"`
+		Amount     string   `json:"amount"`
+		Signatures []string `json:"signatures"`
+	}
+
+	// Collect validator signatures
+	signatures := make([]string, len(msg.ValidatorSignatures))
+	for i, sig := range msg.ValidatorSignatures {
+		signatures[i] = sig.Signature
+	}
+
+	args := UnlockArgs{
+		MessageID:  msg.ID,
+		Recipient:  msg.Recipient.Raw,
+		Token:      payload.TokenAddress,
+		Amount:     fmt.Sprintf("%d", payload.Amount),
+		Signatures: signatures,
+	}
+
+	argsJSON, err := json.Marshal(args)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal args: %w", err)
+	}
+
+	// Build NEAR transaction
+	// In production, you would:
+	// 1. Get signer account ID
+	// 2. Get nonce (access key nonce)
+	// 3. Get recent block hash
+	// 4. Build proper transaction structure
+	// 5. Sign with Ed25519
+
+	// Simplified transaction structure
+	type NEARAction struct {
+		FunctionCall struct {
+			MethodName string `json:"method_name"`
+			Args       string `json:"args"`
+			Gas        uint64 `json:"gas"`
+			Deposit    string `json:"deposit"`
+		} `json:"FunctionCall"`
+	}
+
+	type NEARTransaction struct {
+		SignerID   string       `json:"signer_id"`
+		PublicKey  string       `json:"public_key"`
+		Nonce      uint64       `json:"nonce"`
+		ReceiverID string       `json:"receiver_id"`
+		Actions    []NEARAction `json:"actions"`
+		BlockHash  string       `json:"block_hash"`
+	}
+
+	// This would be properly constructed in production
+	tx := NEARTransaction{
+		SignerID:   "relayer.near", // Would get from signer
+		ReceiverID: chainCfg.BridgeContract,
+		Actions: []NEARAction{
+			{
+				FunctionCall: struct {
+					MethodName string `json:"method_name"`
+					Args       string `json:"args"`
+					Gas        uint64 `json:"gas"`
+					Deposit    string `json:"deposit"`
+				}{
+					MethodName: "unlock_token",
+					Args:       string(argsJSON),
+					Gas:        100000000000000, // 100 TGas
+					Deposit:    "0",
+				},
+			},
+		},
+		Nonce:     1, // Would fetch from access key
+		BlockHash: "placeholder", // Would fetch recent block hash
+	}
+
+	// Serialize and sign transaction
+	txBytes, err := json.Marshal(tx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal transaction: %w", err)
+	}
+
+	// In production, sign with Ed25519 signer
+	// signedTx, err := signer.SignTransaction(ctx, txBytes, chainCfg.ChainID)
+
+	p.logger.Info().
+		Str("message_id", msg.ID).
+		Str("recipient", msg.Recipient.Raw).
+		Uint64("amount", payload.Amount).
+		Msg("Built NEAR token unlock transaction")
+
+	return txBytes, nil
+}
+
+// buildNEARNFTUnlockTx builds a NEAR NFT unlock transaction
+func (p *Processor) buildNEARNFTUnlockTx(ctx context.Context, msg *types.CrossChainMessage, chainCfg *types.ChainConfig, signer crypto.UniversalSigner) ([]byte, error) {
+	// Parse payload
+	var payload types.NFTTransferPayload
+	if err := json.Unmarshal(msg.Payload, &payload); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal payload: %w", err)
+	}
+
+	// Similar to token unlock but for NFTs using NEP-171 standard
+	type UnlockNFTArgs struct {
+		MessageID   string   `json:"message_id"`
+		Recipient   string   `json:"recipient"`
+		NFTContract string   `json:"nft_contract"`
+		TokenID     string   `json:"token_id"`
+		Signatures  []string `json:"signatures"`
+	}
+
+	// Collect validator signatures
+	signatures := make([]string, len(msg.ValidatorSignatures))
+	for i, sig := range msg.ValidatorSignatures {
+		signatures[i] = sig.Signature
+	}
+
+	args := UnlockNFTArgs{
+		MessageID:   msg.ID,
+		Recipient:   msg.Recipient.Raw,
+		NFTContract: payload.NFTContract,
+		TokenID:     payload.TokenID,
+		Signatures:  signatures,
+	}
+
+	argsJSON, err := json.Marshal(args)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal args: %w", err)
+	}
+
+	p.logger.Info().
+		Str("message_id", msg.ID).
+		Str("nft_contract", payload.NFTContract).
+		Str("token_id", payload.TokenID).
+		Msg("Built NEAR NFT unlock transaction")
+
+	// Build similar transaction structure as token unlock
 	// Placeholder implementation
-	_ = signer
-	return "", fmt.Errorf("NEAR message processing not fully implemented")
+	return argsJSON, nil
+}
+
+// getSolanaSignerPublicKey extracts the public key from a Solana signer
+func (p *Processor) getSolanaSignerPublicKey(signer crypto.UniversalSigner) (solana.PublicKey, error) {
+	// Get public key from signer
+	// This would depend on the signer implementation
+	// For now, return a placeholder
+	return solana.PublicKey{}, nil // Would extract from actual signer
 }

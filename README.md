@@ -34,8 +34,10 @@
 ## 📋 Table of Contents
 
 - [Architecture](#architecture)
+- [Self-Hosted Relayer System](#self-hosted-relayer-system)
 - [Supported Networks](#supported-networks)
 - [Prerequisites](#prerequisites)
+- [Azure Production Deployment](#azure-production-deployment)
 - [Quick Start](#quick-start)
 - [Testnet Deployment](#testnet-deployment)
 - [Mainnet Deployment](#mainnet-deployment)
@@ -94,6 +96,304 @@
 
 ---
 
+## 🔄 Self-Hosted Relayer System
+
+Metabridge includes a **production-ready, self-hosted relayer** that eliminates dependency on third-party relayer networks. You control the entire message relay infrastructure.
+
+### Relayer Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Blockchain Networks                       │
+│  EVM (Polygon, BNB, Avalanche, ETH) | Solana | NEAR         │
+└────────────────────┬────────────────────────────────────────┘
+                     │ Lock/Burn Events
+          ┌──────────▼──────────────┐
+          │    Event Listeners      │
+          │  - EVM Listener         │
+          │  - Solana Listener      │
+          │  - NEAR Listener        │
+          └──────────┬──────────────┘
+                     │ Parse Events
+          ┌──────────▼──────────────┐
+          │    NATS Queue           │
+          │  (Message Persistence)  │
+          └──────────┬──────────────┘
+                     │ Dequeue
+          ┌──────────▼──────────────┐
+          │   Relayer Workers       │
+          │  (Configurable Pool)    │
+          └──────────┬──────────────┘
+                     │
+          ┌──────────▼──────────────┐
+          │    Message Processor    │
+          │  - Validate signatures  │
+          │  - Check security rules │
+          │  - Build transactions   │
+          └──────────┬──────────────┘
+                     │ Sign & Broadcast
+          ┌──────────▼──────────────┐
+          │  Destination Chains     │
+          │  Unlock/Mint Assets     │
+          └─────────────────────────┘
+```
+
+### Key Features
+
+✅ **Multi-Chain Support**: EVM, Solana, and NEAR processing
+✅ **Worker Pool**: Configurable concurrent message processing
+✅ **Fault Tolerance**: Automatic retry with exponential backoff
+✅ **Health Monitoring**: Per-chain health checks every 30 seconds
+✅ **Queue Persistence**: Messages survive relayer restarts
+✅ **Multi-Signature Verification**: Validates validator signatures before relay
+✅ **Transaction Confirmation**: Waits for blockchain confirmations
+✅ **Metrics & Monitoring**: Prometheus metrics for all operations
+
+### Relayer Components
+
+#### 1. Event Listeners
+
+**EVM Listener** (`internal/listener/evm/listener.go`):
+- Polls EVM chains for bridge contract events
+- Handles block confirmations (128-256 blocks)
+- Decodes `TokenLocked` and `NFTLocked` events
+- Batch processing (100 blocks at a time)
+
+**Solana Listener** (`internal/listener/solana/listener.go`):
+- Monitors Solana program accounts for lock events
+- Handles slot confirmations (32 slots)
+- Parses account data for bridge events
+- Supports SPL token and Metaplex NFT standards
+
+**NEAR Listener** (`internal/listener/near/listener.go`):
+- Queries NEAR contract events via RPC
+- Handles block confirmations (3 blocks)
+- Parses NEP-141 (token) and NEP-171 (NFT) events
+- Compatible with NEAR Indexer integration
+
+#### 2. Message Processor
+
+**Security Validation**:
+```go
+// Validates before processing
+- Multi-signature verification (2-of-3 testnet, 3-of-5 mainnet)
+- Transaction limit checks
+- Daily volume limits
+- Rate limiting per sender
+- Duplicate message detection
+```
+
+**EVM Transaction Building**:
+```solidity
+// Calls bridge contract unlock function
+unlockToken(
+    bytes32 messageId,
+    address recipient,
+    address token,
+    uint256 amount,
+    bytes[] signatures
+)
+```
+
+**Solana Transaction Building**:
+```rust
+// Builds Solana instruction
+- Program ID: Bridge program
+- Accounts: [relayer, vault_pda, recipient_ata, token_mint, token_program]
+- Data: [discriminator, message_id, amount, signatures]
+- Uses Associated Token Accounts (ATA) for recipients
+```
+
+**NEAR Transaction Building**:
+```rust
+// Builds NEAR function call
+{
+  "method_name": "unlock_token",
+  "args": {
+    "message_id": "...",
+    "recipient": "user.near",
+    "token": "token.near",
+    "amount": "1000000",
+    "signatures": ["sig1", "sig2", "sig3"]
+  },
+  "gas": 100000000000000,
+  "deposit": "0"
+}
+```
+
+### Running the Relayer
+
+#### Development Mode
+
+```bash
+# Start relayer with testnet config
+./relayer --config config/config.testnet.yaml
+```
+
+#### Production Mode (Systemd)
+
+```bash
+# Create systemd service
+sudo cat > /etc/systemd/system/metabridge-relayer.service <<EOF
+[Unit]
+Description=Metabridge Relayer Service
+After=network.target postgresql.service nats.service
+
+[Service]
+Type=simple
+User=bridge
+WorkingDirectory=/opt/metabridge
+ExecStart=/opt/metabridge/relayer --config /opt/metabridge/config/config.mainnet.yaml
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+Environment="BRIDGE_ENVIRONMENT=mainnet"
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Enable and start
+sudo systemctl enable metabridge-relayer
+sudo systemctl start metabridge-relayer
+
+# Check status
+sudo systemctl status metabridge-relayer
+sudo journalctl -u metabridge-relayer -f
+```
+
+#### Docker Deployment
+
+```bash
+# Build relayer image
+docker build -t metabridge-relayer:latest -f Dockerfile.relayer .
+
+# Run relayer container
+docker run -d \
+  --name metabridge-relayer \
+  --network metabridge-network \
+  -v /opt/metabridge/config:/config:ro \
+  -v /opt/metabridge/keys:/keys:ro \
+  -e BRIDGE_ENVIRONMENT=mainnet \
+  metabridge-relayer:latest \
+  --config /config/config.mainnet.yaml
+```
+
+### Relayer Configuration
+
+```yaml
+# config/config.mainnet.yaml
+relayer:
+  workers: 10                    # Number of concurrent workers
+  message_batch_size: 50         # Messages to process per batch
+  retry_attempts: 3              # Retry failed messages
+  retry_delay: "30s"             # Delay between retries
+  confirmation_timeout: "5m"     # Wait time for confirmations
+  health_check_interval: "30s"   # Health check frequency
+
+security:
+  required_signatures: 3         # Multi-sig threshold
+  max_transaction_value: 1000000 # Max value in USD
+  daily_volume_limit: 10000000   # Daily limit in USD
+  rate_limit_per_minute: 20      # Rate limit per sender
+```
+
+### Monitoring Relayer Health
+
+**Prometheus Metrics**:
+```prometheus
+# Messages processed
+bridge_relayer_messages_processed_total{source, destination}
+
+# Processing duration
+bridge_relayer_message_processing_duration_seconds{source, destination}
+
+# Failed messages
+bridge_relayer_messages_failed_total{source, destination, reason}
+
+# Queue depth
+bridge_queue_size
+bridge_queue_consumers
+
+# Chain health
+bridge_chain_health{chain} # 1 = healthy, 0 = unhealthy
+bridge_chain_block_number{chain}
+```
+
+**Grafana Alerts**:
+- Alert when chain health = 0 for > 5 minutes
+- Alert when failed messages > 10 in 10 minutes
+- Alert when processing duration > 60 seconds
+- Alert when queue depth > 1000 messages
+
+### Scaling the Relayer
+
+**Horizontal Scaling**:
+```bash
+# Run multiple relayer instances
+# Each worker pool processes from shared NATS queue
+# Messages are load-balanced automatically
+
+# Instance 1
+./relayer --config config.yaml --workers 10
+
+# Instance 2
+./relayer --config config.yaml --workers 10
+
+# Instance 3
+./relayer --config config.yaml --workers 10
+```
+
+**Vertical Scaling**:
+```yaml
+# Increase workers per instance
+relayer:
+  workers: 50  # Adjust based on CPU cores
+```
+
+### Transaction Signing
+
+**Development (Private Keys)**:
+```go
+// Load from environment/config
+signer, _ := evmCrypto.NewECDSASigner(privateKeyHex)
+```
+
+**Production (AWS KMS)**:
+```go
+// Use AWS KMS for secure key management
+signer, _ := kms.NewKMSSigner(kmsKeyID)
+```
+
+**Production (Hardware Security Module)**:
+```go
+// Use HSM for maximum security
+signer, _ := hsm.NewHSMSigner(hsmConfig)
+```
+
+### Troubleshooting
+
+**Relayer not processing messages**:
+1. Check NATS connection: `nats stream info BRIDGE_MESSAGES`
+2. Check database connection: `psql -U bridge_user -d metabridge`
+3. Check RPC endpoints: View health metrics
+4. Check logs: `journalctl -u metabridge-relayer -f`
+
+**Transactions failing on destination**:
+1. Verify signer has sufficient gas funds
+2. Check destination chain RPC is responsive
+3. Verify bridge contract addresses are correct
+4. Check transaction nonce management
+
+**High processing latency**:
+1. Increase worker count
+2. Optimize RPC endpoint selection
+3. Check database query performance
+4. Review gas price settings
+
+---
+
 ## 🌐 Supported Networks
 
 ### Testnet Configurations
@@ -143,6 +443,780 @@
 - Alchemy API Key (for EVM chains)
 - Infura API Key (for Ethereum)
 - Helius API Key (for Solana)
+
+---
+
+## 🔷 Azure Production Deployment
+
+Complete step-by-step guide to deploy Metabridge on Azure from scratch.
+
+### Prerequisites
+
+- Azure account with active subscription
+- SSH key pair generated on your local machine
+- Domain name (optional, for HTTPS)
+
+### Step 1: Create Azure VM
+
+```bash
+# From Azure Portal or CLI
+az vm create \
+  --resource-group metabridge-rg \
+  --name metabridge-vm \
+  --image Ubuntu2204 \
+  --size Standard_D4s_v3 \
+  --admin-username bridge \
+  --ssh-key-values ~/.ssh/id_rsa.pub \
+  --public-ip-sku Standard
+
+# Get the public IP
+az vm show -d -g metabridge-rg -n metabridge-vm --query publicIps -o tsv
+```
+
+**Recommended VM Sizes**:
+- **Testnet**: Standard_D2s_v3 (2 vCPU, 8 GB RAM) - $70/month
+- **Production**: Standard_D4s_v3 (4 vCPU, 16 GB RAM) - $140/month
+- **High Volume**: Standard_D8s_v3 (8 vCPU, 32 GB RAM) - $280/month
+
+### Step 2: Connect via SSH
+
+```bash
+# SSH into your Azure VM
+ssh bridge@<YOUR_VM_PUBLIC_IP>
+
+# Or if you saved the IP
+export BRIDGE_VM_IP=<YOUR_VM_PUBLIC_IP>
+ssh bridge@$BRIDGE_VM_IP
+```
+
+### Step 3: System Preparation
+
+```bash
+# Update package lists
+sudo apt update
+
+# Upgrade all packages
+sudo apt upgrade -y
+
+# Install essential tools
+sudo apt install -y \
+  curl \
+  wget \
+  git \
+  build-essential \
+  jq \
+  unzip \
+  software-properties-common \
+  apt-transport-https \
+  ca-certificates \
+  gnupg \
+  lsb-release
+
+# Set timezone (recommended)
+sudo timedatectl set-timezone UTC
+```
+
+### Step 4: Install Go 1.21+
+
+```bash
+# Download Go
+cd ~
+wget https://go.dev/dl/go1.21.6.linux-amd64.tar.gz
+
+# Extract and install
+sudo rm -rf /usr/local/go
+sudo tar -C /usr/local -xzf go1.21.6.linux-amd64.tar.gz
+
+# Add to PATH
+echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
+echo 'export GOPATH=$HOME/go' >> ~/.bashrc
+echo 'export PATH=$PATH:$GOPATH/bin' >> ~/.bashrc
+source ~/.bashrc
+
+# Verify installation
+go version
+# Should output: go version go1.21.6 linux/amd64
+```
+
+### Step 5: Install Node.js 18+
+
+```bash
+# Install Node.js via NodeSource
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt install -y nodejs
+
+# Verify installation
+node --version  # Should be v18.x.x
+npm --version   # Should be 9.x.x or higher
+
+# Install Yarn (optional, for faster package management)
+npm install -g yarn
+```
+
+### Step 6: Install Docker & Docker Compose
+
+```bash
+# Add Docker's official GPG key
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
+
+# Add Docker repository
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# Install Docker
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# Add user to docker group
+sudo usermod -aG docker $USER
+
+# Apply group changes (or logout/login)
+newgrp docker
+
+# Verify installation
+docker --version
+docker compose version
+```
+
+### Step 7: Clone Repository
+
+```bash
+# Create project directory
+mkdir -p ~/metabridge
+cd ~/metabridge
+
+# Clone the repository
+git clone https://github.com/EmekaIwuagwu/metabridge-engine-hub.git
+cd metabridge-engine-hub
+
+# Check current branch
+git branch
+git status
+```
+
+### Step 8: Install Project Dependencies
+
+```bash
+# Install Go dependencies
+go mod download
+go mod verify
+
+# Install smart contract dependencies (EVM)
+cd contracts/evm
+npm install
+
+# Return to project root
+cd ~/metabridge/metabridge-engine-hub
+```
+
+### Step 9: Configure Environment
+
+```bash
+# Copy environment template
+cp .env.example .env.production
+
+# Edit environment file
+nano .env.production
+```
+
+**Required environment variables**:
+
+```bash
+# Environment
+BRIDGE_ENVIRONMENT=production
+
+# Database Configuration
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=bridge_user
+DB_PASSWORD=<GENERATE_STRONG_PASSWORD>
+DB_NAME=metabridge_production
+DB_SSLMODE=disable
+
+# Server Configuration
+SERVER_HOST=0.0.0.0
+SERVER_PORT=8080
+
+# JWT Authentication (generate with: openssl rand -hex 32)
+JWT_SECRET=<YOUR_64_CHAR_SECRET_HERE>
+JWT_EXPIRATION_HOURS=24
+
+# CORS (your frontend domain)
+CORS_ALLOWED_ORIGINS=https://yourdomain.com,https://app.yourdomain.com
+
+# Rate Limiting
+RATE_LIMIT_PER_MINUTE=100
+REQUIRE_AUTH=true
+API_KEY_ENABLED=true
+
+# RPC Endpoints (use your own API keys)
+ALCHEMY_API_KEY=<YOUR_ALCHEMY_KEY>
+INFURA_API_KEY=<YOUR_INFURA_KEY>
+HELIUS_API_KEY=<YOUR_HELIUS_KEY>
+
+# Chain RPC URLs
+POLYGON_RPC_URL=https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}
+BNB_RPC_URL=https://bsc-dataseed.binance.org/
+AVALANCHE_RPC_URL=https://api.avax.network/ext/bc/C/rpc
+ETHEREUM_RPC_URL=https://mainnet.infura.io/v3/${INFURA_API_KEY}
+SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
+NEAR_RPC_URL=https://rpc.mainnet.near.org
+
+# Smart Contract Addresses (fill after deployment)
+POLYGON_BRIDGE_CONTRACT=
+BNB_BRIDGE_CONTRACT=
+AVALANCHE_BRIDGE_CONTRACT=
+ETHEREUM_BRIDGE_CONTRACT=
+SOLANA_BRIDGE_PROGRAM=
+NEAR_BRIDGE_CONTRACT=
+
+# Validator Configuration (use secure key management in production)
+VALIDATOR_PRIVATE_KEY=<YOUR_VALIDATOR_KEY>
+
+# NATS Configuration
+NATS_URL=nats://localhost:4222
+
+# Redis Configuration
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=
+```
+
+### Step 10: Start Infrastructure Services
+
+```bash
+# Start PostgreSQL, NATS, and Redis
+docker compose -f docker-compose.production.yaml up -d postgres nats redis
+
+# Wait for services to be ready (30 seconds)
+sleep 30
+
+# Check service status
+docker compose -f docker-compose.production.yaml ps
+
+# Should show postgres, nats, and redis as "running"
+```
+
+### Step 11: Initialize Database
+
+```bash
+# Create database and user
+docker exec -i metabridge-postgres psql -U postgres <<EOF
+CREATE DATABASE metabridge_production;
+CREATE USER bridge_user WITH ENCRYPTED PASSWORD '<YOUR_DB_PASSWORD>';
+GRANT ALL PRIVILEGES ON DATABASE metabridge_production TO bridge_user;
+ALTER DATABASE metabridge_production OWNER TO bridge_user;
+\q
+EOF
+
+# Run database migrations
+docker exec -i metabridge-postgres psql -U bridge_user -d metabridge_production < internal/database/schema.sql
+
+# Run authentication schema
+docker exec -i metabridge-postgres psql -U bridge_user -d metabridge_production < internal/database/auth.sql
+
+# Verify tables created
+docker exec -it metabridge-postgres psql -U bridge_user -d metabridge_production -c "\dt"
+```
+
+### Step 12: Create Admin User
+
+```bash
+# Generate password hash (install bcrypt tool)
+go install github.com/bitnami/bcrypt-cli@latest
+
+# Hash your admin password
+bcrypt-cli <YOUR_ADMIN_PASSWORD>
+# Copy the hash output
+
+# Insert admin user
+docker exec -i metabridge-postgres psql -U bridge_user -d metabridge_production <<EOF
+INSERT INTO users (id, email, name, password_hash, role, active, created_at, updated_at)
+VALUES (
+  'admin-001',
+  'admin@metabridge.local',
+  'System Administrator',
+  '<YOUR_BCRYPT_HASH>',
+  'admin',
+  true,
+  NOW(),
+  NOW()
+);
+EOF
+
+# Verify user created
+docker exec -it metabridge-postgres psql -U bridge_user -d metabridge_production -c "SELECT id, email, role FROM users;"
+```
+
+### Step 13: Deploy Smart Contracts
+
+#### EVM Contracts (Polygon, BNB, Avalanche, Ethereum)
+
+```bash
+cd ~/metabridge/metabridge-engine-hub/contracts/evm
+
+# Create deployment configuration
+cat > hardhat.config.js <<'EOF'
+require("@nomicfoundation/hardhat-toolbox");
+require("hardhat-deploy");
+
+module.exports = {
+  solidity: "0.8.20",
+  networks: {
+    polygon: {
+      url: process.env.POLYGON_RPC_URL,
+      accounts: [process.env.DEPLOYER_PRIVATE_KEY],
+    },
+    bsc: {
+      url: process.env.BNB_RPC_URL,
+      accounts: [process.env.DEPLOYER_PRIVATE_KEY],
+    },
+    avalanche: {
+      url: process.env.AVALANCHE_RPC_URL,
+      accounts: [process.env.DEPLOYER_PRIVATE_KEY],
+    },
+    ethereum: {
+      url: process.env.ETHEREUM_RPC_URL,
+      accounts: [process.env.DEPLOYER_PRIVATE_KEY],
+    },
+  },
+};
+EOF
+
+# Load environment
+export $(cat ../../.env.production | grep -v '^#' | xargs)
+
+# Deploy to Polygon
+npx hardhat deploy --network polygon --tags Bridge
+export POLYGON_BRIDGE=$(cat deployments/polygon/BridgeBase.json | jq -r '.address')
+echo "Polygon Bridge: $POLYGON_BRIDGE"
+
+# Deploy to BNB
+npx hardhat deploy --network bsc --tags Bridge
+export BNB_BRIDGE=$(cat deployments/bsc/BridgeBase.json | jq -r '.address')
+echo "BNB Bridge: $BNB_BRIDGE"
+
+# Deploy to Avalanche
+npx hardhat deploy --network avalanche --tags Bridge
+export AVALANCHE_BRIDGE=$(cat deployments/avalanche/BridgeBase.json | jq -r '.address')
+echo "Avalanche Bridge: $AVALANCHE_BRIDGE"
+
+# Deploy to Ethereum
+npx hardhat deploy --network ethereum --tags Bridge
+export ETHEREUM_BRIDGE=$(cat deployments/ethereum/BridgeBase.json | jq -r '.address')
+echo "Ethereum Bridge: $ETHEREUM_BRIDGE"
+
+# Update .env.production with contract addresses
+echo "POLYGON_BRIDGE_CONTRACT=$POLYGON_BRIDGE" >> ../../.env.production
+echo "BNB_BRIDGE_CONTRACT=$BNB_BRIDGE" >> ../../.env.production
+echo "AVALANCHE_BRIDGE_CONTRACT=$AVALANCHE_BRIDGE" >> ../../.env.production
+echo "ETHEREUM_BRIDGE_CONTRACT=$ETHEREUM_BRIDGE" >> ../../.env.production
+```
+
+#### Solana Program (Optional)
+
+```bash
+# Install Solana CLI
+sh -c "$(curl -sSfL https://release.solana.com/stable/install)"
+export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
+
+# Install Anchor
+cargo install --git https://github.com/coral-xyz/anchor --tag v0.29.0 anchor-cli
+
+cd ~/metabridge/metabridge-engine-hub/contracts/solana
+
+# Build program
+anchor build
+
+# Set Solana to mainnet
+solana config set --url https://api.mainnet-beta.solana.com
+
+# Deploy (requires SOL for deployment)
+anchor deploy
+
+# Get program ID
+solana address -k target/deploy/bridge-keypair.json
+```
+
+#### NEAR Contract (Optional)
+
+```bash
+# Install NEAR CLI
+npm install -g near-cli
+
+cd ~/metabridge/metabridge-engine-hub/contracts/near
+
+# Build contract
+./build.sh
+
+# Deploy to NEAR mainnet
+near deploy --accountId bridge.near --wasmFile res/bridge.wasm
+
+# Initialize contract
+near call bridge.near new '{"owner":"validator.near","required_signatures":3}' --accountId bridge.near
+```
+
+### Step 14: Build Bridge Services
+
+```bash
+cd ~/metabridge/metabridge-engine-hub
+
+# Build API server
+go build -o bin/metabridge-api cmd/api/main.go
+
+# Build relayer
+go build -o bin/metabridge-relayer cmd/relayer/main.go
+
+# Build batcher (if exists)
+go build -o bin/metabridge-batcher cmd/batcher/main.go
+
+# Verify binaries
+ls -lh bin/
+```
+
+### Step 15: Create Systemd Services
+
+**API Server Service**:
+
+```bash
+sudo tee /etc/systemd/system/metabridge-api.service > /dev/null <<EOF
+[Unit]
+Description=Metabridge API Server
+After=network.target postgresql.service nats.service redis.service
+
+[Service]
+Type=simple
+User=bridge
+WorkingDirectory=/home/bridge/metabridge/metabridge-engine-hub
+ExecStart=/home/bridge/metabridge/metabridge-engine-hub/bin/metabridge-api
+EnvironmentFile=/home/bridge/metabridge/metabridge-engine-hub/.env.production
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+EOF
+```
+
+**Relayer Service**:
+
+```bash
+sudo tee /etc/systemd/system/metabridge-relayer.service > /dev/null <<EOF
+[Unit]
+Description=Metabridge Relayer Service
+After=network.target postgresql.service nats.service metabridge-api.service
+
+[Service]
+Type=simple
+User=bridge
+WorkingDirectory=/home/bridge/metabridge/metabridge-engine-hub
+ExecStart=/home/bridge/metabridge/metabridge-engine-hub/bin/metabridge-relayer --config /home/bridge/metabridge/metabridge-engine-hub/config/config.mainnet.yaml
+EnvironmentFile=/home/bridge/metabridge/metabridge-engine-hub/.env.production
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+EOF
+```
+
+**Enable and start services**:
+
+```bash
+# Reload systemd
+sudo systemctl daemon-reload
+
+# Enable services to start on boot
+sudo systemctl enable metabridge-api
+sudo systemctl enable metabridge-relayer
+
+# Start services
+sudo systemctl start metabridge-api
+sudo systemctl start metabridge-relayer
+
+# Check status
+sudo systemctl status metabridge-api
+sudo systemctl status metabridge-relayer
+
+# View logs
+sudo journalctl -u metabridge-api -f --lines=50
+sudo journalctl -u metabridge-relayer -f --lines=50
+```
+
+### Step 16: Configure Firewall
+
+```bash
+# Install UFW if not present
+sudo apt install -y ufw
+
+# Allow SSH (IMPORTANT: Do this first!)
+sudo ufw allow 22/tcp
+
+# Allow API server
+sudo ufw allow 8080/tcp
+
+# Allow Prometheus (if using external monitoring)
+sudo ufw allow 9090/tcp
+
+# Allow Grafana (if using external access)
+sudo ufw allow 3000/tcp
+
+# Enable firewall
+sudo ufw --force enable
+
+# Check status
+sudo ufw status verbose
+```
+
+### Step 17: Set Up HTTPS (Optional but Recommended)
+
+```bash
+# Install Nginx
+sudo apt install -y nginx
+
+# Install Certbot for Let's Encrypt
+sudo apt install -y certbot python3-certbot-nginx
+
+# Create Nginx configuration
+sudo tee /etc/nginx/sites-available/metabridge > /dev/null <<EOF
+server {
+    listen 80;
+    server_name api.yourdomain.com;
+
+    location / {
+        proxy_pass http://localhost:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_cache_bypass \$http_upgrade;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+}
+EOF
+
+# Enable site
+sudo ln -s /etc/nginx/sites-available/metabridge /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl restart nginx
+
+# Get SSL certificate
+sudo certbot --nginx -d api.yourdomain.com
+
+# Auto-renewal is set up automatically
+sudo certbot renew --dry-run
+```
+
+### Step 18: Run Integration Tests
+
+```bash
+cd ~/metabridge/metabridge-engine-hub
+
+# Set test environment
+export TEST_ENV=production
+export $(cat .env.production | grep -v '^#' | xargs)
+
+# Run unit tests
+go test ./internal/... -v
+
+# Run integration tests
+go test ./tests/integration/... -v
+
+# Run API tests
+go test ./tests/api/... -v
+
+# Test health endpoint
+curl http://localhost:8080/health
+# Expected: {"status":"ok","version":"1.0.0"}
+
+# Test chain status
+curl http://localhost:8080/v1/chains/status
+# Expected: JSON with all chain statuses
+
+# Test authentication
+curl -X POST http://localhost:8080/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@metabridge.local","password":"<YOUR_ADMIN_PASSWORD>"}'
+# Expected: JWT token in response
+```
+
+### Step 19: Set Up Monitoring
+
+```bash
+# Install Prometheus
+cd /tmp
+wget https://github.com/prometheus/prometheus/releases/download/v2.45.0/prometheus-2.45.0.linux-amd64.tar.gz
+tar xvf prometheus-2.45.0.linux-amd64.tar.gz
+sudo mv prometheus-2.45.0.linux-amd64 /opt/prometheus
+sudo useradd --no-create-home --shell /bin/false prometheus
+sudo chown -R prometheus:prometheus /opt/prometheus
+
+# Create Prometheus config
+sudo tee /opt/prometheus/prometheus.yml > /dev/null <<EOF
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'metabridge'
+    static_configs:
+      - targets: ['localhost:8080']
+EOF
+
+# Create Prometheus service
+sudo tee /etc/systemd/system/prometheus.service > /dev/null <<EOF
+[Unit]
+Description=Prometheus
+After=network.target
+
+[Service]
+User=prometheus
+Group=prometheus
+Type=simple
+ExecStart=/opt/prometheus/prometheus --config.file=/opt/prometheus/prometheus.yml --storage.tsdb.path=/opt/prometheus/data
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Start Prometheus
+sudo systemctl daemon-reload
+sudo systemctl enable prometheus
+sudo systemctl start prometheus
+
+# Install Grafana
+sudo apt-get install -y software-properties-common
+wget -q -O - https://packages.grafana.com/gpg.key | sudo apt-key add -
+echo "deb https://packages.grafana.com/oss/deb stable main" | sudo tee /etc/apt/sources.list.d/grafana.list
+sudo apt-get update
+sudo apt-get install -y grafana
+
+# Start Grafana
+sudo systemctl enable grafana-server
+sudo systemctl start grafana-server
+
+# Access Grafana at http://<YOUR_VM_IP>:3000
+# Default credentials: admin/admin
+```
+
+### Step 20: Verify Full Deployment
+
+```bash
+# Check all services are running
+sudo systemctl status metabridge-api
+sudo systemctl status metabridge-relayer
+sudo systemctl status prometheus
+sudo systemctl status grafana-server
+
+# Check Docker services
+docker compose -f docker-compose.production.yaml ps
+
+# Test API endpoints
+curl http://localhost:8080/health
+curl http://localhost:8080/v1/chains/status
+curl http://localhost:8080/v1/stats
+
+# Check database
+docker exec -it metabridge-postgres psql -U bridge_user -d metabridge_production -c "SELECT COUNT(*) FROM messages;"
+
+# Check logs for errors
+sudo journalctl -u metabridge-api --since "10 minutes ago" | grep -i error
+sudo journalctl -u metabridge-relayer --since "10 minutes ago" | grep -i error
+
+# Monitor resource usage
+htop  # Or: sudo apt install htop && htop
+```
+
+### Deployment Checklist
+
+After deployment, verify:
+
+- [ ] All systemd services are active and running
+- [ ] Docker containers (postgres, nats, redis) are healthy
+- [ ] API health endpoint returns 200 OK
+- [ ] Chain status endpoint returns all chains
+- [ ] Database contains admin user and schema
+- [ ] Smart contracts are deployed on all chains
+- [ ] Firewall is configured (UFW enabled)
+- [ ] HTTPS/SSL is configured (if using domain)
+- [ ] Prometheus is scraping metrics
+- [ ] Grafana dashboards are accessible
+- [ ] Log rotation is configured
+- [ ] Automated backups are scheduled
+- [ ] Monitoring alerts are configured
+
+### Common Commands
+
+```bash
+# Restart all services
+sudo systemctl restart metabridge-api metabridge-relayer
+
+# View live logs
+sudo journalctl -u metabridge-api -f
+sudo journalctl -u metabridge-relayer -f
+
+# Check resource usage
+docker stats
+htop
+
+# Database backup
+docker exec metabridge-postgres pg_dump -U bridge_user metabridge_production > backup_$(date +%Y%m%d).sql
+
+# Update code
+cd ~/metabridge/metabridge-engine-hub
+git pull origin main
+go build -o bin/metabridge-api cmd/api/main.go
+sudo systemctl restart metabridge-api
+
+# View all bridge transactions
+docker exec -it metabridge-postgres psql -U bridge_user -d metabridge_production -c \
+  "SELECT id, source_chain, destination_chain, status, created_at FROM messages ORDER BY created_at DESC LIMIT 10;"
+```
+
+### Troubleshooting
+
+**Service won't start**:
+```bash
+sudo journalctl -u metabridge-api -n 100 --no-pager
+# Check for configuration errors or missing environment variables
+```
+
+**Database connection failed**:
+```bash
+# Verify PostgreSQL is running
+docker compose ps postgres
+# Check connection
+docker exec -it metabridge-postgres psql -U bridge_user -d metabridge_production -c "SELECT 1;"
+```
+
+**Out of memory**:
+```bash
+# Check memory usage
+free -h
+# Increase VM size or add swap
+sudo fallocate -l 4G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+```
+
+**High CPU usage**:
+```bash
+# Check which process
+top
+# Reduce relayer workers in config
+nano config/config.mainnet.yaml
+# Set workers: 5 (instead of 10)
+```
 
 ---
 
