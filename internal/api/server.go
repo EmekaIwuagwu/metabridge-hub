@@ -10,19 +10,25 @@ import (
 
 	"github.com/EmekaIwuagwu/metabridge-hub/internal/config"
 	"github.com/EmekaIwuagwu/metabridge-hub/internal/database"
+	"github.com/EmekaIwuagwu/metabridge-hub/internal/routing"
 	"github.com/EmekaIwuagwu/metabridge-hub/internal/types"
+	"github.com/EmekaIwuagwu/metabridge-hub/internal/webhooks"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog"
 )
 
 // Server represents the API server
 type Server struct {
-	config  *config.Config
-	db      *database.DB
-	router  *mux.Router
-	server  *http.Server
-	logger  zerolog.Logger
-	clients map[string]types.UniversalClient
+	config          *config.Config
+	db              *database.DB
+	router          *mux.Router
+	server          *http.Server
+	logger          zerolog.Logger
+	clients         map[string]types.UniversalClient
+	webhookRegistry *webhooks.Registry
+	webhookDelivery *webhooks.DeliveryService
+	trackingService *webhooks.TrackingService
+	routingService  *routing.Service
 }
 
 // NewServer creates a new API server
@@ -34,13 +40,31 @@ func NewServer(
 ) *Server {
 	router := mux.NewRouter()
 
+	// Initialize webhook and tracking services
+	webhookRegistry := webhooks.NewRegistry(db, logger)
+	trackingService := webhooks.NewTrackingService(db, logger)
+	webhookDelivery := webhooks.NewDeliveryService(nil, webhookRegistry, db, logger)
+
+	// Initialize routing service
+	routingService := routing.NewService(db, nil, logger)
+
 	s := &Server{
-		config:  cfg,
-		db:      db,
-		router:  router,
-		logger:  logger.With().Str("component", "api").Logger(),
-		clients: clients,
+		config:          cfg,
+		db:              db,
+		router:          router,
+		logger:          logger.With().Str("component", "api").Logger(),
+		clients:         clients,
+		webhookRegistry: webhookRegistry,
+		webhookDelivery: webhookDelivery,
+		trackingService: trackingService,
+		routingService:  routingService,
 	}
+
+	// Start webhook delivery service
+	go webhookDelivery.Start(context.Background())
+
+	// Start routing service
+	go routingService.Start(context.Background())
 
 	// Setup routes
 	s.setupRoutes()
@@ -81,12 +105,51 @@ func (s *Server) setupRoutes() {
 	v1.HandleFunc("/messages/{id}", s.handleGetMessage).Methods("GET")
 	v1.HandleFunc("/messages/{id}/status", s.handleMessageStatus).Methods("GET")
 
+	// Batch endpoints
+	v1.HandleFunc("/batches", s.handleListBatches).Methods("GET")
+	v1.HandleFunc("/batches/stats", s.handleBatchStats).Methods("GET")
+	v1.HandleFunc("/batches/{id}", s.handleGetBatch).Methods("GET")
+	v1.HandleFunc("/batches/{id}/efficiency", s.handleBatchEfficiency).Methods("GET")
+	v1.HandleFunc("/batches/submit", s.handleSubmitToBatch).Methods("POST")
+
 	// Statistics endpoints
 	v1.HandleFunc("/stats", s.handleStats).Methods("GET")
 	v1.HandleFunc("/stats/{chain}", s.handleChainStats).Methods("GET")
 
 	// Transaction endpoints
 	v1.HandleFunc("/transactions/{hash}", s.handleGetTransaction).Methods("GET")
+
+	// Webhook endpoints
+	v1.HandleFunc("/webhooks", s.handleRegisterWebhook).Methods("POST")
+	v1.HandleFunc("/webhooks", s.handleListWebhooks).Methods("GET")
+	v1.HandleFunc("/webhooks/{id}", s.handleGetWebhook).Methods("GET")
+	v1.HandleFunc("/webhooks/{id}", s.handleUpdateWebhook).Methods("PUT")
+	v1.HandleFunc("/webhooks/{id}", s.handleDeleteWebhook).Methods("DELETE")
+	v1.HandleFunc("/webhooks/{id}/pause", s.handlePauseWebhook).Methods("POST")
+	v1.HandleFunc("/webhooks/{id}/resume", s.handleResumeWebhook).Methods("POST")
+	v1.HandleFunc("/webhooks/{id}/test", s.handleTestWebhook).Methods("POST")
+	v1.HandleFunc("/webhooks/{id}/attempts", s.handleWebhookDeliveryAttempts).Methods("GET")
+
+	// Tracking endpoints
+	v1.HandleFunc("/track/{id}", s.handleTrackMessage).Methods("GET")
+	v1.HandleFunc("/track/tx/{hash}", s.handleTrackByTxHash).Methods("GET")
+	v1.HandleFunc("/track/query", s.handleQueryMessages).Methods("GET")
+	v1.HandleFunc("/track/recent", s.handleRecentMessages).Methods("GET")
+	v1.HandleFunc("/track/status/{status}", s.handleMessagesByStatus).Methods("GET")
+	v1.HandleFunc("/track/{id}/timeline", s.handleMessageTimeline).Methods("GET")
+	v1.HandleFunc("/track/{id}/events", s.handleRecordTimelineEvent).Methods("POST")
+	v1.HandleFunc("/track/stats", s.handleTrackingStats).Methods("GET")
+	v1.HandleFunc("/track/search", s.handleSearchMessages).Methods("GET")
+
+	// Routing endpoints
+	v1.HandleFunc("/routes/find", s.handleFindRoutes).Methods("POST")
+	v1.HandleFunc("/routes/{id}", s.handleGetRoute).Methods("GET")
+	v1.HandleFunc("/routes/{id}/execute", s.handleExecuteRoute).Methods("POST")
+	v1.HandleFunc("/routes/topology", s.handleGetChainTopology).Methods("GET")
+	v1.HandleFunc("/routes/liquidity", s.handleGetLiquidity).Methods("GET")
+	v1.HandleFunc("/routes/cache/stats", s.handleGetRouteCacheStats).Methods("GET")
+	v1.HandleFunc("/routes/cache/invalidate", s.handleInvalidateCache).Methods("POST")
+	v1.HandleFunc("/routes/estimate", s.handleGetRouteEstimate).Methods("GET")
 
 	// Apply middleware
 	s.router.Use(s.loggingMiddleware)
