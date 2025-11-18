@@ -81,6 +81,13 @@ func (s *Server) setupRoutes() {
 	v1.HandleFunc("/messages/{id}", s.handleGetMessage).Methods("GET")
 	v1.HandleFunc("/messages/{id}/status", s.handleMessageStatus).Methods("GET")
 
+	// Batch endpoints
+	v1.HandleFunc("/batches", s.handleListBatches).Methods("GET")
+	v1.HandleFunc("/batches/stats", s.handleBatchStats).Methods("GET")
+	v1.HandleFunc("/batches/{id}", s.handleGetBatch).Methods("GET")
+	v1.HandleFunc("/batches/{id}/efficiency", s.handleBatchEfficiency).Methods("GET")
+	v1.HandleFunc("/batches/submit", s.handleSubmitToBatch).Methods("POST")
+
 	// Statistics endpoints
 	v1.HandleFunc("/stats", s.handleStats).Methods("GET")
 	v1.HandleFunc("/stats/{chain}", s.handleChainStats).Methods("GET")
