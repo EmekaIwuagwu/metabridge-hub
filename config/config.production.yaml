@@ -97,7 +97,7 @@ chains:
     max_gas_price: "500"
     gas_limit_multiplier: 1.2
     max_reorg_depth: 256
-    enabled: false
+    enabled: true
 
   # BNB Smart Chain Testnet
   - name: "bnb-testnet"
