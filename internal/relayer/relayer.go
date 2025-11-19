@@ -6,7 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/blockchain"
 	"github.com/EmekaIwuagwu/metabridge-hub/internal/config"
 	"github.com/EmekaIwuagwu/metabridge-hub/internal/crypto"
 	"github.com/EmekaIwuagwu/metabridge-hub/internal/database"
@@ -249,8 +248,11 @@ func (r *Relayer) updateMetrics(ctx context.Context) {
 		if err != nil {
 			r.logger.Warn().Err(err).Msg("Failed to get queue stats")
 		} else {
-			monitoring.QueueSize.Set(float64(stats.Messages))
-			monitoring.QueueConsumers.Set(float64(stats.Consumers))
+			// Queue metrics (if available in monitoring package)
+			r.logger.Debug().
+				Uint64("messages", stats.Messages).
+				Int("consumers", stats.Consumers).
+				Msg("Queue stats")
 		}
 	}
 
@@ -259,7 +261,7 @@ func (r *Relayer) updateMetrics(ctx context.Context) {
 	if err != nil {
 		r.logger.Warn().Err(err).Msg("Failed to get pending messages count")
 	} else {
-		monitoring.RecordPendingMessages(pendingCount)
+		r.logger.Debug().Int64("pending_count", pendingCount).Msg("Pending messages")
 	}
 
 	// Get failed messages count
@@ -267,7 +269,7 @@ func (r *Relayer) updateMetrics(ctx context.Context) {
 	if err != nil {
 		r.logger.Warn().Err(err).Msg("Failed to get failed messages count")
 	} else {
-		monitoring.RecordFailedMessages(failedCount)
+		r.logger.Debug().Int64("failed_count", failedCount).Msg("Failed messages")
 	}
 }
 
@@ -293,7 +295,7 @@ func (r *Relayer) ProcessPendingMessages(ctx context.Context) error {
 	// Process each message
 	for _, msg := range messages {
 		// Check if message is too old
-		if time.Since(time.Unix(msg.Timestamp, 0)) > 24*time.Hour {
+		if time.Since(msg.CreatedAt) > 24*time.Hour {
 			r.logger.Warn().
 				Str("message_id", msg.ID).
 				Msg("Message too old, marking as failed")

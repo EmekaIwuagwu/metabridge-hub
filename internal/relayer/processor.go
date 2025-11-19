@@ -8,7 +8,6 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/blockchain"
 	"github.com/EmekaIwuagwu/metabridge-hub/internal/config"
 	"github.com/EmekaIwuagwu/metabridge-hub/internal/crypto"
 	"github.com/EmekaIwuagwu/metabridge-hub/internal/database"
@@ -644,7 +643,7 @@ func (p *Processor) buildSolanaTokenUnlockTx(ctx context.Context, msg *types.Cro
 
 	// Build transaction
 	tx, err := solana.NewTransaction(
-		[]solana.Instruction{instruction},
+		[]solana.Instruction{&instruction},
 		recentBlockhash,
 	)
 	if err != nil {
