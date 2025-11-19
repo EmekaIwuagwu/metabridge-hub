@@ -12,6 +12,8 @@ import (
 	"github.com/EmekaIwuagwu/metabridge-hub/internal/config"
 	"github.com/EmekaIwuagwu/metabridge-hub/internal/database"
 	"github.com/EmekaIwuagwu/metabridge-hub/internal/listener/evm"
+	nearlistener "github.com/EmekaIwuagwu/metabridge-hub/internal/listener/near"
+	solanalistener "github.com/EmekaIwuagwu/metabridge-hub/internal/listener/solana"
 	"github.com/EmekaIwuagwu/metabridge-hub/internal/queue"
 	"github.com/EmekaIwuagwu/metabridge-hub/internal/types"
 	"github.com/rs/zerolog"
@@ -113,16 +115,66 @@ func main() {
 				Msg("EVM listener started")
 
 		case types.ChainTypeSolana:
-			// TODO: Implement Solana listener
+			solanaClient, ok := clients[chainCfg.Name].(*blockchain.SolanaClientAdapter)
+			if !ok {
+				logger.Fatal().
+					Str("chain", chainCfg.Name).
+					Msg("Failed to cast client to Solana client")
+			}
+
+			listener, err := solanalistener.NewListener(solanaClient.Client, &chainCfg, logger)
+			if err != nil {
+				logger.Fatal().
+					Err(err).
+					Str("chain", chainCfg.Name).
+					Msg("Failed to create Solana listener")
+			}
+
+			// Start listener
+			if err := listener.Start(ctx); err != nil {
+				logger.Fatal().
+					Err(err).
+					Str("chain", chainCfg.Name).
+					Msg("Failed to start listener")
+			}
+
+			// Start event processor
+			go processEvents(ctx, listener, q, db, logger, chainCfg.Name)
+
 			logger.Info().
 				Str("chain", chainCfg.Name).
-				Msg("Solana listener not yet implemented")
+				Msg("Solana listener started")
 
 		case types.ChainTypeNEAR:
-			// TODO: Implement NEAR listener
+			nearClient, ok := clients[chainCfg.Name].(*blockchain.NEARClientAdapter)
+			if !ok {
+				logger.Fatal().
+					Str("chain", chainCfg.Name).
+					Msg("Failed to cast client to NEAR client")
+			}
+
+			listener, err := nearlistener.NewListener(nearClient.Client, &chainCfg, logger)
+			if err != nil {
+				logger.Fatal().
+					Err(err).
+					Str("chain", chainCfg.Name).
+					Msg("Failed to create NEAR listener")
+			}
+
+			// Start listener
+			if err := listener.Start(ctx); err != nil {
+				logger.Fatal().
+					Err(err).
+					Str("chain", chainCfg.Name).
+					Msg("Failed to start listener")
+			}
+
+			// Start event processor
+			go processEvents(ctx, listener, q, db, logger, chainCfg.Name)
+
 			logger.Info().
 				Str("chain", chainCfg.Name).
-				Msg("NEAR listener not yet implemented")
+				Msg("NEAR listener started")
 
 		default:
 			logger.Warn().

@@ -229,12 +229,37 @@ func (a *Aggregator) submitAllReadyBatches(ctx context.Context) {
 
 // storeBatch persists batch data to database
 func (a *Aggregator) storeBatch(ctx context.Context, batch *Batch, merkleData *BatchMerkleData) error {
-	// TODO: Implement database storage for batches
-	// For now, just log
+	// Save batch record
+	dbBatch := &database.Batch{
+		ID:               batch.ID,
+		Status:           string(batch.Status),
+		SourceChain:      batch.SourceChain,
+		DestinationChain: batch.DestinationChain,
+		MessageCount:     len(batch.Messages),
+		TotalGasSaved:    batch.GasCostSaved.String(),
+		CreatedAt:        batch.CreatedAt,
+	}
+
+	if err := a.db.SaveBatch(ctx, dbBatch); err != nil {
+		return fmt.Errorf("failed to save batch: %w", err)
+	}
+
+	// Save batch messages
+	for _, msg := range batch.Messages {
+		if err := a.db.AddMessageToBatch(ctx, batch.ID, msg.ID); err != nil {
+			a.logger.Warn().
+				Err(err).
+				Str("batch_id", batch.ID).
+				Str("message_id", msg.ID).
+				Msg("Failed to add message to batch")
+		}
+	}
+
 	a.logger.Info().
 		Str("batch_id", batch.ID).
 		Str("status", string(batch.Status)).
-		Msg("Batch would be stored in database")
+		Int("message_count", len(batch.Messages)).
+		Msg("Batch stored in database")
 
 	return nil
 }

@@ -14,7 +14,7 @@ import (
 
 var (
 	configPath = flag.String("config", "config/config.testnet.yaml", "Path to configuration file")
-	schemaPath = flag.String("schema", "internal/database/schema.sql", "Path to schema SQL file")
+	schemaDir  = flag.String("schema-dir", "internal/database", "Directory containing schema SQL files")
 )
 
 func main() {
@@ -48,23 +48,37 @@ func main() {
 
 	logger.Info().Msg("Database connection established")
 
-	// Read schema file
-	schema, err := os.ReadFile(*schemaPath)
-	if err != nil {
-		logger.Fatal().Err(err).Msg("Failed to read schema file")
+	// Execute schema files in order
+	schemaFiles := []string{
+		"schema.sql",      // Main tables (chains, messages, validators, etc.)
+		"auth.sql",        // Authentication tables (users, api_keys)
+		"batches.sql",     // Batch processing tables
+		"routes.sql",      // Multi-hop routing tables
+		"webhooks.sql",    // Webhook integration tables
 	}
 
-	logger.Info().
-		Str("schema_file", *schemaPath).
-		Msg("Schema file loaded")
+	for _, filename := range schemaFiles {
+		schemaPath := fmt.Sprintf("%s/%s", *schemaDir, filename)
 
-	// Execute schema
-	if _, err := db.Exec(string(schema)); err != nil {
-		logger.Fatal().Err(err).Msg("Failed to execute schema")
+		logger.Info().
+			Str("schema_file", schemaPath).
+			Msg("Applying schema")
+
+		schema, err := os.ReadFile(schemaPath)
+		if err != nil {
+			logger.Fatal().Err(err).Str("file", schemaPath).Msg("Failed to read schema file")
+		}
+
+		if _, err := db.Exec(string(schema)); err != nil {
+			logger.Fatal().Err(err).Str("file", schemaPath).Msg("Failed to execute schema")
+		}
+
+		logger.Info().
+			Str("schema_file", schemaPath).
+			Msg("Schema applied successfully")
 	}
 
-	logger.Info().Msg("Database schema applied successfully")
-
+	logger.Info().Msg("All database schemas applied successfully")
 	fmt.Println("✓ Database migration completed successfully")
 }
 
