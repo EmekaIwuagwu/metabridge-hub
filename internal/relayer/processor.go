@@ -548,7 +548,7 @@ func (p *Processor) buildSolanaTokenUnlockTx(ctx context.Context, msg *types.Cro
 	}
 
 	// Parse token mint address
-	tokenMint, err := solana.PublicKeyFromBase58(payload.TokenAddress)
+	tokenMint, err := solana.PublicKeyFromBase58(payload.TokenAddress.Raw)
 	if err != nil {
 		return nil, fmt.Errorf("invalid token mint address: %w", err)
 	}
@@ -578,11 +578,15 @@ func (p *Processor) buildSolanaTokenUnlockTx(ctx context.Context, msg *types.Cro
 		}
 	}
 	instructionData = append(instructionData, messageIDBytes...)
-	
-	// Add amount (8 bytes, little endian)
+
+	// Parse and add amount (8 bytes, little endian)
+	amount := new(big.Int)
+	amount.SetString(payload.Amount, 10)
 	amountBytes := make([]byte, 8)
-	for i := 0; i < 8; i++ {
-		amountBytes[i] = byte(payload.Amount >> (i * 8))
+	amountBytesSlice := amount.Bytes()
+	// Copy to little endian
+	for i := 0; i < len(amountBytesSlice) && i < 8; i++ {
+		amountBytes[i] = amountBytesSlice[len(amountBytesSlice)-1-i]
 	}
 	instructionData = append(instructionData, amountBytes...)
 	
@@ -637,15 +641,18 @@ func (p *Processor) buildSolanaTokenUnlockTx(ctx context.Context, msg *types.Cro
 	recentBlockhash := solana.Hash{} // In production, fetch from network
 
 	// Build transaction
-	tx := solana.NewTransaction(
+	tx, err := solana.NewTransaction(
 		[]solana.Instruction{*instruction},
 		recentBlockhash,
 	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create transaction: %w", err)
+	}
 
 	p.logger.Info().
 		Str("message_id", msg.ID).
 		Str("recipient", recipientPubkey.String()).
-		Uint64("amount", payload.Amount).
+		Str("amount", payload.Amount).
 		Msg("Built Solana token unlock transaction")
 
 	return tx, nil
@@ -664,7 +671,7 @@ func (p *Processor) buildSolanaNFTUnlockTx(ctx context.Context, msg *types.Cross
 	
 	p.logger.Info().
 		Str("message_id", msg.ID).
-		Str("nft_contract", payload.NFTContract).
+		Str("nft_contract", payload.ContractAddress.Raw).
 		Str("token_id", payload.TokenID).
 		Msg("Building Solana NFT unlock transaction")
 
@@ -695,14 +702,14 @@ func (p *Processor) buildNEARTokenUnlockTx(ctx context.Context, msg *types.Cross
 	// Collect validator signatures
 	signatures := make([]string, len(msg.ValidatorSignatures))
 	for i, sig := range msg.ValidatorSignatures {
-		signatures[i] = sig.Signature
+		signatures[i] = hex.EncodeToString(sig.Signature)
 	}
 
 	args := UnlockArgs{
 		MessageID:  msg.ID,
 		Recipient:  msg.Recipient.Raw,
-		Token:      payload.TokenAddress,
-		Amount:     fmt.Sprintf("%d", payload.Amount),
+		Token:      payload.TokenAddress.Raw,
+		Amount:     payload.Amount,
 		Signatures: signatures,
 	}
 
@@ -773,7 +780,7 @@ func (p *Processor) buildNEARTokenUnlockTx(ctx context.Context, msg *types.Cross
 	p.logger.Info().
 		Str("message_id", msg.ID).
 		Str("recipient", msg.Recipient.Raw).
-		Uint64("amount", payload.Amount).
+		Str("amount", payload.Amount).
 		Msg("Built NEAR token unlock transaction")
 
 	return txBytes, nil
@@ -799,7 +806,7 @@ func (p *Processor) buildNEARNFTUnlockTx(ctx context.Context, msg *types.CrossCh
 	// Collect validator signatures
 	signatures := make([]string, len(msg.ValidatorSignatures))
 	for i, sig := range msg.ValidatorSignatures {
-		signatures[i] = sig.Signature
+		signatures[i] = hex.EncodeToString(sig.Signature)
 	}
 
 	args := UnlockNFTArgs{
