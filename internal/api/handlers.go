@@ -12,7 +12,7 @@ import (
 func (s *Server) handleListChains(w http.ResponseWriter, r *http.Request) {
 	chains := make([]map[string]interface{}, 0)
 
-	for name, client := range s.clients {
+	for _, client := range s.clients {
 		info := client.GetChainInfo()
 		chains = append(chains, map[string]interface{}{
 			"name":        info.Name,

@@ -2,12 +2,12 @@ package relayer
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"math/big"
 	"time"
 
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/blockchain"
 	"github.com/EmekaIwuagwu/metabridge-hub/internal/config"
 	"github.com/EmekaIwuagwu/metabridge-hub/internal/crypto"
 	"github.com/EmekaIwuagwu/metabridge-hub/internal/database"
@@ -61,7 +61,7 @@ func NewProcessor(
 func (p *Processor) ProcessMessage(ctx context.Context, msg *types.CrossChainMessage) error {
 	startTime := time.Now()
 	defer func() {
-		monitoring.RelayerMessageProcessingDuration.WithLabelValues(
+		monitoring.MessagesProcessingDuration.WithLabelValues(
 			msg.SourceChain.Name,
 			msg.DestinationChain.Name,
 		).Observe(time.Since(startTime).Seconds())
@@ -80,7 +80,7 @@ func (p *Processor) ProcessMessage(ctx context.Context, msg *types.CrossChainMes
 			Err(err).
 			Str("message_id", msg.ID).
 			Msg("Message failed security validation")
-		monitoring.RecordMessageProcessingError("security_validation", msg.SourceChain.Name)
+		monitoring.MessagesTotal.WithLabelValues(msg.SourceChain.Name, msg.DestinationChain.Name, string(msg.Type), "failed").Inc()
 		return fmt.Errorf("security validation failed: %w", err)
 	}
 
@@ -99,7 +99,7 @@ func (p *Processor) ProcessMessage(ctx context.Context, msg *types.CrossChainMes
 			Err(err).
 			Str("message_id", msg.ID).
 			Msg("Signature verification failed")
-		monitoring.RecordMessageProcessingError("signature_verification", msg.SourceChain.Name)
+		monitoring.MessagesTotal.WithLabelValues(msg.SourceChain.Name, msg.DestinationChain.Name, string(msg.Type), "failed").Inc()
 		return fmt.Errorf("signature verification failed: %w", err)
 	}
 
@@ -126,7 +126,7 @@ func (p *Processor) ProcessMessage(ctx context.Context, msg *types.CrossChainMes
 			Err(err).
 			Str("message_id", msg.ID).
 			Msg("Failed to broadcast transaction")
-		monitoring.RecordMessageProcessingError("transaction_broadcast", msg.DestinationChain.Name)
+		monitoring.MessagesTotal.WithLabelValues(msg.SourceChain.Name, msg.DestinationChain.Name, string(msg.Type), "failed").Inc()
 		return fmt.Errorf("failed to broadcast transaction: %w", err)
 	}
 
@@ -145,7 +145,8 @@ func (p *Processor) ProcessMessage(ctx context.Context, msg *types.CrossChainMes
 		Str("destination", msg.DestinationChain.Name).
 		Msg("Message processed successfully")
 
-	monitoring.RecordMessageProcessed(msg.SourceChain.Name, msg.DestinationChain.Name, string(msg.Type))
+	duration := time.Since(startTime).Seconds()
+	monitoring.RecordMessageProcessed(msg.SourceChain.Name, msg.DestinationChain.Name, string(msg.Type), "completed", duration)
 	return nil
 }
 
@@ -213,12 +214,15 @@ func (p *Processor) verifyValidatorSignature(ctx context.Context, msg *types.Cro
 	sourceClient := p.clients[msg.SourceChain.Name]
 	chainType := sourceClient.GetChainType()
 
+	// Convert signature to hex string
+	sigHex := hex.EncodeToString(sig.Signature)
+
 	// Verify signature based on chain type
 	switch chainType {
 	case types.ChainTypeEVM:
-		return crypto.VerifyECDSASignature(msgHash, sig.Signature, sig.ValidatorAddress)
+		return crypto.VerifyECDSASignature(msgHash, sigHex, sig.ValidatorAddress)
 	case types.ChainTypeSolana, types.ChainTypeNEAR:
-		return crypto.VerifyEd25519Signature(msgHash, sig.Signature, sig.ValidatorAddress)
+		return crypto.VerifyEd25519Signature(msgHash, sigHex, sig.ValidatorAddress)
 	default:
 		return fmt.Errorf("unsupported chain type for signature verification")
 	}
@@ -246,7 +250,7 @@ func (p *Processor) createMessageHash(msg *types.CrossChainMessage) ([]byte, err
 		Recipient:        msg.Recipient.Raw,
 		Payload:          msg.Payload,
 		Nonce:            msg.Nonce,
-		Timestamp:        msg.Timestamp,
+		Timestamp:        msg.CreatedAt.Unix(),
 	}
 
 	jsonData, err := json.Marshal(data)
@@ -340,13 +344,17 @@ func (p *Processor) buildEVMTokenUnlockTx(msg *types.CrossChainMessage, chainCfg
 		signatures[i] = []byte(sig.Signature)
 	}
 
+	// Parse amount
+	amount := new(big.Int)
+	amount.SetString(payload.Amount, 10)
+
 	// Pack function call
 	data, err := contractABI.Pack(
 		"unlockToken",
 		[32]byte{}, // messageId (convert msg.ID to bytes32)
 		common.HexToAddress(msg.Recipient.Raw),
-		common.HexToAddress(payload.TokenAddress),
-		new(big.Int).SetUint64(payload.Amount),
+		common.HexToAddress(payload.TokenAddress.Raw),
+		amount,
 		signatures,
 	)
 	if err != nil {
@@ -539,7 +547,7 @@ func (p *Processor) buildSolanaTokenUnlockTx(ctx context.Context, msg *types.Cro
 	}
 
 	// Parse token mint address
-	tokenMint, err := solana.PublicKeyFromBase58(payload.TokenAddress)
+	tokenMint, err := solana.PublicKeyFromBase58(payload.TokenAddress.Raw)
 	if err != nil {
 		return nil, fmt.Errorf("invalid token mint address: %w", err)
 	}
@@ -569,11 +577,15 @@ func (p *Processor) buildSolanaTokenUnlockTx(ctx context.Context, msg *types.Cro
 		}
 	}
 	instructionData = append(instructionData, messageIDBytes...)
-	
-	// Add amount (8 bytes, little endian)
+
+	// Parse and add amount (8 bytes, little endian)
+	amount := new(big.Int)
+	amount.SetString(payload.Amount, 10)
 	amountBytes := make([]byte, 8)
-	for i := 0; i < 8; i++ {
-		amountBytes[i] = byte(payload.Amount >> (i * 8))
+	amountBytesSlice := amount.Bytes()
+	// Copy to little endian
+	for i := 0; i < len(amountBytesSlice) && i < 8; i++ {
+		amountBytes[i] = amountBytesSlice[len(amountBytesSlice)-1-i]
 	}
 	instructionData = append(instructionData, amountBytes...)
 	
@@ -608,9 +620,11 @@ func (p *Processor) buildSolanaTokenUnlockTx(ctx context.Context, msg *types.Cro
 	}
 
 	// Build instruction with all required accounts
-	instruction := &solana.Instruction{
-		ProgramID: bridgeProgramID,
-		Accounts: []*solana.AccountMeta{
+	// Note: solana.Instruction type may vary by library version
+	// Using GenericInstruction or wrapping in NewInstruction if needed
+	instruction := solana.GenericInstruction{
+		ProgID:  bridgeProgramID,
+		AccountValues: []*solana.AccountMeta{
 			{PublicKey: signerPubkey, IsSigner: true, IsWritable: false},    // Relayer signer
 			{PublicKey: bridgeProgramID, IsSigner: false, IsWritable: false}, // Bridge program
 			{PublicKey: vaultPDA, IsSigner: false, IsWritable: true},         // Token vault
@@ -620,7 +634,7 @@ func (p *Processor) buildSolanaTokenUnlockTx(ctx context.Context, msg *types.Cro
 			{PublicKey: solana.TokenProgramID, IsSigner: false, IsWritable: false}, // Token program
 			{PublicKey: solana.SystemProgramID, IsSigner: false, IsWritable: false}, // System program
 		},
-		Data: instructionData,
+		DataBytes: instructionData,
 	}
 
 	// Get recent blockhash (would need to call Solana client)
@@ -628,15 +642,18 @@ func (p *Processor) buildSolanaTokenUnlockTx(ctx context.Context, msg *types.Cro
 	recentBlockhash := solana.Hash{} // In production, fetch from network
 
 	// Build transaction
-	tx := solana.NewTransaction(
-		[]solana.Instruction{*instruction},
+	tx, err := solana.NewTransaction(
+		[]solana.Instruction{&instruction},
 		recentBlockhash,
 	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create transaction: %w", err)
+	}
 
 	p.logger.Info().
 		Str("message_id", msg.ID).
 		Str("recipient", recipientPubkey.String()).
-		Uint64("amount", payload.Amount).
+		Str("amount", payload.Amount).
 		Msg("Built Solana token unlock transaction")
 
 	return tx, nil
@@ -655,7 +672,7 @@ func (p *Processor) buildSolanaNFTUnlockTx(ctx context.Context, msg *types.Cross
 	
 	p.logger.Info().
 		Str("message_id", msg.ID).
-		Str("nft_contract", payload.NFTContract).
+		Str("nft_contract", payload.ContractAddress.Raw).
 		Str("token_id", payload.TokenID).
 		Msg("Building Solana NFT unlock transaction")
 
@@ -686,14 +703,14 @@ func (p *Processor) buildNEARTokenUnlockTx(ctx context.Context, msg *types.Cross
 	// Collect validator signatures
 	signatures := make([]string, len(msg.ValidatorSignatures))
 	for i, sig := range msg.ValidatorSignatures {
-		signatures[i] = sig.Signature
+		signatures[i] = hex.EncodeToString(sig.Signature)
 	}
 
 	args := UnlockArgs{
 		MessageID:  msg.ID,
 		Recipient:  msg.Recipient.Raw,
-		Token:      payload.TokenAddress,
-		Amount:     fmt.Sprintf("%d", payload.Amount),
+		Token:      payload.TokenAddress.Raw,
+		Amount:     payload.Amount,
 		Signatures: signatures,
 	}
 
@@ -764,7 +781,7 @@ func (p *Processor) buildNEARTokenUnlockTx(ctx context.Context, msg *types.Cross
 	p.logger.Info().
 		Str("message_id", msg.ID).
 		Str("recipient", msg.Recipient.Raw).
-		Uint64("amount", payload.Amount).
+		Str("amount", payload.Amount).
 		Msg("Built NEAR token unlock transaction")
 
 	return txBytes, nil
@@ -790,13 +807,13 @@ func (p *Processor) buildNEARNFTUnlockTx(ctx context.Context, msg *types.CrossCh
 	// Collect validator signatures
 	signatures := make([]string, len(msg.ValidatorSignatures))
 	for i, sig := range msg.ValidatorSignatures {
-		signatures[i] = sig.Signature
+		signatures[i] = hex.EncodeToString(sig.Signature)
 	}
 
 	args := UnlockNFTArgs{
 		MessageID:   msg.ID,
 		Recipient:   msg.Recipient.Raw,
-		NFTContract: payload.NFTContract,
+		NFTContract: payload.ContractAddress.Raw,
 		TokenID:     payload.TokenID,
 		Signatures:  signatures,
 	}
@@ -808,7 +825,7 @@ func (p *Processor) buildNEARNFTUnlockTx(ctx context.Context, msg *types.CrossCh
 
 	p.logger.Info().
 		Str("message_id", msg.ID).
-		Str("nft_contract", payload.NFTContract).
+		Str("nft_contract", payload.ContractAddress.Raw).
 		Str("token_id", payload.TokenID).
 		Msg("Built NEAR NFT unlock transaction")
 

@@ -78,7 +78,7 @@ func (fd *FraudDetector) IsSuspicious(ctx context.Context, msg *types.CrossChain
 	}
 
 	// 3. Unusual volume spike
-	if fd.hasVolumeSp spike(history, amount) {
+	if fd.hasVolumeSpike(history, amount) {
 		return true, "volume_spike"
 	}
 

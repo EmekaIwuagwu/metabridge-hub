@@ -6,7 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/blockchain"
 	"github.com/EmekaIwuagwu/metabridge-hub/internal/config"
 	"github.com/EmekaIwuagwu/metabridge-hub/internal/crypto"
 	"github.com/EmekaIwuagwu/metabridge-hub/internal/database"
@@ -40,10 +39,7 @@ func NewRelayer(
 	logger zerolog.Logger,
 ) (*Relayer, error) {
 	// Create security validator
-	validator, err := security.NewValidator(cfg, db, logger)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create validator: %w", err)
-	}
+	validator := security.NewValidator(&cfg.Security, cfg.Environment, logger)
 
 	// Create processor
 	processor := NewProcessor(clients, signers, db, cfg, validator, logger)
@@ -121,9 +117,11 @@ func (r *Relayer) handleMessage(ctx context.Context, msg *types.CrossChainMessag
 		Msg("Handling message")
 
 	// Update metrics
-	monitoring.RelayerMessagesReceived.WithLabelValues(
+	monitoring.MessagesTotal.WithLabelValues(
 		msg.SourceChain.Name,
 		msg.DestinationChain.Name,
+		string(msg.Type),
+		"received",
 	).Inc()
 
 	// Process message
@@ -138,10 +136,11 @@ func (r *Relayer) handleMessage(ctx context.Context, msg *types.CrossChainMessag
 			Dur("duration", duration).
 			Msg("Failed to process message")
 
-		monitoring.RelayerMessagesFailed.WithLabelValues(
+		monitoring.MessagesTotal.WithLabelValues(
 			msg.SourceChain.Name,
 			msg.DestinationChain.Name,
-			"processing_error",
+			string(msg.Type),
+			"failed",
 		).Inc()
 
 		// Update message status to failed
@@ -160,9 +159,11 @@ func (r *Relayer) handleMessage(ctx context.Context, msg *types.CrossChainMessag
 		Dur("duration", duration).
 		Msg("Message processed successfully")
 
-	monitoring.RelayerMessagesProcessed.WithLabelValues(
+	monitoring.MessagesTotal.WithLabelValues(
 		msg.SourceChain.Name,
 		msg.DestinationChain.Name,
+		string(msg.Type),
+		"completed",
 	).Inc()
 
 	return nil
@@ -206,11 +207,10 @@ func (r *Relayer) performHealthCheck(ctx context.Context) {
 		}
 
 		// Update metrics
+		chainType := string(client.GetChainType())
+		monitoring.UpdateChainHealth(chainName, chainType, healthy)
 		if healthy {
-			monitoring.UpdateChainHealth(chainName, 1)
 			monitoring.UpdateChainBlockNumber(chainName, blockNumber)
-		} else {
-			monitoring.UpdateChainHealth(chainName, 0)
 		}
 
 		r.logger.Debug().
@@ -248,8 +248,11 @@ func (r *Relayer) updateMetrics(ctx context.Context) {
 		if err != nil {
 			r.logger.Warn().Err(err).Msg("Failed to get queue stats")
 		} else {
-			monitoring.QueueSize.Set(float64(stats.Messages))
-			monitoring.QueueConsumers.Set(float64(stats.Consumers))
+			// Queue metrics (if available in monitoring package)
+			r.logger.Debug().
+				Uint64("messages", stats.Messages).
+				Int("consumers", stats.Consumers).
+				Msg("Queue stats")
 		}
 	}
 
@@ -258,7 +261,7 @@ func (r *Relayer) updateMetrics(ctx context.Context) {
 	if err != nil {
 		r.logger.Warn().Err(err).Msg("Failed to get pending messages count")
 	} else {
-		monitoring.RecordPendingMessages(pendingCount)
+		r.logger.Debug().Int64("pending_count", pendingCount).Msg("Pending messages")
 	}
 
 	// Get failed messages count
@@ -266,7 +269,7 @@ func (r *Relayer) updateMetrics(ctx context.Context) {
 	if err != nil {
 		r.logger.Warn().Err(err).Msg("Failed to get failed messages count")
 	} else {
-		monitoring.RecordFailedMessages(failedCount)
+		r.logger.Debug().Int64("failed_count", failedCount).Msg("Failed messages")
 	}
 }
 
@@ -292,7 +295,7 @@ func (r *Relayer) ProcessPendingMessages(ctx context.Context) error {
 	// Process each message
 	for _, msg := range messages {
 		// Check if message is too old
-		if time.Since(time.Unix(msg.Timestamp, 0)) > 24*time.Hour {
+		if time.Since(msg.CreatedAt) > 24*time.Hour {
 			r.logger.Warn().
 				Str("message_id", msg.ID).
 				Msg("Message too old, marking as failed")

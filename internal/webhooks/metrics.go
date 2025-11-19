@@ -1,6 +1,8 @@
 package webhooks
 
 import (
+	"fmt"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
@@ -196,6 +198,3 @@ func SetWebhookQueueSize(size int) {
 func SetWebhookQueueCapacity(capacity int) {
 	WebhookQueueCapacity.Set(float64(capacity))
 }
-
-// Import fmt for string formatting
-import "fmt"

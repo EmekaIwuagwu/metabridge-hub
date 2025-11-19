@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/EmekaIwuagwu/metabridge-hub/internal/types"
 )
@@ -39,7 +38,7 @@ func (db *DB) SaveMessage(ctx context.Context, msg *types.CrossChainMessage) err
 		payloadJSON,
 		msg.Status,
 		msg.Nonce,
-		time.Unix(msg.Timestamp, 0),
+		msg.CreatedAt,
 	)
 
 	if err != nil {
@@ -60,7 +59,7 @@ func (db *DB) GetMessage(ctx context.Context, messageID string) (*types.CrossCha
 		SELECT
 			id, type, source_chain_id, source_chain_name, destination_chain_id,
 			destination_chain_name, sender, recipient, payload, status, nonce,
-			EXTRACT(EPOCH FROM timestamp)::BIGINT as timestamp
+			timestamp
 		FROM messages
 		WHERE id = $1
 	`
@@ -80,7 +79,7 @@ func (db *DB) GetMessage(ctx context.Context, messageID string) (*types.CrossCha
 		&payloadJSON,
 		&msg.Status,
 		&msg.Nonce,
-		&msg.Timestamp,
+		&msg.CreatedAt,
 	)
 
 	if err == sql.ErrNoRows {
@@ -149,7 +148,7 @@ func (db *DB) GetPendingMessages(ctx context.Context, limit int) ([]types.CrossC
 		SELECT
 			id, type, source_chain_id, source_chain_name, destination_chain_id,
 			destination_chain_name, sender, recipient, payload, status, nonce,
-			EXTRACT(EPOCH FROM timestamp)::BIGINT as timestamp
+			timestamp
 		FROM messages
 		WHERE status = $1
 		ORDER BY timestamp ASC
@@ -180,7 +179,7 @@ func (db *DB) GetPendingMessages(ctx context.Context, limit int) ([]types.CrossC
 			&payloadJSON,
 			&msg.Status,
 			&msg.Nonce,
-			&msg.Timestamp,
+			&msg.CreatedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan message: %w", err)
@@ -242,7 +241,7 @@ func (db *DB) GetMessagesByStatus(ctx context.Context, status types.MessageStatu
 		SELECT
 			id, type, source_chain_id, source_chain_name, destination_chain_id,
 			destination_chain_name, sender, recipient, payload, status, nonce,
-			EXTRACT(EPOCH FROM timestamp)::BIGINT as timestamp
+			timestamp
 		FROM messages
 		WHERE status = $1
 		ORDER BY timestamp DESC
@@ -273,7 +272,7 @@ func (db *DB) GetMessagesByStatus(ctx context.Context, status types.MessageStatu
 			&payloadJSON,
 			&msg.Status,
 			&msg.Nonce,
-			&msg.Timestamp,
+			&msg.CreatedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan message: %w", err)
@@ -296,7 +295,7 @@ func (db *DB) GetMessagesByChains(ctx context.Context, sourceChain, destChain st
 		SELECT
 			id, type, source_chain_id, source_chain_name, destination_chain_id,
 			destination_chain_name, sender, recipient, payload, status, nonce,
-			EXTRACT(EPOCH FROM timestamp)::BIGINT as timestamp
+			timestamp
 		FROM messages
 		WHERE source_chain_name = $1 AND destination_chain_name = $2
 		ORDER BY timestamp DESC
@@ -327,7 +326,7 @@ func (db *DB) GetMessagesByChains(ctx context.Context, sourceChain, destChain st
 			&payloadJSON,
 			&msg.Status,
 			&msg.Nonce,
-			&msg.Timestamp,
+			&msg.CreatedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan message: %w", err)
@@ -357,7 +356,7 @@ func (db *DB) SaveValidatorSignature(ctx context.Context, messageID string, sig 
 		messageID,
 		sig.ValidatorAddress,
 		sig.Signature,
-		time.Unix(sig.Timestamp, 0),
+		sig.Timestamp,
 	)
 
 	if err != nil {
@@ -370,7 +369,7 @@ func (db *DB) SaveValidatorSignature(ctx context.Context, messageID string, sig 
 // GetValidatorSignatures retrieves all validator signatures for a message
 func (db *DB) GetValidatorSignatures(ctx context.Context, messageID string) ([]types.ValidatorSignature, error) {
 	query := `
-		SELECT validator_address, signature, EXTRACT(EPOCH FROM signed_at)::BIGINT as timestamp
+		SELECT validator_address, signature, signed_at
 		FROM validator_signatures
 		WHERE message_id = $1
 		ORDER BY signed_at ASC

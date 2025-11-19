@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -18,7 +19,6 @@ import (
 	"github.com/EmekaIwuagwu/metabridge-hub/internal/relayer"
 	"github.com/EmekaIwuagwu/metabridge-hub/internal/types"
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 )
 
 var (
@@ -149,7 +149,7 @@ func createSigners(cfg *config.Config, logger zerolog.Logger) (map[string]crypto
 		var signer crypto.UniversalSigner
 		var err error
 
-		switch chain.Type {
+		switch chain.ChainType {
 		case types.ChainTypeEVM:
 			// In production, load private key from secure storage (HSM, KMS, etc.)
 			// For now, we'll create a placeholder signer
@@ -160,7 +160,7 @@ func createSigners(cfg *config.Config, logger zerolog.Logger) (map[string]crypto
 
 			// Create a test signer for development
 			// In production, replace with actual key loading
-			signer, err = evmCrypto.NewECDSASigner("0000000000000000000000000000000000000000000000000000000000000001")
+			signer, err = evmCrypto.NewECDSASignerFromPrivateKey("0000000000000000000000000000000000000000000000000000000000000001")
 			if err != nil {
 				return nil, fmt.Errorf("failed to create EVM signer for %s: %w", chain.Name, err)
 			}
@@ -172,19 +172,19 @@ func createSigners(cfg *config.Config, logger zerolog.Logger) (map[string]crypto
 				Msg("Using placeholder signer - configure proper key management in production")
 
 			// Create a test signer for development
-			signer, err = ed25519Crypto.NewEd25519Signer(nil) // nil will generate random key
+			signer, err = ed25519Crypto.GenerateKeyPair() // Generate new key pair
 			if err != nil {
 				return nil, fmt.Errorf("failed to create Ed25519 signer for %s: %w", chain.Name, err)
 			}
 
 		default:
-			return nil, fmt.Errorf("unsupported chain type: %s", chain.Type)
+			return nil, fmt.Errorf("unsupported chain type: %s", chain.ChainType)
 		}
 
 		signers[chain.Name] = signer
 		logger.Info().
 			Str("chain", chain.Name).
-			Str("type", string(chain.Type)).
+			Str("type", string(chain.ChainType)).
 			Msg("Signer created")
 	}
 

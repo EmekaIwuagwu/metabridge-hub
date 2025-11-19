@@ -361,9 +361,12 @@ func (lt *LiquidityTracker) RefreshLiquidity(ctx context.Context) error {
 		dest := pair[1]
 
 		// Placeholder values
-		total := big.NewInt(1e20)      // 100 ETH
-		available := big.NewInt(8e19)  // 80 ETH
-		reserved := big.NewInt(2e19)   // 20 ETH
+		total := new(big.Int)
+		total.SetString("100000000000000000000", 10) // 100 ETH
+		available := new(big.Int)
+		available.SetString("80000000000000000000", 10) // 80 ETH
+		reserved := new(big.Int)
+		reserved.SetString("20000000000000000000", 10) // 20 ETH
 
 		lt.UpdateLiquidity(source, dest, total, available, reserved)
 		lt.UpdateLiquidity(dest, source, total, available, reserved) // Bidirectional

@@ -10,7 +10,7 @@ import (
 	"github.com/EmekaIwuagwu/metabridge-hub/internal/types"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types" as ethtypes
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
@@ -58,7 +58,7 @@ func NewECDSASigner(keystorePath string, password string) (*ECDSASigner, error) 
 	address := crypto.PubkeyToAddress(*publicKeyECDSA)
 
 	return &ECDSASigner{
-		privateKey: &privateKey.PrivateKey,
+		privateKey: privateKey.PrivateKey,
 		publicKey:  publicKeyECDSA,
 		address:    address,
 	}, nil

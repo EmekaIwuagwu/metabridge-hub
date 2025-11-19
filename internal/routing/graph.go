@@ -325,12 +325,15 @@ func (gb *GraphBuilder) loadEdges(ctx context.Context) error {
 		// Estimate cost (in wei) - this would be fetched from blockchain in production
 		estimatedCost := big.NewInt(1e16) // 0.01 ETH
 
+		liquidity := new(big.Int)
+		liquidity.SetString("100000000000000000000", 10) // 100 ETH
+
 		edge := &Edge{
 			SourceChain: sourceChain,
 			DestChain:   destChain,
 			Cost:        estimatedCost,
 			Time:        int64(avgTime),
-			Liquidity:   big.NewInt(1e20), // Placeholder: 100 ETH
+			Liquidity:   liquidity,
 			SuccessRate: successRate,
 			LastUpdated: time.Now().UTC(),
 		}
@@ -378,12 +381,14 @@ func (gb *GraphBuilder) createDefaultEdges() {
 			gb.graph.Edges[source] = make(map[string]*Edge)
 		}
 		if _, exists := gb.graph.Edges[source][dest]; !exists {
+			liq := new(big.Int)
+			liq.SetString("100000000000000000000", 10) // 100 ETH
 			edge := &Edge{
 				SourceChain: source,
 				DestChain:   dest,
 				Cost:        big.NewInt(1e16), // 0.01 ETH
 				Time:        300,               // 5 minutes
-				Liquidity:   big.NewInt(1e20), // 100 ETH
+				Liquidity:   liq,
 				SuccessRate: 0.98,
 				LastUpdated: time.Now().UTC(),
 			}
@@ -396,12 +401,14 @@ func (gb *GraphBuilder) createDefaultEdges() {
 			gb.graph.Edges[dest] = make(map[string]*Edge)
 		}
 		if _, exists := gb.graph.Edges[dest][source]; !exists {
+			liq := new(big.Int)
+			liq.SetString("100000000000000000000", 10) // 100 ETH
 			edge := &Edge{
 				SourceChain: dest,
 				DestChain:   source,
 				Cost:        big.NewInt(1e16),
 				Time:        300,
-				Liquidity:   big.NewInt(1e20),
+				Liquidity:   liq,
 				SuccessRate: 0.98,
 				LastUpdated: time.Now().UTC(),
 			}
