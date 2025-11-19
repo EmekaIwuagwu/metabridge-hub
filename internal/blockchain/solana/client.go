@@ -116,8 +116,6 @@ func (c *Client) GetLatestBlockNumber(ctx context.Context) (uint64, error) {
 
 // GetBlockByNumber returns block information by slot
 func (c *Client) GetBlockByNumber(ctx context.Context, slot uint64) (*types.BlockInfo, error) {
-	commitment := c.getCommitment()
-
 	for _, client := range c.rpcClients {
 		block, err := client.GetBlock(ctx, slot)
 		if err != nil {
@@ -193,8 +191,6 @@ func (c *Client) GetTransactionStatus(ctx context.Context, signature string) (*t
 	if err != nil {
 		return nil, fmt.Errorf("invalid signature: %w", err)
 	}
-
-	commitment := c.getCommitment()
 
 	for _, client := range c.rpcClients {
 		result, err := client.GetSignatureStatuses(ctx, true, sig)
@@ -326,24 +322,15 @@ func (c *Client) getCommitment() rpc.CommitmentType {
 }
 
 // GetProgramAccounts retrieves accounts owned by a program
-func (c *Client) GetProgramAccounts(ctx context.Context, programID solana.PublicKey) (map[solana.PublicKey]solana.AccountInfo, error) {
-	commitment := c.getCommitment()
-
+func (c *Client) GetProgramAccounts(ctx context.Context, programID solana.PublicKey) (rpc.GetProgramAccountsResult, error) {
 	for _, client := range c.rpcClients {
-		accounts, err := client.GetProgramAccounts(ctx, programID, &rpc.GetProgramAccountsOpts{
-			Commitment: commitment,
-		})
+		accounts, err := client.GetProgramAccounts(ctx, programID)
 		if err != nil {
 			c.logger.Warn().Err(err).Msg("Failed to get program accounts")
 			continue
 		}
 
-		result := make(map[solana.PublicKey]solana.AccountInfo)
-		for _, account := range accounts {
-			result[account.Pubkey] = *account.Account
-		}
-
-		return result, nil
+		return accounts, nil
 	}
 
 	return nil, fmt.Errorf("failed to get program accounts from all endpoints")

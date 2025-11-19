@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math/big"
-	"time"
 
 	"github.com/EmekaIwuagwu/metabridge-hub/internal/config"
 	"github.com/EmekaIwuagwu/metabridge-hub/internal/monitoring"
@@ -133,7 +132,7 @@ func (v *Validator) validateTransactionLimit(amount *big.Int) error {
 func (v *Validator) validateDailyVolumeLimit(ctx context.Context, amount *big.Int) error {
 	// TODO: Implement daily volume tracking in database
 	// For now, just check against the limit
-	dailyLimit, ok := new(big.Int).SetString(v.config.DailyVolumeLimit, 10)
+	_, ok := new(big.Int).SetString(v.config.DailyVolumeLimit, 10)
 	if !ok {
 		return fmt.Errorf("invalid daily volume limit configuration")
 	}

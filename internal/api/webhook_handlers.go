@@ -3,8 +3,10 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/EmekaIwuagwu/metabridge-hub/internal/webhooks"
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
 
@@ -355,10 +357,3 @@ func (s *Server) handleWebhookDeliveryAttempts(w http.ResponseWriter, r *http.Re
 		"count":      len(attempts),
 	})
 }
-
-// Import required packages
-import (
-	"time"
-
-	"github.com/google/uuid"
-)

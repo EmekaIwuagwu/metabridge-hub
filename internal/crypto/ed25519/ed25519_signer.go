@@ -3,13 +3,13 @@ package ed25519
 import (
 	"context"
 	"crypto/ed25519"
-	"encoding/base58"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
 
 	"github.com/EmekaIwuagwu/metabridge-hub/internal/types"
+	"github.com/mr-tron/base58"
 )
 
 // Ed25519Signer implements UniversalSigner for Solana and NEAR chains
@@ -46,9 +46,9 @@ func NewEd25519Signer(keystorePath string, password string) (*Ed25519Signer, err
 	privateKeyBytes, err = hex.DecodeString(keystore.PrivateKey)
 	if err != nil {
 		// Try base58
-		privateKeyBytes = base58.Decode(keystore.PrivateKey)
-		if len(privateKeyBytes) == 0 {
-			return nil, fmt.Errorf("failed to decode private key")
+		privateKeyBytes, err = base58.Decode(keystore.PrivateKey)
+		if err != nil || len(privateKeyBytes) == 0 {
+			return nil, fmt.Errorf("failed to decode private key: %w", err)
 		}
 	}
 

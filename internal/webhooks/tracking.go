@@ -45,7 +45,7 @@ func (t *TrackingService) TrackMessage(ctx context.Context, messageID string) (*
 	timeline := &MessageTimeline{
 		MessageID:           messageID,
 		Events:              events,
-		CurrentStatus:       message.Status,
+		CurrentStatus:       string(message.Status),
 		CreatedAt:           message.CreatedAt,
 		UpdatedAt:           message.UpdatedAt,
 		EstimatedCompletion: estimatedCompletion,
@@ -305,8 +305,8 @@ func (t *TrackingService) estimateCompletion(message *types.CrossChainMessage, e
 	}
 
 	// For submitted messages, estimate 2-5 minutes
-	if message.Status == "SUBMITTED" && message.SubmittedAt != nil {
-		estimated := message.SubmittedAt.Add(5 * time.Minute)
+	if message.Status == "SUBMITTED" {
+		estimated := message.UpdatedAt.Add(5 * time.Minute)
 		return &estimated
 	}
 
@@ -435,17 +435,21 @@ func (t *TrackingService) scanMessage(row scanner) (*types.CrossChainMessage, er
 	var submittedAt, confirmedAt sql.NullTime
 	var sourceTxHash, destTxHash sql.NullString
 	var validatorSignatures sql.NullString
+	var sourceChain, destChain, sender, recipient string
+	var tokenAddress sql.NullString
+	var amount sql.NullString
+	var data sql.NullString
 
 	err := row.Scan(
 		&message.ID,
-		&message.SourceChain,
-		&message.DestChain,
-		&message.Sender,
-		&message.Recipient,
-		&message.TokenAddress,
-		&message.Amount,
+		&sourceChain,
+		&destChain,
+		&sender,
+		&recipient,
+		&tokenAddress,
+		&amount,
 		&message.Nonce,
-		&message.Data,
+		&data,
 		&message.Status,
 		&sourceTxHash,
 		&destTxHash,
@@ -463,12 +467,12 @@ func (t *TrackingService) scanMessage(row scanner) (*types.CrossChainMessage, er
 		return nil, fmt.Errorf("failed to scan message: %w", err)
 	}
 
-	if submittedAt.Valid {
-		message.SubmittedAt = &submittedAt.Time
-	}
-	if confirmedAt.Valid {
-		message.ConfirmedAt = &confirmedAt.Time
-	}
+	// Map scanned values to struct fields
+	message.SourceChain = types.ChainInfo{ChainID: sourceChain}
+	message.DestinationChain = types.ChainInfo{ChainID: destChain}
+	message.Sender = types.Address{Raw: sender}
+	message.Recipient = types.Address{Raw: recipient}
+
 	if sourceTxHash.Valid {
 		message.SourceTxHash = sourceTxHash.String
 	}

@@ -33,10 +33,9 @@ func (n *Notifier) NotifyMessageCreated(ctx context.Context, message *types.Cros
 	payload := map[string]interface{}{
 		"message":      message,
 		"source_chain": message.SourceChain,
-		"dest_chain":   message.DestChain,
+		"dest_chain":   message.DestinationChain,
 		"sender":       message.Sender,
 		"recipient":    message.Recipient,
-		"amount":       message.Amount,
 		"status":       message.Status,
 	}
 
@@ -54,7 +53,7 @@ func (n *Notifier) NotifyMessagePending(ctx context.Context, message *types.Cros
 	payload := map[string]interface{}{
 		"message":      message,
 		"source_chain": message.SourceChain,
-		"dest_chain":   message.DestChain,
+		"dest_chain":   message.DestinationChain,
 		"status":       message.Status,
 	}
 
@@ -72,7 +71,7 @@ func (n *Notifier) NotifyMessageSubmitted(ctx context.Context, message *types.Cr
 	payload := map[string]interface{}{
 		"message":      message,
 		"source_chain": message.SourceChain,
-		"dest_chain":   message.DestChain,
+		"dest_chain":   message.DestinationChain,
 		"tx_hash":      txHash,
 		"block_number": blockNumber,
 		"status":       message.Status,
@@ -87,7 +86,7 @@ func (n *Notifier) NotifyMessageSubmitted(ctx context.Context, message *types.Cr
 	}
 
 	// Record timeline event
-	if err := n.recordTimelineEvent(ctx, message.ID, "message_submitted", "Message submitted to destination chain", txHash, blockNumber, message.DestChain); err != nil {
+	if err := n.recordTimelineEvent(ctx, message.ID, "message_submitted", "Message submitted to destination chain", txHash, blockNumber, message.DestinationChain.ChainID); err != nil {
 		n.logger.Warn().Err(err).Msg("Failed to record timeline event")
 	}
 
@@ -99,7 +98,7 @@ func (n *Notifier) NotifyMessageConfirmed(ctx context.Context, message *types.Cr
 	payload := map[string]interface{}{
 		"message":       message,
 		"source_chain":  message.SourceChain,
-		"dest_chain":    message.DestChain,
+		"dest_chain":    message.DestinationChain,
 		"tx_hash":       message.DestTxHash,
 		"confirmations": confirmations,
 		"status":        message.Status,
@@ -114,7 +113,7 @@ func (n *Notifier) NotifyMessageConfirmed(ctx context.Context, message *types.Cr
 	}
 
 	// Record timeline event
-	if err := n.recordTimelineEvent(ctx, message.ID, "message_confirmed", fmt.Sprintf("Message confirmed with %d confirmations", confirmations), message.DestTxHash, 0, message.DestChain); err != nil {
+	if err := n.recordTimelineEvent(ctx, message.ID, "message_confirmed", fmt.Sprintf("Message confirmed with %d confirmations", confirmations), message.DestTxHash, 0, message.DestinationChain.ChainID); err != nil {
 		n.logger.Warn().Err(err).Msg("Failed to record timeline event")
 	}
 
@@ -126,7 +125,7 @@ func (n *Notifier) NotifyMessageFinalized(ctx context.Context, message *types.Cr
 	payload := map[string]interface{}{
 		"message":      message,
 		"source_chain": message.SourceChain,
-		"dest_chain":   message.DestChain,
+		"dest_chain":   message.DestinationChain,
 		"tx_hash":      message.DestTxHash,
 		"status":       message.Status,
 	}
@@ -139,7 +138,7 @@ func (n *Notifier) NotifyMessageFinalized(ctx context.Context, message *types.Cr
 	}
 
 	// Record timeline event
-	if err := n.recordTimelineEvent(ctx, message.ID, "message_finalized", "Message finalized on destination chain", message.DestTxHash, 0, message.DestChain); err != nil {
+	if err := n.recordTimelineEvent(ctx, message.ID, "message_finalized", "Message finalized on destination chain", message.DestTxHash, 0, message.DestinationChain.ChainID); err != nil {
 		n.logger.Warn().Err(err).Msg("Failed to record timeline event")
 	}
 
@@ -151,7 +150,7 @@ func (n *Notifier) NotifyMessageFailed(ctx context.Context, message *types.Cross
 	payload := map[string]interface{}{
 		"message":       message,
 		"source_chain":  message.SourceChain,
-		"dest_chain":    message.DestChain,
+		"dest_chain":    message.DestinationChain,
 		"error_message": errorMsg,
 		"status":        message.Status,
 	}
