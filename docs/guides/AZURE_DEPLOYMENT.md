@@ -651,6 +651,601 @@ ps aux | grep metabridge
 
 ---
 
+## Run Comprehensive Tests
+
+### Test Suite 1: Infrastructure Health Checks
+
+```bash
+# Test 1: Check all Docker containers
+cd ~/metabridge/metabridge-engine-hub/deployments/docker
+docker compose -f docker-compose.infrastructure.yaml ps
+
+# Expected: All services "Up" and "healthy"
+# - postgres (healthy)
+# - nats (healthy)
+# - redis (healthy)
+# - prometheus (healthy)
+# - grafana (healthy)
+
+# Test 2: Verify PostgreSQL
+docker exec -it metabridge-postgres psql -U metabridge -d metabridge_testnet -c "SELECT version();"
+
+# Expected: PostgreSQL 15.x version info
+
+# Test 3: Verify NATS
+curl -s http://localhost:8222/varz | jq '.version'
+
+# Expected: NATS version 2.10.x
+
+# Test 4: Verify Redis
+docker exec -it metabridge-redis redis-cli ping
+
+# Expected: PONG
+
+# Test 5: Verify Prometheus
+curl -s http://localhost:9090/-/healthy
+
+# Expected: Prometheus is Healthy.
+
+# Test 6: Verify Grafana
+curl -s http://localhost:3000/api/health | jq '.'
+
+# Expected: {"database":"ok","version":"..."}
+```
+
+### Test Suite 2: API Health & Functionality
+
+```bash
+# Get your VM's public IP
+VM_IP=$(curl -s ifconfig.me)
+echo "Your VM IP: $VM_IP"
+
+# Test 1: Health endpoint
+curl http://$VM_IP:8080/health | jq '.'
+
+# Expected:
+# {
+#   "status": "ok",
+#   "version": "1.0.0",
+#   "timestamp": "2025-11-20T..."
+# }
+
+# Test 2: API status
+curl http://$VM_IP:8080/v1/status | jq '.'
+
+# Expected: Detailed service status
+
+# Test 3: Chains endpoint
+curl http://$VM_IP:8080/v1/chains | jq '.'
+
+# Expected: Array of all 6 supported chains
+
+# Test 4: Chain status
+curl http://$VM_IP:8080/v1/chains/status | jq '.'
+
+# Expected: RPC connection status for each chain
+
+# Test 5: Stats endpoint
+curl http://$VM_IP:8080/v1/stats | jq '.'
+
+# Expected:
+# {
+#   "total_messages": 0,
+#   "pending_messages": 0,
+#   "completed_messages": 0,
+#   "failed_messages": 0,
+#   "total_volume": "0"
+# }
+
+# Test 6: Supported tokens
+curl http://$VM_IP:8080/v1/tokens | jq '.'
+
+# Expected: List of supported tokens per chain
+```
+
+### Test Suite 3: Authentication & Authorization
+
+```bash
+# Test 1: Create admin user (if not exists)
+docker exec -i metabridge-postgres psql -U metabridge -d metabridge_testnet << 'EOF'
+INSERT INTO users (id, email, name, password_hash, role, active, created_at, updated_at)
+VALUES (
+  'admin-001',
+  'admin@metabridge.local',
+  'System Administrator',
+  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+  'admin',
+  true,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO NOTHING;
+EOF
+
+# Test 2: Login
+RESPONSE=$(curl -s -X POST http://$VM_IP:8080/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "admin@metabridge.local",
+    "password": "admin123"
+  }')
+
+echo $RESPONSE | jq '.'
+
+# Expected: JWT token
+# {
+#   "token": "eyJhbGciOi...",
+#   "user": {
+#     "id": "admin-001",
+#     "email": "admin@metabridge.local",
+#     "role": "admin"
+#   }
+# }
+
+# Extract token
+export JWT_TOKEN=$(echo $RESPONSE | jq -r '.token')
+echo "JWT Token: $JWT_TOKEN"
+
+# Test 3: Access protected endpoint
+curl -s http://$VM_IP:8080/v1/admin/users \
+  -H "Authorization: Bearer $JWT_TOKEN" | jq '.'
+
+# Expected: List of users
+
+# Test 4: Create API key
+curl -s -X POST http://$VM_IP:8080/v1/admin/api-keys \
+  -H "Authorization: Bearer $JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Test API Key",
+    "scopes": ["bridge:read", "bridge:write"]
+  }' | jq '.'
+
+# Expected: New API key created
+
+# Test 5: Invalid authentication
+curl -s http://$VM_IP:8080/v1/admin/users \
+  -H "Authorization: Bearer invalid_token"
+
+# Expected: 401 Unauthorized
+```
+
+### Test Suite 4: Database Operations
+
+```bash
+# Test 1: List all tables
+docker exec -it metabridge-postgres psql -U metabridge -d metabridge_testnet << 'EOF'
+SELECT schemaname, tablename, pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) AS size
+FROM pg_tables
+WHERE schemaname = 'public'
+ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
+EOF
+
+# Expected: All bridge tables with sizes
+
+# Test 2: Check table counts
+docker exec -it metabridge-postgres psql -U metabridge -d metabridge_testnet << 'EOF'
+SELECT
+  (SELECT COUNT(*) FROM messages) as total_messages,
+  (SELECT COUNT(*) FROM batches) as total_batches,
+  (SELECT COUNT(*) FROM users) as total_users,
+  (SELECT COUNT(*) FROM api_keys) as total_api_keys,
+  (SELECT COUNT(*) FROM routes) as total_routes,
+  (SELECT COUNT(*) FROM webhooks) as total_webhooks;
+EOF
+
+# Expected: Record counts for all tables
+
+# Test 3: Database performance
+docker exec -it metabridge-postgres psql -U metabridge -d metabridge_testnet << 'EOF'
+\timing on
+EXPLAIN ANALYZE SELECT * FROM messages WHERE status = 'pending' LIMIT 100;
+EOF
+
+# Expected: Query execution time < 10ms
+
+# Test 4: Check database connections
+docker exec -it metabridge-postgres psql -U metabridge -d metabridge_testnet -c \
+  "SELECT count(*) as active_connections FROM pg_stat_activity WHERE datname = 'metabridge_testnet';"
+
+# Expected: Active connections count (should be < 10 for testnet)
+
+# Test 5: Database size
+docker exec -it metabridge-postgres psql -U metabridge -d metabridge_testnet << 'EOF'
+SELECT
+  pg_database.datname,
+  pg_size_pretty(pg_database_size(pg_database.datname)) AS size
+FROM pg_database
+WHERE datname = 'metabridge_testnet';
+EOF
+
+# Expected: Total database size (~50MB for fresh install)
+```
+
+### Test Suite 5: Service Health & Monitoring
+
+```bash
+# Test 1: Check systemd services
+sudo systemctl status metabridge-api --no-pager
+sudo systemctl status metabridge-listener --no-pager
+sudo systemctl status metabridge-relayer --no-pager
+
+# Expected: All active (running)
+
+# Test 2: Check service logs
+sudo journalctl -u metabridge-api --since "10 minutes ago" --no-pager | tail -20
+
+# Expected to see:
+# - "API server started"
+# - "Connected to database"
+# - "Connected to NATS"
+# - "Listening on :8080"
+
+# Test 3: Check for errors
+sudo journalctl -u metabridge-api --since "1 hour ago" --no-pager | grep -i error | wc -l
+
+# Expected: 0 or very low count
+
+# Test 4: Resource usage
+echo "=== CPU Usage ==="
+top -bn1 | head -20
+
+echo "=== Memory Usage ==="
+free -h
+
+echo "=== Disk Usage ==="
+df -h /mnt/metabridge-data
+
+# Expected:
+# - CPU: < 50% average
+# - Memory: > 2GB free
+# - Disk: > 100GB free
+
+# Test 5: Process monitoring
+ps aux | grep -E '(api|listener|relayer)' | grep -v grep
+
+# Expected: All three processes running
+
+# Test 6: Port availability
+sudo netstat -tlnp | grep -E '(8080|5432|4222|6379|9090|3000)'
+
+# Expected ports open:
+# - 8080 (API)
+# - 5432 (PostgreSQL)
+# - 4222 (NATS)
+# - 6379 (Redis)
+# - 9090 (Prometheus)
+# - 3000 (Grafana)
+```
+
+### Test Suite 6: Network & Connectivity
+
+```bash
+# Test 1: Internal connectivity
+curl -s http://localhost:8080/health | jq '.'
+
+# Expected: Success
+
+# Test 2: External connectivity (from another machine or browser)
+curl -s http://$VM_IP:8080/health | jq '.'
+
+# Expected: Success
+
+# Test 3: Check firewall rules
+sudo ufw status numbered
+
+# Expected rules:
+# - SSH (22)
+# - HTTP (80)
+# - HTTPS (443)
+# - API (8080)
+# - Prometheus (9090) - restricted to your IP
+# - Grafana (3000) - restricted to your IP
+
+# Test 4: DNS resolution (if domain configured)
+nslookup bridge.yourdomain.com
+
+# Expected: Your VM IP address
+
+# Test 5: SSL certificate (if configured)
+openssl s_client -connect bridge.yourdomain.com:443 -servername bridge.yourdomain.com < /dev/null 2>/dev/null | openssl x509 -noout -dates
+
+# Expected: Valid certificate with future expiry date
+
+# Test 6: RPC endpoint connectivity
+curl -s -X POST http://localhost:8080/v1/test/rpc \
+  -H "Content-Type: application/json" \
+  -d '{
+    "chain": "polygon"
+  }' | jq '.'
+
+# Expected: RPC connection test results
+```
+
+### Test Suite 7: Performance & Load Testing
+
+```bash
+# Test 1: Install Apache Bench
+sudo apt install -y apache2-utils
+
+# Test 2: Basic load test (100 requests, 10 concurrent)
+ab -n 100 -c 10 http://localhost:8080/health
+
+# Expected:
+# - Requests per second: > 1000
+# - Time per request: < 100ms
+# - Failed requests: 0
+
+# Test 3: Sustained load test (1000 requests, 50 concurrent)
+ab -n 1000 -c 50 -t 30 http://localhost:8080/health
+
+# Expected:
+# - No errors
+# - Consistent response times
+# - No memory leaks
+
+# Test 4: API endpoint stress test
+ab -n 500 -c 25 http://localhost:8080/v1/chains
+
+# Expected:
+# - Complete successfully
+# - Average time < 200ms
+
+# Test 5: Monitor during load
+# Open another terminal and run:
+watch -n 1 'ps aux | grep -E "(api|listener|relayer)" | grep -v grep'
+
+# Run load test and observe:
+# - CPU usage stays reasonable
+# - Memory doesn't grow unbounded
+# - Processes don't crash
+```
+
+### Test Suite 8: Smart Contract Integration (If Deployed)
+
+```bash
+# These tests require deployed contracts
+
+# Test 1: Check contract addresses in config
+cat ~/metabridge/metabridge-engine-hub/config/config.testnet.yaml | grep -A 5 "bridge_contract"
+
+# Expected: Contract addresses for all chains
+
+# Test 2: Verify contract on Polygon
+curl -s "https://api-amoy.polygonscan.com/api?module=contract&action=getabi&address=YOUR_POLYGON_CONTRACT&apikey=YOUR_API_KEY" | jq '.status'
+
+# Expected: "1" (verified)
+
+# Test 3: Test bridge request creation
+curl -X POST http://localhost:8080/v1/bridge/request \
+  -H "Content-Type: application/json" \
+  -d '{
+    "source_chain": "polygon",
+    "destination_chain": "bnb",
+    "token_address": "0x...",
+    "amount": "1000000000000000000",
+    "recipient": "0x...",
+    "sender": "0x..."
+  }' | jq '.'
+
+# Expected: Request ID and pending status
+
+# Test 4: Query bridge request
+curl -s http://localhost:8080/v1/messages?status=pending | jq '.messages[0]'
+
+# Expected: Bridge request details
+```
+
+### Test Suite 9: Backup & Disaster Recovery
+
+```bash
+# Test 1: Manual database backup
+BACKUP_DIR=/mnt/metabridge-data/metabridge/backups
+mkdir -p $BACKUP_DIR
+
+docker exec metabridge-postgres pg_dump -U metabridge metabridge_testnet > \
+  $BACKUP_DIR/test_backup_$(date +%Y%m%d_%H%M%S).sql
+
+# Verify backup
+ls -lh $BACKUP_DIR/test_backup_*.sql
+
+# Expected: Backup file > 0 bytes
+
+# Test 2: Insert test data
+docker exec -i metabridge-postgres psql -U metabridge -d metabridge_testnet << 'EOF'
+CREATE TABLE IF NOT EXISTS test_recovery (
+  id SERIAL PRIMARY KEY,
+  data TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+INSERT INTO test_recovery (data) VALUES ('Test backup and recovery');
+EOF
+
+# Verify
+docker exec -it metabridge-postgres psql -U metabridge -d metabridge_testnet -c \
+  "SELECT * FROM test_recovery;"
+
+# Expected: Test record
+
+# Test 3: Simulate failure and restore
+docker exec -it metabridge-postgres psql -U metabridge -d metabridge_testnet -c \
+  "DROP TABLE test_recovery;"
+
+# Restore from backup
+LATEST_BACKUP=$(ls -t $BACKUP_DIR/test_backup_*.sql | head -1)
+docker exec -i metabridge-postgres psql -U metabridge -d metabridge_testnet < $LATEST_BACKUP
+
+# Verify restoration
+docker exec -it metabridge-postgres psql -U metabridge -d metabridge_testnet -c \
+  "SELECT * FROM test_recovery;"
+
+# Expected: Test record restored
+
+# Clean up
+docker exec -it metabridge-postgres psql -U metabridge -d metabridge_testnet -c \
+  "DROP TABLE IF EXISTS test_recovery;"
+rm $BACKUP_DIR/test_backup_*.sql
+
+# Test 4: Test automated backup script
+~/backup-database.sh
+
+# Verify automated backup created
+ls -lh $BACKUP_DIR/ | tail -5
+
+# Expected: New backup file
+```
+
+### Test Suite 10: Monitoring & Alerting
+
+```bash
+# Test 1: Access Prometheus
+curl -s http://localhost:9090/api/v1/status/config | jq '.status'
+
+# Expected: "success"
+
+# Test 2: Query Prometheus metrics
+curl -s 'http://localhost:9090/api/v1/query?query=up' | jq '.data.result[] | {job: .metric.job, value: .value[1]}'
+
+# Expected: All services showing "1" (up)
+
+# Test 3: Check custom metrics
+curl -s 'http://localhost:9090/api/v1/query?query=metabridge_api_requests_total' | jq '.'
+
+# Expected: API request metrics
+
+# Test 4: Access Grafana (from browser or curl)
+curl -s http://localhost:3000/api/health | jq '.'
+
+# Expected: {"database":"ok"}
+
+# Test 5: Test Grafana dashboards (via browser)
+# Open: http://$VM_IP:3000
+# Login: admin / (password you set)
+# Navigate to Dashboards
+# Expected: Metabridge dashboards visible
+
+# Test 6: Test alerts (if configured)
+curl -s 'http://localhost:9090/api/v1/rules' | jq '.data.groups[].rules[] | {alert: .name, state: .state}'
+
+# Expected: Alert rules and their states
+```
+
+### Test Summary Checklist
+
+Run this final verification:
+
+```bash
+cat << 'EOF' > ~/test-summary.sh
+#!/bin/bash
+
+echo "=========================================="
+echo "METABRIDGE DEPLOYMENT TEST SUMMARY"
+echo "=========================================="
+echo ""
+
+# Infrastructure
+echo "1. Infrastructure Services:"
+docker compose -f ~/metabridge/metabridge-engine-hub/deployments/docker/docker-compose.infrastructure.yaml ps | grep -E "(postgres|nats|redis)" && echo "   ✅ All services running" || echo "   ❌ Some services down"
+
+# API Health
+echo ""
+echo "2. API Health:"
+curl -sf http://localhost:8080/health > /dev/null && echo "   ✅ API responding" || echo "   ❌ API not responding"
+
+# Database
+echo ""
+echo "3. Database:"
+docker exec metabridge-postgres psql -U metabridge -d metabridge_testnet -c "SELECT 1;" > /dev/null 2>&1 && echo "   ✅ Database accessible" || echo "   ❌ Database not accessible"
+
+# Systemd Services
+echo ""
+echo "4. Systemd Services:"
+sudo systemctl is-active metabridge-api > /dev/null 2>&1 && echo "   ✅ API service active" || echo "   ❌ API service inactive"
+sudo systemctl is-active metabridge-listener > /dev/null 2>&1 && echo "   ✅ Listener service active" || echo "   ❌ Listener service inactive"
+sudo systemctl is-active metabridge-relayer > /dev/null 2>&1 && echo "   ✅ Relayer service active" || echo "   ❌ Relayer service inactive"
+
+# Disk Space
+echo ""
+echo "5. Disk Space:"
+AVAILABLE=$(df -BG /mnt/metabridge-data | awk 'NR==2 {print $4}' | sed 's/G//')
+if [ "$AVAILABLE" -gt 50 ]; then
+  echo "   ✅ Sufficient disk space: ${AVAILABLE}GB"
+else
+  echo "   ⚠️  Low disk space: ${AVAILABLE}GB"
+fi
+
+# Memory
+echo ""
+echo "6. Memory:"
+FREE_MEM=$(free -g | awk '/^Mem:/{print $7}')
+if [ "$FREE_MEM" -gt 2 ]; then
+  echo "   ✅ Sufficient memory: ${FREE_MEM}GB free"
+else
+  echo "   ⚠️  Low memory: ${FREE_MEM}GB free"
+fi
+
+# Firewall
+echo ""
+echo "7. Firewall:"
+sudo ufw status | grep -q "Status: active" && echo "   ✅ Firewall active" || echo "   ❌ Firewall inactive"
+
+# Monitoring
+echo ""
+echo "8. Monitoring:"
+curl -sf http://localhost:9090/-/healthy > /dev/null && echo "   ✅ Prometheus healthy" || echo "   ❌ Prometheus unhealthy"
+curl -sf http://localhost:3000/api/health > /dev/null && echo "   ✅ Grafana healthy" || echo "   ❌ Grafana unhealthy"
+
+echo ""
+echo "=========================================="
+echo "Test completed at: $(date)"
+echo "=========================================="
+EOF
+
+chmod +x ~/test-summary.sh
+~/test-summary.sh
+```
+
+**Expected Output:**
+```
+==========================================
+METABRIDGE DEPLOYMENT TEST SUMMARY
+==========================================
+
+1. Infrastructure Services:
+   ✅ All services running
+
+2. API Health:
+   ✅ API responding
+
+3. Database:
+   ✅ Database accessible
+
+4. Systemd Services:
+   ✅ API service active
+   ✅ Listener service active
+   ✅ Relayer service active
+
+5. Disk Space:
+   ✅ Sufficient disk space: 450GB
+
+6. Memory:
+   ✅ Sufficient memory: 10GB free
+
+7. Firewall:
+   ✅ Firewall active
+
+8. Monitoring:
+   ✅ Prometheus healthy
+   ✅ Grafana healthy
+
+==========================================
+Test completed at: 2025-11-20 12:34:56
+==========================================
+```
+
+---
+
 ## Setup SSL/HTTPS
 
 ### Step 1: Configure Domain (Optional)

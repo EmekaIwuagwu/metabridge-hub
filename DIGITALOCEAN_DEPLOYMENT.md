@@ -517,29 +517,329 @@ sudo ufw --force enable
 sudo ufw status verbose
 ```
 
-## Step 16: Test Your Deployment
+## Step 16: Run Comprehensive Tests
+
+### Test 1: Infrastructure Health Checks
 
 ```bash
-# Test 1: Health check
+# Check all Docker containers are running
+sudo docker compose -f ~/projects/metabridge-engine-hub/docker-compose.production.yaml ps
+
+# Expected output: All containers should show "Up" status
+# - metabridge-postgres  Up (healthy)
+# - metabridge-nats      Up (healthy)
+# - metabridge-redis     Up (healthy)
+
+# Test PostgreSQL connection
+sudo docker exec -it metabridge-postgres psql -U bridge_user -d metabridge_production -c "SELECT version();"
+
+# Expected: PostgreSQL version info
+
+# Test NATS connection
+curl http://localhost:8222/varz
+
+# Expected: JSON with NATS server stats
+
+# Test Redis connection
+sudo docker exec -it metabridge-redis redis-cli ping
+
+# Expected: PONG
+```
+
+### Test 2: API Health Checks
+
+```bash
+# Test 1: Basic health endpoint
 curl http://159.65.73.133:8080/health
 
 # Expected output:
-# {"status":"ok","version":"1.0.0"}
+# {"status":"ok","version":"1.0.0","timestamp":"2025-11-20T..."}
 
-# Test 2: Chain status
+# Test 2: Detailed API status
+curl http://159.65.73.133:8080/v1/status
+
+# Expected: Detailed status of all services
+
+# Test 3: Chain connectivity
 curl http://159.65.73.133:8080/v1/chains/status
 
-# Expected: JSON with chain information
+# Expected: JSON with all 6 chains and their RPC status
+# Should show which chains are connected/disconnected
 
-# Test 3: Bridge stats
+# Test 4: Bridge statistics
 curl http://159.65.73.133:8080/v1/stats
 
-# Test 4: Login (if auth enabled)
+# Expected:
+# {
+#   "total_messages": 0,
+#   "pending_messages": 0,
+#   "completed_messages": 0,
+#   "failed_messages": 0,
+#   "total_volume": "0",
+#   "total_fees": "0"
+# }
+```
+
+### Test 3: Authentication Tests
+
+```bash
+# Login test (if auth enabled)
 curl -X POST http://159.65.73.133:8080/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@metabridge.local","password":"admin123"}'
+  -d '{
+    "email": "admin@metabridge.local",
+    "password": "admin123"
+  }'
 
 # Expected: JWT token in response
+# {
+#   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+#   "user": {
+#     "id": "admin-001",
+#     "email": "admin@metabridge.local",
+#     "role": "admin"
+#   }
+# }
+
+# Save the token for later use
+export JWT_TOKEN="<your_token_here>"
+
+# Test authenticated endpoint
+curl http://159.65.73.133:8080/v1/admin/users \
+  -H "Authorization: Bearer $JWT_TOKEN"
+
+# Expected: List of users
+```
+
+### Test 4: Database Tests
+
+```bash
+# Test 1: Check all tables exist
+sudo docker exec -it metabridge-postgres psql -U bridge_user -d metabridge_production << 'EOF'
+SELECT table_name
+FROM information_schema.tables
+WHERE table_schema = 'public'
+ORDER BY table_name;
+EOF
+
+# Expected tables:
+# - messages
+# - batches
+# - batch_messages
+# - routes
+# - webhooks
+# - users
+# - api_keys
+# - sessions
+
+# Test 2: Verify admin user exists
+sudo docker exec -it metabridge-postgres psql -U bridge_user -d metabridge_production << 'EOF'
+SELECT id, email, role, active FROM users;
+EOF
+
+# Expected: admin-001 | admin@metabridge.local | admin | true
+
+# Test 3: Check database size
+sudo docker exec -it metabridge-postgres psql -U bridge_user -d metabridge_production -c \
+  "SELECT pg_size_pretty(pg_database_size('metabridge_production')) as size;"
+
+# Expected: Database size (should be ~50MB for fresh install)
+```
+
+### Test 5: Service Monitoring Tests
+
+```bash
+# Check systemd service status
+sudo systemctl status metabridge-api --no-pager
+sudo systemctl status metabridge-relayer --no-pager
+
+# Both should show:
+# Active: active (running)
+
+# Check service logs for errors
+sudo journalctl -u metabridge-api --since "5 minutes ago" --no-pager | grep -i error
+
+# Expected: No critical errors (some warnings are normal)
+
+# Check resource usage
+ps aux | grep metabridge
+
+# Expected: See api and relayer processes running
+
+# Check memory usage
+free -h
+
+# Expected: At least 1GB free memory
+
+# Check disk usage
+df -h
+
+# Expected: At least 10GB free disk space
+```
+
+### Test 6: Network Connectivity Tests
+
+```bash
+# Test 1: Check open ports
+sudo netstat -tlnp | grep -E '(8080|5432|4222|6379)'
+
+# Expected ports:
+# - 8080  (API)
+# - 5432  (PostgreSQL)
+# - 4222  (NATS)
+# - 6379  (Redis)
+
+# Test 2: Test external API access
+curl -I http://159.65.73.133:8080/health
+
+# Expected:
+# HTTP/1.1 200 OK
+# Content-Type: application/json
+
+# Test 3: Test firewall rules
+sudo ufw status numbered
+
+# Expected rules:
+# [1] 22/tcp                     ALLOW IN    Anywhere
+# [2] 80/tcp                     ALLOW IN    Anywhere
+# [3] 443/tcp                    ALLOW IN    Anywhere
+# [4] 8080/tcp                   ALLOW IN    Anywhere
+```
+
+### Test 7: End-to-End Bridge Flow Test (Optional)
+
+```bash
+# This test requires deployed smart contracts and test tokens
+
+# Test 1: Create a bridge request
+curl -X POST http://159.65.73.133:8080/v1/bridge/request \
+  -H "Content-Type: application/json" \
+  -d '{
+    "source_chain": "polygon",
+    "destination_chain": "bnb",
+    "token_address": "0x...",
+    "amount": "1000000000000000000",
+    "recipient": "0x...",
+    "sender": "0x..."
+  }'
+
+# Expected: Bridge request ID
+
+# Test 2: Check request status
+curl http://159.65.73.133:8080/v1/bridge/request/<request_id>
+
+# Expected: Request details with status
+
+# Test 3: List all bridge requests
+curl http://159.65.73.133:8080/v1/messages?limit=10
+
+# Expected: List of bridge messages
+```
+
+### Test 8: Performance Tests
+
+```bash
+# Test 1: API response time
+time curl http://159.65.73.133:8080/health
+
+# Expected: < 100ms
+
+# Test 2: Database query performance
+sudo docker exec -it metabridge-postgres psql -U bridge_user -d metabridge_production << 'EOF'
+\timing on
+SELECT COUNT(*) FROM messages;
+EOF
+
+# Expected: Query time < 10ms
+
+# Test 3: Concurrent requests test (requires Apache Bench)
+sudo apt install -y apache2-utils
+
+ab -n 100 -c 10 http://159.65.73.133:8080/health
+
+# Expected:
+# - 100% successful requests
+# - Average response time < 100ms
+# - No failed requests
+```
+
+### Test 9: Log Analysis
+
+```bash
+# Check API logs for startup messages
+sudo journalctl -u metabridge-api --since "10 minutes ago" --no-pager | head -50
+
+# Expected to see:
+# - "Starting Metabridge API..."
+# - "Database connected"
+# - "NATS connected"
+# - "Redis connected"
+# - "Server listening on :8080"
+
+# Check for any error patterns
+sudo journalctl -u metabridge-api --since "1 hour ago" --no-pager | grep -iE '(error|fatal|panic|failed)' | wc -l
+
+# Expected: 0 or very low number
+
+# Check relayer logs
+sudo journalctl -u metabridge-relayer --since "10 minutes ago" --no-pager | head -50
+
+# Expected to see:
+# - "Relayer starting..."
+# - "Connected to NATS"
+# - "Listening for messages..."
+```
+
+### Test 10: Backup & Recovery Test
+
+```bash
+# Test 1: Create a manual backup
+sudo docker exec metabridge-postgres pg_dump -U bridge_user metabridge_production > ~/test_backup_$(date +%Y%m%d).sql
+
+# Verify backup file was created
+ls -lh ~/test_backup_*.sql
+
+# Expected: Backup file with size > 0 bytes
+
+# Test 2: Insert test data
+sudo docker exec -i metabridge-postgres psql -U bridge_user -d metabridge_production << 'EOF'
+INSERT INTO users (id, email, name, password_hash, role, active, created_at, updated_at)
+VALUES (
+  'test-user-001',
+  'test@metabridge.local',
+  'Test User',
+  '$2a$10$test',
+  'user',
+  true,
+  NOW(),
+  NOW()
+);
+EOF
+
+# Verify insertion
+sudo docker exec -it metabridge-postgres psql -U bridge_user -d metabridge_production -c \
+  "SELECT COUNT(*) FROM users WHERE id='test-user-001';"
+
+# Expected: 1
+
+# Test 3: Test restore (to verify backup integrity)
+# First, delete the test user
+sudo docker exec -it metabridge-postgres psql -U bridge_user -d metabridge_production -c \
+  "DELETE FROM users WHERE id='test-user-001';"
+
+# Restore from backup
+sudo docker exec -i metabridge-postgres psql -U bridge_user -d metabridge_production < ~/test_backup_*.sql
+
+# Verify restore
+sudo docker exec -it metabridge-postgres psql -U bridge_user -d metabridge_production -c \
+  "SELECT COUNT(*) FROM users;"
+
+# Expected: Original count + test user
+
+# Clean up test data
+sudo docker exec -it metabridge-postgres psql -U bridge_user -d metabridge_production -c \
+  "DELETE FROM users WHERE id='test-user-001';"
+rm ~/test_backup_*.sql
 ```
 
 ## Step 17: View Logs
