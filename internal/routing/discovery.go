@@ -14,9 +14,9 @@ import (
 
 // RouteFinder discovers optimal routes between chains
 type RouteFinder struct {
-	graph   *Graph
-	config  *RouteOptimizationConfig
-	logger  zerolog.Logger
+	graph  *Graph
+	config *RouteOptimizationConfig
+	logger zerolog.Logger
 }
 
 // NewRouteFinder creates a new route finder

@@ -232,25 +232,25 @@ func (p *Processor) verifyValidatorSignature(ctx context.Context, msg *types.Cro
 func (p *Processor) createMessageHash(msg *types.CrossChainMessage) ([]byte, error) {
 	// Create a canonical representation of the message
 	data := struct {
-		ID               string
-		Type             types.MessageType
-		SourceChainID    string
-		DestChainID      string
-		Sender           string
-		Recipient        string
-		Payload          json.RawMessage
-		Nonce            uint64
-		Timestamp        int64
+		ID            string
+		Type          types.MessageType
+		SourceChainID string
+		DestChainID   string
+		Sender        string
+		Recipient     string
+		Payload       json.RawMessage
+		Nonce         uint64
+		Timestamp     int64
 	}{
-		ID:               msg.ID,
-		Type:             msg.Type,
-		SourceChainID:    msg.SourceChain.ChainID,
-		DestChainID:      msg.DestinationChain.ChainID,
-		Sender:           msg.Sender.Raw,
-		Recipient:        msg.Recipient.Raw,
-		Payload:          msg.Payload,
-		Nonce:            msg.Nonce,
-		Timestamp:        msg.CreatedAt.Unix(),
+		ID:            msg.ID,
+		Type:          msg.Type,
+		SourceChainID: msg.SourceChain.ChainID,
+		DestChainID:   msg.DestinationChain.ChainID,
+		Sender:        msg.Sender.Raw,
+		Recipient:     msg.Recipient.Raw,
+		Payload:       msg.Payload,
+		Nonce:         msg.Nonce,
+		Timestamp:     msg.CreatedAt.Unix(),
 	}
 
 	jsonData, err := json.Marshal(data)
@@ -371,8 +371,8 @@ func (p *Processor) buildEVMTokenUnlockTx(msg *types.CrossChainMessage, chainCfg
 	tx := ethTypes.NewTransaction(
 		0, // nonce - should be fetched
 		common.HexToAddress(chainCfg.BridgeContract),
-		big.NewInt(0), // value
-		300000, // gas limit - should be estimated
+		big.NewInt(0),           // value
+		300000,                  // gas limit - should be estimated
 		big.NewInt(20000000000), // gas price - should be fetched
 		data,
 	)
@@ -561,11 +561,11 @@ func (p *Processor) buildSolanaTokenUnlockTx(ctx context.Context, msg *types.Cro
 	// Build unlock instruction data
 	// Format: [unlock_discriminator(8), message_id(32), amount(8), signatures_count(1), signatures...]
 	instructionData := make([]byte, 0)
-	
+
 	// Add discriminator for "unlock_token" instruction (simplified)
 	unlockDiscriminator := []byte{0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
 	instructionData = append(instructionData, unlockDiscriminator...)
-	
+
 	// Add message ID (convert to 32 bytes)
 	messageIDBytes := []byte(msg.ID)
 	if len(messageIDBytes) > 32 {
@@ -588,10 +588,10 @@ func (p *Processor) buildSolanaTokenUnlockTx(ctx context.Context, msg *types.Cro
 		amountBytes[i] = amountBytesSlice[len(amountBytesSlice)-1-i]
 	}
 	instructionData = append(instructionData, amountBytes...)
-	
+
 	// Add number of validator signatures
 	instructionData = append(instructionData, byte(len(msg.ValidatorSignatures)))
-	
+
 	// Add validator signatures
 	for _, sig := range msg.ValidatorSignatures {
 		sigBytes := []byte(sig.Signature)
@@ -623,15 +623,15 @@ func (p *Processor) buildSolanaTokenUnlockTx(ctx context.Context, msg *types.Cro
 	// Note: solana.Instruction type may vary by library version
 	// Using GenericInstruction or wrapping in NewInstruction if needed
 	instruction := solana.GenericInstruction{
-		ProgID:  bridgeProgramID,
+		ProgID: bridgeProgramID,
 		AccountValues: []*solana.AccountMeta{
-			{PublicKey: signerPubkey, IsSigner: true, IsWritable: false},    // Relayer signer
-			{PublicKey: bridgeProgramID, IsSigner: false, IsWritable: false}, // Bridge program
-			{PublicKey: vaultPDA, IsSigner: false, IsWritable: true},         // Token vault
-			{PublicKey: recipientPubkey, IsSigner: false, IsWritable: false}, // Recipient
-			{PublicKey: recipientTokenAccount, IsSigner: false, IsWritable: true}, // Recipient token account
-			{PublicKey: tokenMint, IsSigner: false, IsWritable: false},       // Token mint
-			{PublicKey: solana.TokenProgramID, IsSigner: false, IsWritable: false}, // Token program
+			{PublicKey: signerPubkey, IsSigner: true, IsWritable: false},            // Relayer signer
+			{PublicKey: bridgeProgramID, IsSigner: false, IsWritable: false},        // Bridge program
+			{PublicKey: vaultPDA, IsSigner: false, IsWritable: true},                // Token vault
+			{PublicKey: recipientPubkey, IsSigner: false, IsWritable: false},        // Recipient
+			{PublicKey: recipientTokenAccount, IsSigner: false, IsWritable: true},   // Recipient token account
+			{PublicKey: tokenMint, IsSigner: false, IsWritable: false},              // Token mint
+			{PublicKey: solana.TokenProgramID, IsSigner: false, IsWritable: false},  // Token program
 			{PublicKey: solana.SystemProgramID, IsSigner: false, IsWritable: false}, // System program
 		},
 		DataBytes: instructionData,
@@ -669,7 +669,7 @@ func (p *Processor) buildSolanaNFTUnlockTx(ctx context.Context, msg *types.Cross
 
 	// Similar to token unlock but for NFTs
 	// Would use Metaplex standard for NFT transfers
-	
+
 	p.logger.Info().
 		Str("message_id", msg.ID).
 		Str("nft_contract", payload.ContractAddress.Raw).
@@ -691,7 +691,7 @@ func (p *Processor) buildNEARTokenUnlockTx(ctx context.Context, msg *types.Cross
 	// Build NEAR function call transaction
 	// Method: unlock_token
 	// Args: {message_id, recipient, token, amount, signatures}
-	
+
 	type UnlockArgs struct {
 		MessageID  string   `json:"message_id"`
 		Recipient  string   `json:"recipient"`
@@ -765,7 +765,7 @@ func (p *Processor) buildNEARTokenUnlockTx(ctx context.Context, msg *types.Cross
 				},
 			},
 		},
-		Nonce:     1, // Would fetch from access key
+		Nonce:     1,             // Would fetch from access key
 		BlockHash: "placeholder", // Would fetch recent block hash
 	}
 

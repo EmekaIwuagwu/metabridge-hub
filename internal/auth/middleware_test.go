@@ -220,8 +220,8 @@ func TestMiddleware_IsPublicEndpoint(t *testing.T) {
 		{"/auth/login", true},
 		{"/auth/logout", false},
 		{"/v1/messages", false},
-		{"/health/deep", true},  // prefix match
-		{"/auth/login/extra", true},  // prefix match
+		{"/health/deep", true},      // prefix match
+		{"/auth/login/extra", true}, // prefix match
 	}
 
 	for _, tc := range testCases {
@@ -392,9 +392,9 @@ func TestRolePermissions(t *testing.T) {
 	hasWrite = false
 	for _, perm := range readonlyPerms {
 		if perm == PermissionWriteMessages ||
-		   perm == PermissionWriteBatches ||
-		   perm == PermissionWriteWebhooks ||
-		   perm == PermissionWriteRoutes {
+			perm == PermissionWriteBatches ||
+			perm == PermissionWriteWebhooks ||
+			perm == PermissionWriteRoutes {
 			hasWrite = true
 			break
 		}

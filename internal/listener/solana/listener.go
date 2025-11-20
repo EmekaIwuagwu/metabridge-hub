@@ -16,13 +16,13 @@ import (
 
 // Listener listens for events on Solana blockchain
 type Listener struct {
-	client            *solana.Client
-	config            *types.ChainConfig
-	logger            zerolog.Logger
-	eventChan         chan *types.CrossChainMessage
-	stopChan          chan struct{}
-	lastSlot          uint64
-	bridgeProgramID   solanago.PublicKey
+	client          *solana.Client
+	config          *types.ChainConfig
+	logger          zerolog.Logger
+	eventChan       chan *types.CrossChainMessage
+	stopChan        chan struct{}
+	lastSlot        uint64
+	bridgeProgramID solanago.PublicKey
 }
 
 // NewListener creates a new Solana event listener

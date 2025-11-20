@@ -51,14 +51,14 @@ func (s *Server) handleChainStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondJSON(w, http.StatusOK, map[string]interface{}{
-		"name":         info.Name,
-		"type":         info.Type,
-		"chain_id":     info.ChainID,
-		"network_id":   info.NetworkID,
-		"environment":  info.Environment,
-		"healthy":      client.IsHealthy(r.Context()),
-		"block_number": blockNumber,
-		"block_time":   client.GetBlockTime().String(),
+		"name":          info.Name,
+		"type":          info.Type,
+		"chain_id":      info.ChainID,
+		"network_id":    info.NetworkID,
+		"environment":   info.Environment,
+		"healthy":       client.IsHealthy(r.Context()),
+		"block_number":  blockNumber,
+		"block_time":    client.GetBlockTime().String(),
 		"confirmations": client.GetConfirmationBlocks(),
 	})
 }
@@ -291,12 +291,12 @@ func (s *Server) handleStats(w http.ResponseWriter, r *http.Request) {
 	totalMessages := pendingCount + completedCount + failedCount
 
 	respondJSON(w, http.StatusOK, map[string]interface{}{
-		"total_messages":      totalMessages,
-		"pending_messages":    pendingCount,
-		"completed_messages":  completedCount,
-		"failed_messages":     failedCount,
-		"total_volume_usd":    "0", // TODO: Implement volume tracking
-		"supported_chains":    len(s.clients),
+		"total_messages":     totalMessages,
+		"pending_messages":   pendingCount,
+		"completed_messages": completedCount,
+		"failed_messages":    failedCount,
+		"total_volume_usd":   "0", // TODO: Implement volume tracking
+		"supported_chains":   len(s.clients),
 	})
 }
 
@@ -337,10 +337,10 @@ func (s *Server) handleChainStats(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondJSON(w, http.StatusOK, map[string]interface{}{
-		"chain":               chainName,
-		"total_messages":      len(allMessages),
-		"completed_messages":  completedCount,
-		"failed_messages":     failedCount,
+		"chain":              chainName,
+		"total_messages":     len(allMessages),
+		"completed_messages": completedCount,
+		"failed_messages":    failedCount,
 	})
 }
 

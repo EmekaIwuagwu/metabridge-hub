@@ -331,8 +331,8 @@ func respondJSON(w http.ResponseWriter, status int, data interface{}) {
 
 func respondError(w http.ResponseWriter, status int, message string, err error) {
 	response := map[string]interface{}{
-		"error":   message,
-		"status":  status,
+		"error":  message,
+		"status": status,
 	}
 
 	if err != nil {

@@ -141,10 +141,10 @@ func (s *Server) handleBatchEfficiency(w http.ResponseWriter, r *http.Request) {
 }
 
 type SubmitToBatchRequest struct {
-	MessageID       string `json:"message_id"`
-	SourceChain     string `json:"source_chain"`
+	MessageID        string `json:"message_id"`
+	SourceChain      string `json:"source_chain"`
 	DestinationChain string `json:"dest_chain"`
-	Priority        string `json:"priority"` // "low", "normal", "high"
+	Priority         string `json:"priority"` // "low", "normal", "high"
 }
 
 func (s *Server) handleSubmitToBatch(w http.ResponseWriter, r *http.Request) {
@@ -164,9 +164,9 @@ func (s *Server) handleSubmitToBatch(w http.ResponseWriter, r *http.Request) {
 	// This would interact with the batcher service
 
 	respondJSON(w, http.StatusAccepted, map[string]interface{}{
-		"status":     "pending",
-		"message":    "Message added to batch queue",
-		"message_id": req.MessageID,
+		"status":               "pending",
+		"message":              "Message added to batch queue",
+		"message_id":           req.MessageID,
 		"estimated_batch_time": "30s",
 	})
 }

@@ -13,13 +13,13 @@ import (
 // handleRegisterWebhook registers a new webhook
 func (s *Server) handleRegisterWebhook(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		URL          string                `json:"url"`
-		Events       []webhooks.EventType  `json:"events"`
-		Description  string                `json:"description"`
-		SourceChains []string              `json:"source_chains,omitempty"`
-		DestChains   []string              `json:"dest_chains,omitempty"`
-		MinAmount    string                `json:"min_amount,omitempty"`
-		MaxAmount    string                `json:"max_amount,omitempty"`
+		URL          string               `json:"url"`
+		Events       []webhooks.EventType `json:"events"`
+		Description  string               `json:"description"`
+		SourceChains []string             `json:"source_chains,omitempty"`
+		DestChains   []string             `json:"dest_chains,omitempty"`
+		MinAmount    string               `json:"min_amount,omitempty"`
+		MaxAmount    string               `json:"max_amount,omitempty"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -111,14 +111,14 @@ func (s *Server) handleUpdateWebhook(w http.ResponseWriter, r *http.Request) {
 	webhookID := vars["id"]
 
 	var req struct {
-		URL          string                `json:"url"`
-		Events       []webhooks.EventType  `json:"events"`
+		URL          string                 `json:"url"`
+		Events       []webhooks.EventType   `json:"events"`
 		Status       webhooks.WebhookStatus `json:"status"`
-		Description  string                `json:"description"`
-		SourceChains []string              `json:"source_chains,omitempty"`
-		DestChains   []string              `json:"dest_chains,omitempty"`
-		MinAmount    string                `json:"min_amount,omitempty"`
-		MaxAmount    string                `json:"max_amount,omitempty"`
+		Description  string                 `json:"description"`
+		SourceChains []string               `json:"source_chains,omitempty"`
+		DestChains   []string               `json:"dest_chains,omitempty"`
+		MinAmount    string                 `json:"min_amount,omitempty"`
+		MaxAmount    string                 `json:"max_amount,omitempty"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {

@@ -9,14 +9,14 @@ import (
 
 // Batch represents a batch of messages
 type Batch struct {
-	ID               string    `json:"id"`
-	Status           string    `json:"status"` // pending, confirmed, failed
-	SourceChain      string    `json:"source_chain"`
-	DestinationChain string    `json:"dest_chain"`
-	MessageCount     int       `json:"message_count"`
-	TotalGasSaved    string    `json:"total_gas_saved"`
-	TxHash           string    `json:"tx_hash,omitempty"`
-	CreatedAt        time.Time `json:"created_at"`
+	ID               string     `json:"id"`
+	Status           string     `json:"status"` // pending, confirmed, failed
+	SourceChain      string     `json:"source_chain"`
+	DestinationChain string     `json:"dest_chain"`
+	MessageCount     int        `json:"message_count"`
+	TotalGasSaved    string     `json:"total_gas_saved"`
+	TxHash           string     `json:"tx_hash,omitempty"`
+	CreatedAt        time.Time  `json:"created_at"`
 	ConfirmedAt      *time.Time `json:"confirmed_at,omitempty"`
 }
 

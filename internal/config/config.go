@@ -11,17 +11,17 @@ import (
 
 // Config represents the main application configuration
 type Config struct {
-	Environment types.Environment `mapstructure:"environment"`
-	Server      ServerConfig      `mapstructure:"server"`
+	Environment types.Environment   `mapstructure:"environment"`
+	Server      ServerConfig        `mapstructure:"server"`
 	Chains      []types.ChainConfig `mapstructure:"chains"`
-	Database    DatabaseConfig    `mapstructure:"database"`
-	Queue       QueueConfig       `mapstructure:"queue"`
-	Cache       CacheConfig       `mapstructure:"cache"`
-	Relayer     RelayerConfig     `mapstructure:"relayer"`
-	Security    SecurityConfig    `mapstructure:"security"`
-	Crypto      CryptoConfig      `mapstructure:"crypto"`
-	Monitoring  MonitoringConfig  `mapstructure:"monitoring"`
-	Alerting    AlertingConfig    `mapstructure:"alerting"`
+	Database    DatabaseConfig      `mapstructure:"database"`
+	Queue       QueueConfig         `mapstructure:"queue"`
+	Cache       CacheConfig         `mapstructure:"cache"`
+	Relayer     RelayerConfig       `mapstructure:"relayer"`
+	Security    SecurityConfig      `mapstructure:"security"`
+	Crypto      CryptoConfig        `mapstructure:"crypto"`
+	Monitoring  MonitoringConfig    `mapstructure:"monitoring"`
+	Alerting    AlertingConfig      `mapstructure:"alerting"`
 }
 
 // ServerConfig represents server configuration
@@ -51,16 +51,16 @@ type DatabaseConfig struct {
 
 // QueueConfig represents message queue configuration
 type QueueConfig struct {
-	Type      string   `mapstructure:"type"` // nats, kafka, redis
-	URLs      []string `mapstructure:"urls"`
-	Subject   string   `mapstructure:"subject"`
-	StreamName string  `mapstructure:"stream_name"`
-	MaxRetries int     `mapstructure:"max_retries"`
+	Type       string   `mapstructure:"type"` // nats, kafka, redis
+	URLs       []string `mapstructure:"urls"`
+	Subject    string   `mapstructure:"subject"`
+	StreamName string   `mapstructure:"stream_name"`
+	MaxRetries int      `mapstructure:"max_retries"`
 }
 
 // CacheConfig represents cache configuration
 type CacheConfig struct {
-	Type     string   `mapstructure:"type"` // redis, memcached
+	Type      string   `mapstructure:"type"` // redis, memcached
 	Addresses []string `mapstructure:"addresses"`
 	Password  string   `mapstructure:"password"`
 	DB        int      `mapstructure:"db"`
@@ -80,48 +80,48 @@ type RelayerConfig struct {
 
 // SecurityConfig represents security configuration
 type SecurityConfig struct {
-	RequiredSignatures       int      `mapstructure:"required_signatures"`
-	ValidatorAddresses       []string `mapstructure:"validator_addresses"`
-	MaxTransactionAmount     string   `mapstructure:"max_transaction_amount"`
-	DailyVolumeLimit         string   `mapstructure:"daily_volume_limit"`
-	EnableRateLimiting       bool     `mapstructure:"enable_rate_limiting"`
-	RateLimitPerHour         int      `mapstructure:"rate_limit_per_hour"`
-	RateLimitPerAddress      int      `mapstructure:"rate_limit_per_address"`
-	EnableEmergencyPause     bool     `mapstructure:"enable_emergency_pause"`
-	EnableFraudDetection     bool     `mapstructure:"enable_fraud_detection"`
-	AlertingWebhook          string   `mapstructure:"alerting_webhook"`
-	LargeTransactionThreshold string  `mapstructure:"large_transaction_threshold"`
+	RequiredSignatures        int      `mapstructure:"required_signatures"`
+	ValidatorAddresses        []string `mapstructure:"validator_addresses"`
+	MaxTransactionAmount      string   `mapstructure:"max_transaction_amount"`
+	DailyVolumeLimit          string   `mapstructure:"daily_volume_limit"`
+	EnableRateLimiting        bool     `mapstructure:"enable_rate_limiting"`
+	RateLimitPerHour          int      `mapstructure:"rate_limit_per_hour"`
+	RateLimitPerAddress       int      `mapstructure:"rate_limit_per_address"`
+	EnableEmergencyPause      bool     `mapstructure:"enable_emergency_pause"`
+	EnableFraudDetection      bool     `mapstructure:"enable_fraud_detection"`
+	AlertingWebhook           string   `mapstructure:"alerting_webhook"`
+	LargeTransactionThreshold string   `mapstructure:"large_transaction_threshold"`
 }
 
 // CryptoConfig represents cryptography configuration
 type CryptoConfig struct {
-	EVMKeystorePath    string `mapstructure:"evm_keystore_path"`
-	SolanaKeystorePath string `mapstructure:"solana_keystore_path"`
-	NEARKeystorePath   string `mapstructure:"near_keystore_path"`
-	PasswordEnvVar     string `mapstructure:"password_env_var"`
-	UseAWSKMS          bool   `mapstructure:"use_aws_kms"`
+	EVMKeystorePath    string            `mapstructure:"evm_keystore_path"`
+	SolanaKeystorePath string            `mapstructure:"solana_keystore_path"`
+	NEARKeystorePath   string            `mapstructure:"near_keystore_path"`
+	PasswordEnvVar     string            `mapstructure:"password_env_var"`
+	UseAWSKMS          bool              `mapstructure:"use_aws_kms"`
 	KMSKeyIDs          map[string]string `mapstructure:"kms_key_ids"`
 }
 
 // MonitoringConfig represents monitoring configuration
 type MonitoringConfig struct {
-	PrometheusPort          int    `mapstructure:"prometheus_port"`
-	EnableTracing           bool   `mapstructure:"enable_tracing"`
-	JaegerEndpoint          string `mapstructure:"jaeger_endpoint"`
-	LogLevel                string `mapstructure:"log_level"`
-	EnableMetricsExport     bool   `mapstructure:"enable_metrics_export"`
-	MetricsExportInterval   string `mapstructure:"metrics_export_interval"`
+	PrometheusPort        int    `mapstructure:"prometheus_port"`
+	EnableTracing         bool   `mapstructure:"enable_tracing"`
+	JaegerEndpoint        string `mapstructure:"jaeger_endpoint"`
+	LogLevel              string `mapstructure:"log_level"`
+	EnableMetricsExport   bool   `mapstructure:"enable_metrics_export"`
+	MetricsExportInterval string `mapstructure:"metrics_export_interval"`
 }
 
 // AlertingConfig represents alerting configuration
 type AlertingConfig struct {
-	Enabled                     bool   `mapstructure:"enabled"`
-	SlackWebhook                string `mapstructure:"slack_webhook"`
-	PagerDutyKey                string `mapstructure:"pagerduty_key"`
-	AlertOnFailureThreshold     int    `mapstructure:"alert_on_failure_threshold"`
-	AlertOnHighGas              bool   `mapstructure:"alert_on_high_gas"`
-	AlertOnLargeTransaction     bool   `mapstructure:"alert_on_large_transaction"`
-	LargeTransactionThreshold   string `mapstructure:"large_transaction_threshold"`
+	Enabled                   bool   `mapstructure:"enabled"`
+	SlackWebhook              string `mapstructure:"slack_webhook"`
+	PagerDutyKey              string `mapstructure:"pagerduty_key"`
+	AlertOnFailureThreshold   int    `mapstructure:"alert_on_failure_threshold"`
+	AlertOnHighGas            bool   `mapstructure:"alert_on_high_gas"`
+	AlertOnLargeTransaction   bool   `mapstructure:"alert_on_large_transaction"`
+	LargeTransactionThreshold string `mapstructure:"large_transaction_threshold"`
 }
 
 // LoadConfig loads configuration from file and environment variables

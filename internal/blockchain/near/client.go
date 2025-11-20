@@ -63,10 +63,10 @@ func NewClient(
 
 // RPCRequest represents a JSON-RPC request
 type RPCRequest struct {
-	JSONRPC string        `json:"jsonrpc"`
-	ID      string        `json:"id"`
-	Method  string        `json:"method"`
-	Params  interface{}   `json:"params"`
+	JSONRPC string      `json:"jsonrpc"`
+	ID      string      `json:"id"`
+	Method  string      `json:"method"`
+	Params  interface{} `json:"params"`
 }
 
 // RPCResponse represents a JSON-RPC response
@@ -165,10 +165,10 @@ func (c *Client) Close() error {
 
 // StatusResponse represents NEAR status response
 type StatusResponse struct {
-	ChainID         string `json:"chain_id"`
-	LatestBlockHash string `json:"latest_block_hash"`
+	ChainID           string `json:"chain_id"`
+	LatestBlockHash   string `json:"latest_block_hash"`
 	LatestBlockHeight uint64 `json:"latest_block_height"`
-	SyncInfo        struct {
+	SyncInfo          struct {
 		LatestBlockHash   string `json:"latest_block_hash"`
 		LatestBlockHeight uint64 `json:"latest_block_height"`
 		LatestBlockTime   string `json:"latest_block_time"`

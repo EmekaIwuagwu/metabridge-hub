@@ -28,17 +28,17 @@ type User struct {
 
 // APIKey represents an API key for authentication
 type APIKey struct {
-	ID          string    `json:"id"`
-	UserID      string    `json:"user_id"`
-	Name        string    `json:"name"`
-	Key         string    `json:"key"`
-	KeyHash     string    `json:"-"` // Never expose hash
-	Permissions []string  `json:"permissions"`
-	Active      bool      `json:"active"`
+	ID          string     `json:"id"`
+	UserID      string     `json:"user_id"`
+	Name        string     `json:"name"`
+	Key         string     `json:"key"`
+	KeyHash     string     `json:"-"` // Never expose hash
+	Permissions []string   `json:"permissions"`
+	Active      bool       `json:"active"`
 	ExpiresAt   *time.Time `json:"expires_at,omitempty"`
 	LastUsedAt  *time.Time `json:"last_used_at,omitempty"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
 }
 
 // JWTClaims represents JWT token claims
@@ -53,12 +53,12 @@ type JWTClaims struct {
 
 // AuthConfig represents authentication configuration
 type AuthConfig struct {
-	JWTSecret           string
-	JWTExpirationHours  int
-	APIKeyEnabled       bool
-	RequireAuth         bool
-	PublicEndpoints     []string
-	RateLimitPerMinute  int
+	JWTSecret          string
+	JWTExpirationHours int
+	APIKeyEnabled      bool
+	RequireAuth        bool
+	PublicEndpoints    []string
+	RateLimitPerMinute int
 }
 
 // DefaultAuthConfig returns default authentication configuration
@@ -82,16 +82,16 @@ func DefaultAuthConfig() *AuthConfig {
 type Permission string
 
 const (
-	PermissionReadMessages   Permission = "messages:read"
-	PermissionWriteMessages  Permission = "messages:write"
-	PermissionReadBatches    Permission = "batches:read"
-	PermissionWriteBatches   Permission = "batches:write"
-	PermissionReadWebhooks   Permission = "webhooks:read"
-	PermissionWriteWebhooks  Permission = "webhooks:write"
-	PermissionReadRoutes     Permission = "routes:read"
-	PermissionWriteRoutes    Permission = "routes:write"
-	PermissionReadStats      Permission = "stats:read"
-	PermissionAdmin          Permission = "admin"
+	PermissionReadMessages  Permission = "messages:read"
+	PermissionWriteMessages Permission = "messages:write"
+	PermissionReadBatches   Permission = "batches:read"
+	PermissionWriteBatches  Permission = "batches:write"
+	PermissionReadWebhooks  Permission = "webhooks:read"
+	PermissionWriteWebhooks Permission = "webhooks:write"
+	PermissionReadRoutes    Permission = "routes:read"
+	PermissionWriteRoutes   Permission = "routes:write"
+	PermissionReadStats     Permission = "stats:read"
+	PermissionAdmin         Permission = "admin"
 )
 
 // Role represents a user role

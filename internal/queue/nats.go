@@ -107,13 +107,13 @@ func (q *NATSQueue) initializeStream() error {
 
 	// Create stream
 	streamConfig := &nats.StreamConfig{
-		Name:     q.streamName,
-		Subjects: []string{q.subject},
-		Storage:  nats.FileStorage,
+		Name:      q.streamName,
+		Subjects:  []string{q.subject},
+		Storage:   nats.FileStorage,
 		Retention: nats.WorkQueuePolicy,
-		MaxAge:   7 * 24 * time.Hour, // Keep messages for 7 days
-		MaxMsgs:  100000,              // Keep up to 100k messages
-		Discard:  nats.DiscardOld,
+		MaxAge:    7 * 24 * time.Hour, // Keep messages for 7 days
+		MaxMsgs:   100000,             // Keep up to 100k messages
+		Discard:   nats.DiscardOld,
 	}
 
 	stream, err = q.js.AddStream(streamConfig)
@@ -246,11 +246,11 @@ func (q *NATSQueue) GetStats() (*QueueStats, error) {
 	}
 
 	return &QueueStats{
-		Messages:    stream.State.Msgs,
-		Bytes:       stream.State.Bytes,
-		FirstSeq:    stream.State.FirstSeq,
-		LastSeq:     stream.State.LastSeq,
-		Consumers:   stream.State.Consumers,
+		Messages:  stream.State.Msgs,
+		Bytes:     stream.State.Bytes,
+		FirstSeq:  stream.State.FirstSeq,
+		LastSeq:   stream.State.LastSeq,
+		Consumers: stream.State.Consumers,
 	}, nil
 }
 

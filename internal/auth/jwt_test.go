@@ -211,10 +211,10 @@ func TestJWTService_RolePermissions(t *testing.T) {
 	service := NewJWTService("test-secret", 24)
 
 	testCases := []struct {
-		role                string
-		expectedMinPerms    int
-		shouldHaveAdmin     bool
-		shouldHaveWriteAll  bool
+		role               string
+		expectedMinPerms   int
+		shouldHaveAdmin    bool
+		shouldHaveWriteAll bool
 	}{
 		{string(RoleAdmin), 1, true, false},
 		{string(RoleDeveloper), 8, false, true},

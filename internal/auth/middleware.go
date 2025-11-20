@@ -24,10 +24,10 @@ const (
 
 // Middleware provides authentication middleware
 type Middleware struct {
-	config     *AuthConfig
-	jwtService *JWTService
-	db         *database.DB
-	logger     zerolog.Logger
+	config      *AuthConfig
+	jwtService  *JWTService
+	db          *database.DB
+	logger      zerolog.Logger
 	rateLimiter *RateLimiter
 }
 

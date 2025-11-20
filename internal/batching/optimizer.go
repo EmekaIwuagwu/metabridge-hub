@@ -30,16 +30,16 @@ func (o *Optimizer) CalculateGasSavings(batch *Batch) (*big.Int, error) {
 	// Estimated gas costs (in wei)
 	const (
 		// Individual transaction costs
-		baseGasCostPerTx     = 21000      // Base transaction cost
-		callDataCostPerByte  = 16         // Calldata cost
-		storageSlotCost      = 20000      // SSTORE cost
-		signatureVerifyCost  = 3000       // ECRECOVER
-		avgTxSize            = 500        // Average tx size in bytes
+		baseGasCostPerTx    = 21000 // Base transaction cost
+		callDataCostPerByte = 16    // Calldata cost
+		storageSlotCost     = 20000 // SSTORE cost
+		signatureVerifyCost = 3000  // ECRECOVER
+		avgTxSize           = 500   // Average tx size in bytes
 
 		// Batch transaction costs
-		batchBaseCost        = 21000      // Base cost for batch tx
-		batchCallDataPerMsg  = 200        // Calldata per message in batch
-		merkleVerifyCost     = 5000       // Merkle proof verification
+		batchBaseCost       = 21000 // Base cost for batch tx
+		batchCallDataPerMsg = 200   // Calldata per message in batch
+		merkleVerifyCost    = 5000  // Merkle proof verification
 	)
 
 	messageCount := int64(len(batch.Messages))
@@ -47,16 +47,16 @@ func (o *Optimizer) CalculateGasSavings(batch *Batch) (*big.Int, error) {
 	// Individual cost: Each message as separate transaction
 	individualCostPerMsg := int64(
 		baseGasCostPerTx +
-		(callDataCostPerByte * avgTxSize) +
-		storageSlotCost +
-		signatureVerifyCost,
+			(callDataCostPerByte * avgTxSize) +
+			storageSlotCost +
+			signatureVerifyCost,
 	)
 	totalIndividualCost := big.NewInt(individualCostPerMsg * messageCount)
 
 	// Batch cost: All messages in one transaction
 	batchCostPerMsg := int64(
 		batchCallDataPerMsg +
-		merkleVerifyCost,
+			merkleVerifyCost,
 	)
 	totalBatchCost := big.NewInt(batchBaseCost + (batchCostPerMsg * messageCount))
 
@@ -99,9 +99,9 @@ func (o *Optimizer) CalculateSavingsPercentage(batch *Batch) (float64, error) {
 
 	individualCostPerMsg := int64(
 		baseGasCostPerTx +
-		(callDataCostPerByte * avgTxSize) +
-		storageSlotCost +
-		signatureVerifyCost,
+			(callDataCostPerByte * avgTxSize) +
+			storageSlotCost +
+			signatureVerifyCost,
 	)
 	totalIndividualCost := big.NewInt(individualCostPerMsg * int64(len(batch.Messages)))
 
@@ -190,9 +190,9 @@ func (o *Optimizer) calculateCostPerMessage(batch *Batch, totalSavings *big.Int)
 
 	individualCostPerMsg := int64(
 		baseGasCostPerTx +
-		(callDataCostPerByte * avgTxSize) +
-		storageSlotCost +
-		signatureVerifyCost,
+			(callDataCostPerByte * avgTxSize) +
+			storageSlotCost +
+			signatureVerifyCost,
 	)
 
 	gasPrice := big.NewInt(20000000000)

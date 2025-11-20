@@ -14,14 +14,14 @@ import (
 
 // Aggregator collects messages and creates batches
 type Aggregator struct {
-	config      *BatchConfig
-	db          *database.DB
-	logger      zerolog.Logger
-	mu          sync.RWMutex
+	config         *BatchConfig
+	db             *database.DB
+	logger         zerolog.Logger
+	mu             sync.RWMutex
 	pendingBatches map[string]*Batch // key: "sourceChain-destChain"
-	optimizer   *Optimizer
-	stopChan    chan struct{}
-	wg          sync.WaitGroup
+	optimizer      *Optimizer
+	stopChan       chan struct{}
+	wg             sync.WaitGroup
 }
 
 // NewAggregator creates a new batch aggregator
@@ -283,9 +283,9 @@ func (a *Aggregator) GetBatchStats() *BatchStats {
 	defer a.mu.RUnlock()
 
 	stats := &BatchStats{
-		PendingBatchCount: len(a.pendingBatches),
+		PendingBatchCount:   len(a.pendingBatches),
 		PendingMessageCount: 0,
-		TotalValueLocked: big.NewInt(0),
+		TotalValueLocked:    big.NewInt(0),
 	}
 
 	for _, batch := range a.pendingBatches {
