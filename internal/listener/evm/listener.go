@@ -237,19 +237,3 @@ func (l *Listener) createMessageFromLog(ctx context.Context, vLog ethtypes.Log) 
 	// You would implement proper event decoding here
 	return nil, nil
 }
-
-// FilterLogs is a helper method to filter logs
-func (c *Client) FilterLogs(ctx context.Context, query ethereum.FilterQuery) ([]ethtypes.Log, error) {
-	var logs []ethtypes.Log
-
-	err := c.executeWithFailover(ctx, func(client *ethclient.Client) error {
-		l, err := client.FilterLogs(ctx, query)
-		if err != nil {
-			return err
-		}
-		logs = l
-		return nil
-	})
-
-	return logs, err
-}
