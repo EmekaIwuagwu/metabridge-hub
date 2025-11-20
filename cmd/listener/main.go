@@ -24,6 +24,11 @@ var (
 	configPath = flag.String("config", "config/config.testnet.yaml", "Path to configuration file")
 )
 
+// EventListener is an interface that all listeners implement
+type EventListener interface {
+	EventChan() <-chan *types.CrossChainMessage
+}
+
 func main() {
 	flag.Parse()
 
@@ -82,7 +87,7 @@ func main() {
 
 	// Start listeners based on chain type
 	for _, chainCfg := range cfg.Chains {
-		switch chainCfg.Type {
+		switch chainCfg.ChainType {
 		case types.ChainTypeEVM:
 			evmClient, ok := clients[chainCfg.Name].(*blockchain.EVMClientAdapter)
 			if !ok {
@@ -179,7 +184,7 @@ func main() {
 		default:
 			logger.Warn().
 				Str("chain", chainCfg.Name).
-				Str("type", string(chainCfg.Type)).
+				Str("type", string(chainCfg.ChainType)).
 				Msg("Unsupported chain type")
 		}
 	}
@@ -219,7 +224,7 @@ func setupLogger() zerolog.Logger {
 }
 
 // processEvents processes events from a listener and publishes them to the queue
-func processEvents(ctx context.Context, listener *evm.Listener, q queue.Queue, db *database.DB, logger zerolog.Logger, chainName string) {
+func processEvents(ctx context.Context, listener EventListener, q queue.Queue, db *database.DB, logger zerolog.Logger, chainName string) {
 	eventLogger := logger.With().Str("chain", chainName).Str("component", "event-processor").Logger()
 	eventLogger.Info().Msg("Event processor started")
 

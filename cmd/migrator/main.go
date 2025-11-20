@@ -9,7 +9,6 @@ import (
 	"github.com/EmekaIwuagwu/metabridge-hub/internal/config"
 	"github.com/EmekaIwuagwu/metabridge-hub/internal/database"
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 )
 
 var (
@@ -50,11 +49,11 @@ func main() {
 
 	// Execute schema files in order
 	schemaFiles := []string{
-		"schema.sql",      // Main tables (chains, messages, validators, etc.)
-		"auth.sql",        // Authentication tables (users, api_keys)
-		"batches.sql",     // Batch processing tables
-		"routes.sql",      // Multi-hop routing tables
-		"webhooks.sql",    // Webhook integration tables
+		"schema.sql",   // Main tables (chains, messages, validators, etc.)
+		"auth.sql",     // Authentication tables (users, api_keys)
+		"batches.sql",  // Batch processing tables
+		"routes.sql",   // Multi-hop routing tables
+		"webhooks.sql", // Webhook integration tables
 	}
 
 	for _, filename := range schemaFiles {
