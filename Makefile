@@ -18,11 +18,13 @@ help: ## Show this help message
 build: ## Build all Go binaries
 	@echo "$(GREEN)Building Go binaries...$(NC)"
 	@mkdir -p bin
-	CGO_ENABLED=0 go build -o bin/listener ./cmd/listener
-	CGO_ENABLED=0 go build -o bin/relayer ./cmd/relayer
 	CGO_ENABLED=0 go build -o bin/api ./cmd/api
+	CGO_ENABLED=0 go build -o bin/relayer ./cmd/relayer
+	CGO_ENABLED=0 go build -o bin/listener ./cmd/listener
+	CGO_ENABLED=0 go build -o bin/batcher ./cmd/batcher
 	CGO_ENABLED=0 go build -o bin/migrator ./cmd/migrator
 	@echo "$(GREEN)Build complete! Binaries in ./bin/$(NC)"
+	@ls -lh bin/
 
 test: ## Run all tests
 	@echo "$(GREEN)Running tests...$(NC)"

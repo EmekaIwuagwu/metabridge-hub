@@ -479,3 +479,23 @@ func (c *Client) ChainID(ctx context.Context) (*big.Int, error) {
 
 	return chainID, err
 }
+
+// FilterLogs filters blockchain logs based on the provided query
+func (c *Client) FilterLogs(ctx context.Context, query ethereum.FilterQuery) ([]ethtypes.Log, error) {
+	var logs []ethtypes.Log
+
+	err := c.executeWithFailover(ctx, func(client *ethclient.Client) error {
+		result, err := client.FilterLogs(ctx, query)
+		if err != nil {
+			return err
+		}
+		logs = result
+		return nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to filter logs: %w", err)
+	}
+
+	return logs, nil
+}

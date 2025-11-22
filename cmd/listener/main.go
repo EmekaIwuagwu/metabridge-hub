@@ -17,7 +17,6 @@ import (
 	"github.com/EmekaIwuagwu/metabridge-hub/internal/queue"
 	"github.com/EmekaIwuagwu/metabridge-hub/internal/types"
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 )
 
 var (
@@ -96,7 +95,7 @@ func main() {
 					Msg("Failed to cast client to EVM client")
 			}
 
-			listener, err := evm.NewListener(evmClient.Client, &chainCfg, logger)
+			listener, err := evm.NewListener(evmClient.GetUnderlyingClient(), &chainCfg, logger)
 			if err != nil {
 				logger.Fatal().
 					Err(err).
