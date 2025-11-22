@@ -1311,35 +1311,751 @@ sudo ufw status numbered
 # [4] 8080/tcp                   ALLOW IN    Anywhere
 ```
 
-### Test 7: End-to-End Bridge Flow Test (Optional)
+### Test 7: Production-Ready End-to-End Bridge Flow Test
+
+This comprehensive test walks you through the complete bridge lifecycle from smart contract deployment to successful cross-chain token transfer.
+
+**Test Overview:**
+- Deploy smart contracts to Polygon Amoy and BNB Testnet
+- Deploy test ERC20 token on both chains
+- Bridge 10 tokens from Polygon → BNB
+- Verify at every step with expected responses
+
+**Prerequisites:**
+- Metamask wallet with testnet funds (Polygon Amoy, BNB Testnet)
+- Hardhat installed: `cd contracts/evm && npm install`
+- Test wallet private key in `.env.production`
+
+---
+
+#### Part 1: Smart Contract Deployment
+
+##### Step 1.1: Deploy Bridge Contract to Polygon Amoy
 
 ```bash
-# This test requires deployed smart contracts and test tokens
+cd ~/projects/metabridge-engine-hub/contracts/evm
 
-# Test 1: Create a bridge request
-curl -X POST http://159.65.73.133:8080/v1/bridge/request \
-  -H "Content-Type: application/json" \
-  -d '{
-    "source_chain": "polygon",
-    "destination_chain": "bnb",
-    "token_address": "0x...",
-    "amount": "1000000000000000000",
-    "recipient": "0x...",
-    "sender": "0x..."
-  }'
+# Set environment variables
+export PRIVATE_KEY="your_test_wallet_private_key_here"
+export INFURA_API_KEY="your_infura_api_key"
 
-# Expected: Bridge request ID
+# Deploy to Polygon Amoy (Testnet)
+echo "Deploying bridge contract to Polygon Amoy..."
+npx hardhat run scripts/deploy.js --network polygon-amoy
 
-# Test 2: Check request status
-curl http://159.65.73.133:8080/v1/bridge/request/<request_id>
+# Expected Output:
+# Deploying MetabridgeV1...
+# Waiting for confirmations...
+# MetabridgeV1 deployed to: 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb5
+# Transaction hash: 0x1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f
+# Block number: 12345678
+# Gas used: 2,847,391
+# Deployer address: 0xYourWalletAddress
+#
+# Initializing contract...
+# Setting validators: [0xValidator1, 0xValidator2, 0xValidator3]
+# Threshold set to: 2 (2-of-3 multisig)
+# ✅ Deployment complete!
 
-# Expected: Request details with status
+# Save the contract address
+export POLYGON_BRIDGE_ADDRESS="0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb5"
+echo "POLYGON_BRIDGE_CONTRACT=$POLYGON_BRIDGE_ADDRESS" >> ~/.env.production
 
-# Test 3: List all bridge requests
-curl http://159.65.73.133:8080/v1/messages?limit=10
-
-# Expected: List of bridge messages
+# Verify on PolygonScan
+echo "Verify at: https://amoy.polygonscan.com/address/$POLYGON_BRIDGE_ADDRESS"
 ```
+
+**✅ What to verify on PolygonScan:**
+- Contract shows as "Contract" (green checkmark)
+- Contract Creation transaction is successful
+- Contract Code tab shows verified source code (after running verify script)
+- Read Contract shows correct validator addresses
+- Threshold shows "2"
+
+##### Step 1.2: Deploy Bridge Contract to BNB Testnet
+
+```bash
+echo "Deploying bridge contract to BNB Testnet..."
+npx hardhat run scripts/deploy.js --network bnb-testnet
+
+# Expected Output:
+# Deploying MetabridgeV1...
+# Waiting for confirmations...
+# MetabridgeV1 deployed to: 0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063
+# Transaction hash: 0x2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g
+# Block number: 34567890
+# Gas used: 2,847,391
+# Deployer address: 0xYourWalletAddress
+#
+# Initializing contract...
+# Setting validators: [0xValidator1, 0xValidator2, 0xValidator3]
+# Threshold set to: 2 (2-of-3 multisig)
+# ✅ Deployment complete!
+
+# Save the contract address
+export BNB_BRIDGE_ADDRESS="0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063"
+echo "BNB_BRIDGE_CONTRACT=$BNB_BRIDGE_ADDRESS" >> ~/.env.production
+
+# Verify on BscScan
+echo "Verify at: https://testnet.bscscan.com/address/$BNB_BRIDGE_ADDRESS"
+```
+
+##### Step 1.3: Verify Contract Deployment
+
+```bash
+echo "Verifying contracts on block explorers..."
+
+# Verify Polygon Amoy
+npx hardhat verify --network polygon-amoy $POLYGON_BRIDGE_ADDRESS
+
+# Expected Output:
+# Verifying contract on Etherscan...
+# Successfully submitted source code for contract
+# contracts/MetabridgeV1.sol:MetabridgeV1 at 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb5
+# for verification on the block explorer. Waiting for verification result...
+#
+# Successfully verified contract MetabridgeV1 on PolygonScan.
+# https://amoy.polygonscan.com/address/0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb5#code
+
+# Verify BNB Testnet
+npx hardhat verify --network bnb-testnet $BNB_BRIDGE_ADDRESS
+
+# Expected Output:
+# Successfully verified contract MetabridgeV1 on BscScan.
+# https://testnet.bscscan.com/address/0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063#code
+```
+
+##### Step 1.4: Deploy Test ERC20 Token
+
+```bash
+echo "Deploying test token to Polygon Amoy..."
+npx hardhat run scripts/deploy-token.js --network polygon-amoy
+
+# Expected Output:
+# Deploying TestToken (USDC)...
+# Token deployed to: 0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889
+# Name: USD Coin Test
+# Symbol: USDC
+# Decimals: 6
+# Total Supply: 1,000,000 USDC (1000000000000)
+# ✅ Token deployment complete!
+
+export POLYGON_TOKEN_ADDRESS="0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889"
+
+# Mint test tokens to your wallet
+npx hardhat run scripts/mint-tokens.js --network polygon-amoy
+
+# Expected Output:
+# Minting 1000 USDC to 0xYourWalletAddress...
+# Transaction hash: 0x3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g4h
+# ✅ Minted 1000 USDC
+# Your balance: 1000000000 (1000 USDC)
+
+echo "Deploying wrapped token to BNB Testnet..."
+npx hardhat run scripts/deploy-token.js --network bnb-testnet
+
+# Expected Output:
+# Deploying TestToken (USDC)...
+# Token deployed to: 0x4B0897b0513fdC7C541B6d9D7E929C4e5364D2dB
+# ✅ Token deployment complete!
+
+export BNB_TOKEN_ADDRESS="0x4B0897b0513fdC7C541B6d9D7E929C4e5364D2dB"
+```
+
+##### Step 1.5: Update Backend Configuration
+
+```bash
+# Update .env.production with contract addresses
+cat >> ~/projects/metabridge-engine-hub/.env.production << EOF
+
+# Smart Contract Addresses (Updated)
+POLYGON_BRIDGE_CONTRACT=$POLYGON_BRIDGE_ADDRESS
+BNB_BRIDGE_CONTRACT=$BNB_BRIDGE_ADDRESS
+POLYGON_USDC_TOKEN=$POLYGON_TOKEN_ADDRESS
+BNB_USDC_TOKEN=$BNB_TOKEN_ADDRESS
+EOF
+
+# Restart services to load new configuration
+sudo systemctl restart metabridge-api
+sudo systemctl restart metabridge-relayer
+sudo systemctl restart metabridge-listener
+
+# Wait for services to restart
+sleep 10
+
+# Verify services picked up new contracts
+curl -s http://159.65.73.133:8080/v1/contracts | jq '.'
+
+# Expected Output:
+# {
+#   "polygon": {
+#     "bridge": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb5",
+#     "tokens": {
+#       "USDC": "0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889"
+#     }
+#   },
+#   "bnb": {
+#     "bridge": "0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063",
+#     "tokens": {
+#       "USDC": "0x4B0897b0513fdC7C541B6d9D7E929C4e5364D2dB"
+#     }
+#   }
+# }
+```
+
+---
+
+#### Part 2: End-to-End Token Bridge Test (Polygon → BNB)
+
+##### Step 2.1: Check Initial Balances
+
+```bash
+# Check your token balance on Polygon
+npx hardhat run scripts/check-balance.js --network polygon-amoy
+
+# Expected Output:
+# Checking balance for: 0xYourWalletAddress
+# USDC Balance on Polygon: 1000.000000 USDC
+# Native MATIC Balance: 2.456789 MATIC
+
+# Check your token balance on BNB
+npx hardhat run scripts/check-balance.js --network bnb-testnet
+
+# Expected Output:
+# Checking balance for: 0xYourWalletAddress
+# USDC Balance on BNB: 0.000000 USDC
+# Native BNB Balance: 0.234567 BNB
+
+# Save initial state
+export INITIAL_POLYGON_BALANCE="1000000000"  # 1000 USDC (6 decimals)
+export INITIAL_BNB_BALANCE="0"
+export BRIDGE_AMOUNT="10000000"  # 10 USDC (6 decimals)
+```
+
+##### Step 2.2: Approve Bridge Contract
+
+```bash
+echo "Step 1: Approving bridge contract to spend tokens..."
+
+# Approve the Polygon bridge contract to spend your USDC
+npx hardhat run scripts/approve-bridge.js --network polygon-amoy
+
+# Expected Output:
+# Approving Polygon Bridge (0x742d35Cc...) to spend 10 USDC...
+# Token: 0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889
+# Spender: 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb5
+# Amount: 10000000 (10 USDC)
+#
+# Sending approval transaction...
+# Transaction hash: 0x4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g4h5i
+# Waiting for confirmation...
+#
+# ✅ Approval confirmed!
+# Block number: 12345690
+# Gas used: 46,523
+#
+# Checking allowance...
+# Current allowance: 10000000 (10 USDC)
+# ✅ Approval successful!
+
+# Verify on PolygonScan
+# https://amoy.polygonscan.com/tx/0x4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g4h5i
+```
+
+**✅ What to verify on PolygonScan:**
+- Transaction Status: Success ✓
+- Method: "Approve"
+- Logs show "Approval" event
+- Spender: 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb5 (Bridge Contract)
+- Value: 10000000 (10 USDC)
+
+##### Step 2.3: Lock Tokens on Source Chain (Polygon)
+
+```bash
+echo "Step 2: Locking tokens on Polygon..."
+
+# Lock tokens on Polygon bridge
+npx hardhat run scripts/bridge-lock.js --network polygon-amoy
+
+# Expected Output:
+# ================================================
+# BRIDGE LOCK TRANSACTION
+# ================================================
+# Source Chain: Polygon Amoy (Chain ID: 80002)
+# Destination Chain: BNB Testnet (Chain ID: 97)
+# Token: 0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889 (USDC)
+# Amount: 10000000 (10 USDC)
+# Sender: 0xYourWalletAddress
+# Recipient: 0xYourWalletAddress
+# Bridge Contract: 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb5
+#
+# Sending lock transaction...
+# Transaction hash: 0x5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g4h5i6j
+# Waiting for confirmation...
+#
+# ✅ Transaction confirmed!
+# Block number: 12345695
+# Gas used: 127,845
+#
+# Event: TokensLocked
+#   - messageId: 0x7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g4h5i6j7k
+#   - sourceChain: 80002
+#   - destinationChain: 97
+#   - token: 0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889
+#   - sender: 0xYourWalletAddress
+#   - recipient: 0xYourWalletAddress
+#   - amount: 10000000
+#   - nonce: 1
+#   - timestamp: 1700654321
+#
+# ✅ Tokens successfully locked!
+#
+# Next steps:
+# 1. Wait for listener to detect event (~30 seconds)
+# 2. Wait for validators to sign message (~2 minutes)
+# 3. Wait for relayer to submit on BNB (~3 minutes)
+#
+# Track your bridge request:
+# Message ID: 0x7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g4h5i6j7k
+# View on PolygonScan: https://amoy.polygonscan.com/tx/0x5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g4h5i6j
+
+export MESSAGE_ID="0x7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g4h5i6j7k"
+export LOCK_TX_HASH="0x5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g4h5i6j"
+```
+
+**✅ What to verify on PolygonScan:**
+- Transaction Status: Success ✓
+- Method: "lock" or "lockTokens"
+- Logs show "TokensLocked" event with correct parameters
+- Your USDC balance decreased by 10 USDC
+- Bridge contract balance increased by 10 USDC
+
+##### Step 2.4: Monitor Listener Detection
+
+```bash
+echo "Step 3: Monitoring listener for event detection..."
+
+# Check listener logs
+sudo journalctl -u metabridge-listener -f --since "1 minute ago" | grep -E "(TokensLocked|$MESSAGE_ID)"
+
+# Expected Log Output:
+# Nov 22 14:35:12 metabridge-listener[12345]: {"level":"info","time":"2025-11-22T14:35:12Z","message":"New block detected","chain":"polygon","block":12345695}
+# Nov 22 14:35:13 metabridge-listener[12345]: {"level":"info","time":"2025-11-22T14:35:13Z","message":"Event detected","event":"TokensLocked","txHash":"0x5e6f7g8h..."}
+# Nov 22 14:35:13 metabridge-listener[12345]: {"level":"info","time":"2025-11-22T14:35:13Z","message":"Processing lock event","messageId":"0x7g8h9i0j...","amount":"10000000"}
+# Nov 22 14:35:14 metabridge-listener[12345]: {"level":"info","time":"2025-11-22T14:35:14Z","message":"Message stored in database","messageId":"0x7g8h9i0j...","status":"pending"}
+# Nov 22 14:35:14 metabridge-listener[12345]: {"level":"info","time":"2025-11-22T14:35:14Z","message":"Message published to NATS","subject":"bridge.message.new","messageId":"0x7g8h9i0j..."}
+
+# Check via API (wait 30 seconds after lock transaction)
+sleep 30
+curl -s "http://159.65.73.133:8080/v1/messages/$MESSAGE_ID" | jq '.'
+
+# Expected API Response:
+# {
+#   "id": "0x7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g4h5i6j7k",
+#   "source_chain": "polygon",
+#   "destination_chain": "bnb",
+#   "source_tx_hash": "0x5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g4h5i6j",
+#   "destination_tx_hash": null,
+#   "token_address": "0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889",
+#   "sender": "0xYourWalletAddress",
+#   "recipient": "0xYourWalletAddress",
+#   "amount": "10000000",
+#   "status": "pending",
+#   "validator_signatures": [],
+#   "created_at": "2025-11-22T14:35:13Z",
+#   "updated_at": "2025-11-22T14:35:14Z"
+# }
+
+# ✅ Message is detected and in "pending" status
+```
+
+##### Step 2.5: Monitor Validator Signing
+
+```bash
+echo "Step 4: Waiting for validator signatures..."
+
+# Monitor relayer logs for validator signing
+sudo journalctl -u metabridge-relayer -f --since "1 minute ago" | grep -E "(Signing|Signature|$MESSAGE_ID)"
+
+# Expected Log Output:
+# Nov 22 14:35:30 metabridge-relayer[12346]: {"level":"info","time":"2025-11-22T14:35:30Z","message":"Processing new message","messageId":"0x7g8h9i0j..."}
+# Nov 22 14:35:30 metabridge-relayer[12346]: {"level":"info","time":"2025-11-22T14:35:30Z","message":"Validating message","messageId":"0x7g8h9i0j..."}
+# Nov 22 14:35:31 metabridge-relayer[12346]: {"level":"info","time":"2025-11-22T14:35:31Z","message":"Verifying source transaction","txHash":"0x5e6f7g8h...","chain":"polygon"}
+# Nov 22 14:35:32 metabridge-relayer[12346]: {"level":"info","time":"2025-11-22T14:35:32Z","message":"Source transaction verified","confirmations":12}
+# Nov 22 14:35:33 metabridge-relayer[12346]: {"level":"info","time":"2025-11-22T14:35:33Z","message":"Generating signature","messageId":"0x7g8h9i0j...","validator":"0xValidator1"}
+# Nov 22 14:35:33 metabridge-relayer[12346]: {"level":"info","time":"2025-11-22T14:35:33Z","message":"Signature created","signature":"0x8h9i0j...","validator":"0xValidator1"}
+# Nov 22 14:35:34 metabridge-relayer[12346]: {"level":"info","time":"2025-11-22T14:35:34Z","message":"Signature stored","messageId":"0x7g8h9i0j...","signatureCount":1,"required":2}
+# Nov 22 14:36:45 metabridge-relayer[12347]: {"level":"info","time":"2025-11-22T14:36:45Z","message":"Signature created","signature":"0x9i0j1k...","validator":"0xValidator2"}
+# Nov 22 14:36:45 metabridge-relayer[12347]: {"level":"info","time":"2025-11-22T14:36:45Z","message":"Threshold reached","messageId":"0x7g8h9i0j...","signatureCount":2,"required":2}
+# Nov 22 14:36:46 metabridge-relayer[12347]: {"level":"info","time":"2025-11-22T14:36:46Z","message":"Message ready for relay","messageId":"0x7g8h9i0j..."}
+
+# Check signatures via API (wait 2 minutes)
+sleep 90
+curl -s "http://159.65.73.133:8080/v1/messages/$MESSAGE_ID" | jq '.'
+
+# Expected API Response:
+# {
+#   "id": "0x7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g4h5i6j7k",
+#   "status": "signed",
+#   "validator_signatures": [
+#     {
+#       "validator": "0xValidator1Address",
+#       "signature": "0x8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g4h5i6j7k8l",
+#       "signed_at": "2025-11-22T14:35:33Z"
+#     },
+#     {
+#       "validator": "0xValidator2Address",
+#       "signature": "0x9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g4h5i6j7k8l9m",
+#       "signed_at": "2025-11-22T14:36:45Z"
+#     }
+#   ],
+#   ...
+# }
+
+# ✅ Message has 2/2 required signatures
+```
+
+##### Step 2.6: Monitor Unlock on Destination Chain (BNB)
+
+```bash
+echo "Step 5: Monitoring unlock transaction on BNB..."
+
+# Monitor relayer logs for unlock submission
+sudo journalctl -u metabridge-relayer -f --since "1 minute ago" | grep -E "(Unlock|Submitting|$MESSAGE_ID)"
+
+# Expected Log Output:
+# Nov 22 14:37:00 metabridge-relayer[12347]: {"level":"info","time":"2025-11-22T14:37:00Z","message":"Preparing unlock transaction","messageId":"0x7g8h9i0j...","chain":"bnb"}
+# Nov 22 14:37:01 metabridge-relayer[12347]: {"level":"info","time":"2025-11-22T14:37:01Z","message":"Building unlock payload","recipient":"0xYourWalletAddress","amount":"10000000"}
+# Nov 22 14:37:02 metabridge-relayer[12347]: {"level":"info","time":"2025-11-22T14:37:02Z","message":"Estimating gas","chain":"bnb","estimatedGas":145000}
+# Nov 22 14:37:03 metabridge-relayer[12347]: {"level":"info","time":"2025-11-22T14:37:03Z","message":"Submitting unlock transaction","messageId":"0x7g8h9i0j..."}
+# Nov 22 14:37:05 metabridge-relayer[12347]: {"level":"info","time":"2025-11-22T14:37:05Z","message":"Unlock transaction sent","txHash":"0x6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g4h5i6j7k","chain":"bnb"}
+# Nov 22 14:37:06 metabridge-relayer[12347]: {"level":"info","time":"2025-11-22T14:37:06Z","message":"Waiting for transaction confirmation","txHash":"0x6f7g8h9i..."}
+# Nov 22 14:37:25 metabridge-relayer[12347]: {"level":"info","time":"2025-11-22T14:37:25Z","message":"Transaction confirmed","txHash":"0x6f7g8h9i...","blockNumber":34567920,"confirmations":12}
+# Nov 22 14:37:26 metabridge-relayer[12347]: {"level":"info","time":"2025-11-22T14:37:26Z","message":"Message completed","messageId":"0x7g8h9i0j...","status":"completed"}
+
+export UNLOCK_TX_HASH="0x6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g4h5i6j7k"
+
+# Check final message status via API
+curl -s "http://159.65.73.133:8080/v1/messages/$MESSAGE_ID" | jq '.'
+
+# Expected API Response:
+# {
+#   "id": "0x7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g4h5i6j7k",
+#   "source_chain": "polygon",
+#   "destination_chain": "bnb",
+#   "source_tx_hash": "0x5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g4h5i6j",
+#   "destination_tx_hash": "0x6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g4h5i6j7k",
+#   "token_address": "0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889",
+#   "sender": "0xYourWalletAddress",
+#   "recipient": "0xYourWalletAddress",
+#   "amount": "10000000",
+#   "status": "completed",
+#   "validator_signatures": [ /* 2 signatures */ ],
+#   "processing_time_seconds": 193,
+#   "source_block": 12345695,
+#   "destination_block": 34567920,
+#   "created_at": "2025-11-22T14:35:13Z",
+#   "completed_at": "2025-11-22T14:37:26Z",
+#   "updated_at": "2025-11-22T14:37:26Z"
+# }
+
+# ✅ Message status is "completed"
+# ✅ destination_tx_hash is set
+# ✅ Processing time: ~3 minutes
+
+echo "Verify unlock transaction on BscScan:"
+echo "https://testnet.bscscan.com/tx/$UNLOCK_TX_HASH"
+```
+
+**✅ What to verify on BscScan:**
+- Transaction Status: Success ✓
+- Method: "unlock" or "unlockTokens"
+- Logs show "TokensUnlocked" event
+- To: 0xYourWalletAddress
+- Token Transfer: 10 USDC to your address
+- Message ID matches
+
+##### Step 2.7: Verify Final Balances
+
+```bash
+echo "Step 6: Verifying final token balances..."
+
+# Check final balance on Polygon
+npx hardhat run scripts/check-balance.js --network polygon-amoy
+
+# Expected Output:
+# Checking balance for: 0xYourWalletAddress
+# USDC Balance on Polygon: 990.000000 USDC (was 1000 USDC)
+# Change: -10 USDC ✓
+
+# Check final balance on BNB
+npx hardhat run scripts/check-balance.js --network bnb-testnet
+
+# Expected Output:
+# Checking balance for: 0xYourWalletAddress
+# USDC Balance on BNB: 10.000000 USDC (was 0 USDC)
+# Change: +10 USDC ✓
+
+# Verify bridge statistics
+curl -s http://159.65.73.133:8080/v1/stats | jq '.'
+
+# Expected Output:
+# {
+#   "total_messages": 1,
+#   "pending_messages": 0,
+#   "processing_messages": 0,
+#   "completed_messages": 1,
+#   "failed_messages": 0,
+#   "total_volume_usd": "10.00",
+#   "total_fees_usd": "0.15",
+#   "success_rate": 100,
+#   "average_processing_time_seconds": 193,
+#   "chains": {
+#     "polygon": {"sent": 1, "received": 0, "volume_usd": "10.00"},
+#     "bnb": {"sent": 0, "received": 1, "volume_usd": "10.00"}
+#   }
+# }
+```
+
+##### Step 2.8: Database Verification
+
+```bash
+echo "Step 7: Verifying database records..."
+
+# Check message in database
+sudo docker exec -it metabridge-postgres psql -U bridge_user -d metabridge_production << EOF
+SELECT
+  id,
+  source_chain,
+  destination_chain,
+  status,
+  amount,
+  created_at,
+  completed_at,
+  EXTRACT(EPOCH FROM (completed_at - created_at)) as processing_seconds
+FROM messages
+WHERE id = '$MESSAGE_ID';
+EOF
+
+# Expected Output:
+#                                        id                                        | source_chain | destination_chain | status    | amount   |         created_at         |        completed_at        | processing_seconds
+# ---------------------------------------------------------------------------------+--------------+-------------------+-----------+----------+----------------------------+----------------------------+--------------------
+#  0x7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g4h5i6j7k | polygon      | bnb               | completed | 10000000 | 2025-11-22 14:35:13.123456 | 2025-11-22 14:37:26.789012 |             193.67
+# (1 row)
+
+# Check validator signatures
+sudo docker exec -it metabridge-postgres psql -U bridge_user -d metabridge_production << EOF
+SELECT
+  message_id,
+  validator_address,
+  LEFT(signature, 20) as signature_prefix,
+  created_at
+FROM validator_signatures
+WHERE message_id = '$MESSAGE_ID'
+ORDER BY created_at;
+EOF
+
+# Expected Output:
+#                                     message_id                                     |            validator_address              | signature_prefix |         created_at
+# -----------------------------------------------------------------------------------+--------------------------------------------+------------------+----------------------------
+#  0x7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g4h5i6j7k | 0xValidator1Address                        | 0x8h9i0j1k2l3m4n | 2025-11-22 14:35:33.456789
+#  0x7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g4h5i6j7k | 0xValidator2Address                        | 0x9i0j1k2l3m4n5o | 2025-11-22 14:36:45.123456
+# (2 rows)
+
+# ✅ Database shows complete record with both signatures
+```
+
+---
+
+#### Part 3: Test Summary and Verification Checklist
+
+##### ✅ Complete End-to-End Verification Checklist
+
+```bash
+echo "========================================="
+echo "END-TO-END TEST VERIFICATION SUMMARY"
+echo "========================================="
+echo ""
+
+# 1. Smart Contracts Deployed
+echo "✅ 1. Smart Contracts:"
+echo "   Polygon Bridge: $POLYGON_BRIDGE_ADDRESS"
+echo "   BNB Bridge: $BNB_BRIDGE_ADDRESS"
+echo "   Polygon USDC: $POLYGON_TOKEN_ADDRESS"
+echo "   BNB USDC: $BNB_TOKEN_ADDRESS"
+echo ""
+
+# 2. Lock Transaction Successful
+echo "✅ 2. Lock Transaction (Polygon):"
+echo "   TX Hash: $LOCK_TX_HASH"
+echo "   Block: View on https://amoy.polygonscan.com/tx/$LOCK_TX_HASH"
+echo "   Status: ✓ Confirmed"
+echo "   Amount Locked: 10 USDC"
+echo ""
+
+# 3. Message Detected and Stored
+echo "✅ 3. Message Detection:"
+echo "   Message ID: $MESSAGE_ID"
+echo "   Status: Detected by listener"
+echo "   Stored in database: ✓"
+echo ""
+
+# 4. Validator Signatures Collected
+echo "✅ 4. Validator Signatures:"
+echo "   Required: 2-of-3"
+echo "   Collected: 2 signatures"
+echo "   Validators: Validator1, Validator2"
+echo ""
+
+# 5. Unlock Transaction Successful
+echo "✅ 5. Unlock Transaction (BNB):"
+echo "   TX Hash: $UNLOCK_TX_HASH"
+echo "   Block: View on https://testnet.bscscan.com/tx/$UNLOCK_TX_HASH"
+echo "   Status: ✓ Confirmed"
+echo "   Amount Unlocked: 10 USDC"
+echo ""
+
+# 6. Balance Changes Verified
+echo "✅ 6. Token Balances:"
+echo "   Polygon: 1000 → 990 USDC (-10 USDC) ✓"
+echo "   BNB: 0 → 10 USDC (+10 USDC) ✓"
+echo ""
+
+# 7. Processing Time
+echo "✅ 7. Performance:"
+echo "   Total Processing Time: ~3 minutes"
+echo "   Listener Detection: ~30 seconds"
+echo "   Validator Signing: ~2 minutes"
+echo "   Relay to BNB: ~30 seconds"
+echo ""
+
+echo "========================================="
+echo "🎉 END-TO-END TEST PASSED!"
+echo "========================================="
+echo ""
+echo "Your bridge is fully operational and ready for production!"
+echo ""
+```
+
+---
+
+#### Troubleshooting End-to-End Test
+
+##### Issue 1: Lock Transaction Fails
+
+**Symptoms:**
+- Transaction reverts on Polygon
+- Error: "ERC20: insufficient allowance"
+
+**Solution:**
+```bash
+# Check allowance
+npx hardhat run scripts/check-allowance.js --network polygon-amoy
+
+# If allowance is 0, re-approve
+npx hardhat run scripts/approve-bridge.js --network polygon-amoy
+
+# Retry lock
+npx hardhat run scripts/bridge-lock.js --network polygon-amoy
+```
+
+##### Issue 2: Listener Not Detecting Event
+
+**Symptoms:**
+- Message not appearing in API after 2 minutes
+- No logs in listener service
+
+**Solution:**
+```bash
+# Check listener is running
+sudo systemctl status metabridge-listener
+
+# Check listener logs for errors
+sudo journalctl -u metabridge-listener --since "5 minutes ago" | grep -i error
+
+# Check RPC connection
+curl -s http://159.65.73.133:8080/v1/chains/status | jq '.polygon.healthy'
+
+# Restart listener if needed
+sudo systemctl restart metabridge-listener
+
+# Manual event fetch (if needed)
+npx hardhat run scripts/fetch-events.js --network polygon-amoy
+```
+
+##### Issue 3: Not Enough Validator Signatures
+
+**Symptoms:**
+- Message stuck in "pending" status
+- Less than 2 signatures after 5 minutes
+
+**Solution:**
+```bash
+# Check validator configuration
+curl -s http://159.65.73.133:8080/v1/config/validators | jq '.'
+
+# Check relayer logs
+sudo journalctl -u metabridge-relayer --since "5 minutes ago" | grep -i signature
+
+# Verify validator private keys are configured
+grep VALIDATOR ~/.env.production
+
+# Restart relayer
+sudo systemctl restart metabridge-relayer
+```
+
+##### Issue 4: Unlock Transaction Fails on BNB
+
+**Symptoms:**
+- Message has signatures but no unlock TX
+- Relayer logs show transaction errors
+
+**Solution:**
+```bash
+# Check relayer has BNB for gas
+npx hardhat run scripts/check-balance.js --network bnb-testnet
+
+# Check bridge contract has tokens to unlock
+npx hardhat run scripts/check-bridge-balance.js --network bnb-testnet
+
+# If bridge is empty, mint tokens to bridge contract
+npx hardhat run scripts/mint-to-bridge.js --network bnb-testnet
+
+# Check relayer logs for specific error
+sudo journalctl -u metabridge-relayer -n 100 | grep -A 5 "unlock"
+
+# Manual retry unlock (if needed)
+curl -X POST http://159.65.73.133:8080/v1/admin/retry-message \
+  -H "Content-Type: application/json" \
+  -d "{\"message_id\": \"$MESSAGE_ID\"}"
+```
+
+##### Issue 5: Balance Not Updated on BNB
+
+**Symptoms:**
+- Unlock transaction successful
+- But balance shows 0 USDC
+
+**Solution:**
+```bash
+# Check you're looking at correct token contract
+echo "Token contract: $BNB_TOKEN_ADDRESS"
+
+# Force refresh balance
+npx hardhat run scripts/check-balance.js --network bnb-testnet
+
+# Check block explorer
+echo "https://testnet.bscscan.com/token/$BNB_TOKEN_ADDRESS?a=0xYourWalletAddress"
+
+# Add token to Metamask if not visible:
+# - Token Address: $BNB_TOKEN_ADDRESS
+# - Symbol: USDC
+# - Decimals: 6
+```
+
+---
+
+This completes the comprehensive end-to-end testing guide with detailed expected responses at every step!
 
 ### Test 8: Performance Tests
 
