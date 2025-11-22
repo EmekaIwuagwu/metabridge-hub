@@ -171,20 +171,22 @@ BEGIN
         last_updated
     )
     SELECT
-        source_chain,
-        dest_chain,
+        sc.name as source_chain,
+        dc.name as dest_chain,
         COUNT(*) as total,
-        COUNT(*) FILTER (WHERE status = 'CONFIRMED') as successful,
-        COUNT(*) FILTER (WHERE status = 'FAILED') as failed,
+        COUNT(*) FILTER (WHERE m.status = 'COMPLETED') as successful,
+        COUNT(*) FILTER (WHERE m.status = 'FAILED') as failed,
         COALESCE(
-            CAST(COUNT(*) FILTER (WHERE status = 'CONFIRMED') AS NUMERIC) / NULLIF(COUNT(*), 0),
+            CAST(COUNT(*) FILTER (WHERE m.status = 'COMPLETED') AS NUMERIC) / NULLIF(COUNT(*), 0),
             0
         ) as success_rate,
-        AVG(EXTRACT(EPOCH FROM (COALESCE(confirmed_at, NOW()) - created_at)))::BIGINT as avg_time,
+        AVG(EXTRACT(EPOCH FROM (COALESCE(m.processed_at, NOW()) - m.created_at)))::BIGINT as avg_time,
         NOW()
-    FROM messages
-    WHERE created_at > NOW() - INTERVAL '7 days'
-    GROUP BY source_chain, dest_chain
+    FROM messages m
+    JOIN chains sc ON m.source_chain_id = sc.id
+    JOIN chains dc ON m.dest_chain_id = dc.id
+    WHERE m.created_at > NOW() - INTERVAL '7 days'
+    GROUP BY sc.name, dc.name
     ON CONFLICT (source_chain, dest_chain) DO UPDATE SET
         total_transactions = EXCLUDED.total_transactions,
         successful_transactions = EXCLUDED.successful_transactions,

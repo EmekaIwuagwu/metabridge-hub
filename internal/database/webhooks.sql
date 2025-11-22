@@ -142,11 +142,10 @@ ORDER BY wa.next_retry_at ASC;
 CREATE OR REPLACE VIEW message_tracking_summary AS
 SELECT
     m.id,
-    m.source_chain,
-    m.dest_chain,
-    m.sender,
-    m.recipient,
-    m.amount,
+    sc.name as source_chain,
+    dc.name as dest_chain,
+    m.sender_address as sender,
+    m.recipient_address as recipient,
     m.status,
     m.created_at,
     m.updated_at,
@@ -154,12 +153,14 @@ SELECT
     m.dest_tx_hash,
     COUNT(mte.id) as event_count,
     MAX(mte.timestamp) as last_event_time,
-    EXTRACT(EPOCH FROM (COALESCE(m.confirmed_at, NOW()) - m.created_at)) as processing_time_seconds
+    EXTRACT(EPOCH FROM (COALESCE(m.processed_at, NOW()) - m.created_at)) as processing_time_seconds
 FROM messages m
+JOIN chains sc ON m.source_chain_id = sc.id
+JOIN chains dc ON m.dest_chain_id = dc.id
 LEFT JOIN message_timeline_events mte ON m.id = mte.message_id
-GROUP BY m.id, m.source_chain, m.dest_chain, m.sender, m.recipient,
-         m.amount, m.status, m.created_at, m.updated_at,
-         m.source_tx_hash, m.dest_tx_hash, m.confirmed_at;
+GROUP BY m.id, sc.name, dc.name, m.sender_address, m.recipient_address,
+         m.status, m.created_at, m.updated_at,
+         m.source_tx_hash, m.dest_tx_hash, m.processed_at;
 
 -- Function to auto-update webhook updated_at timestamp
 CREATE OR REPLACE FUNCTION update_webhook_updated_at()
@@ -180,9 +181,14 @@ CREATE TRIGGER trigger_update_webhook_updated_at
 -- Function to automatically create timeline events for message status changes
 CREATE OR REPLACE FUNCTION create_message_timeline_event()
 RETURNS TRIGGER AS $$
+DECLARE
+    dest_chain_name VARCHAR(50);
 BEGIN
     -- Only create timeline events when status changes
     IF (TG_OP = 'UPDATE' AND NEW.status != OLD.status) OR TG_OP = 'INSERT' THEN
+        -- Get destination chain name
+        SELECT name INTO dest_chain_name FROM chains WHERE id = NEW.dest_chain_id;
+
         INSERT INTO message_timeline_events (
             message_id,
             event_type,
@@ -199,7 +205,7 @@ BEGIN
                 ELSE 'Status changed from ' || OLD.status || ' to ' || NEW.status
             END,
             COALESCE(NEW.dest_tx_hash, NEW.source_tx_hash),
-            NEW.dest_chain
+            dest_chain_name
         );
     END IF;
     RETURN NEW;
@@ -245,14 +251,15 @@ $$ LANGUAGE plpgsql;
 -- Insert initial timeline events for existing messages
 INSERT INTO message_timeline_events (message_id, event_type, timestamp, description, tx_hash, chain_id)
 SELECT
-    id,
+    m.id,
     'message_created',
-    created_at,
+    m.created_at,
     'Message created',
-    source_tx_hash,
-    source_chain
-FROM messages
-WHERE id NOT IN (SELECT DISTINCT message_id FROM message_timeline_events)
+    m.source_tx_hash,
+    c.name
+FROM messages m
+JOIN chains c ON m.source_chain_id = c.id
+WHERE m.id NOT IN (SELECT DISTINCT message_id FROM message_timeline_events)
 ON CONFLICT DO NOTHING;
 
 -- Webhook delivery metrics (daily aggregation)
