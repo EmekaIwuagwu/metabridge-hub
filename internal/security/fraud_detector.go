@@ -246,7 +246,7 @@ func (fd *FraudDetector) GetStats() map[string]interface{} {
 	defer fd.mu.RUnlock()
 
 	return map[string]interface{}{
-		"tracked_addresses": len(fd.addressHistory),
+		"tracked_addresses":       len(fd.addressHistory),
 		"fraud_detection_enabled": fd.config.EnableFraudDetection,
 	}
 }

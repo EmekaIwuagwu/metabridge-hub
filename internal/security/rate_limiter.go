@@ -159,9 +159,9 @@ func (rl *RateLimiter) GetStats() map[string]interface{} {
 	defer rl.mu.RUnlock()
 
 	return map[string]interface{}{
-		"tracked_addresses": len(rl.limits),
+		"tracked_addresses":     len(rl.limits),
 		"rate_limiting_enabled": rl.config.EnableRateLimiting,
-		"hourly_limit": rl.config.RateLimitPerHour,
-		"per_address_limit": rl.config.RateLimitPerAddress,
+		"hourly_limit":          rl.config.RateLimitPerHour,
+		"per_address_limit":     rl.config.RateLimitPerAddress,
 	}
 }

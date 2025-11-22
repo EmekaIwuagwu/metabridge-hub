@@ -209,12 +209,12 @@ func (n *Notifier) NotifyBatchSubmitted(ctx context.Context, batchID string, mes
 // NotifyBatchConfirmed sends webhook notifications when a batch is confirmed
 func (n *Notifier) NotifyBatchConfirmed(ctx context.Context, batchID string, messageCount int, txHash string, gasSaved string, savingsPercent float64) error {
 	payload := map[string]interface{}{
-		"batch_id":         batchID,
-		"message_count":    messageCount,
-		"tx_hash":          txHash,
-		"gas_saved_wei":    gasSaved,
-		"savings_percent":  savingsPercent,
-		"event":            "batch_confirmed",
+		"batch_id":        batchID,
+		"message_count":   messageCount,
+		"tx_hash":         txHash,
+		"gas_saved_wei":   gasSaved,
+		"savings_percent": savingsPercent,
+		"event":           "batch_confirmed",
 	}
 
 	event := &BatchEvent{

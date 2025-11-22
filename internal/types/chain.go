@@ -26,10 +26,10 @@ const (
 
 // ChainInfo contains blockchain-specific information
 type ChainInfo struct {
-	Name      string      `json:"name"`
-	Type      ChainType   `json:"type"`
-	ChainID   string      `json:"chain_id"`
-	NetworkID string      `json:"network_id,omitempty"` // For NEAR
+	Name        string      `json:"name"`
+	Type        ChainType   `json:"type"`
+	ChainID     string      `json:"chain_id"`
+	NetworkID   string      `json:"network_id,omitempty"` // For NEAR
 	Environment Environment `json:"environment"`
 }
 
@@ -83,28 +83,28 @@ type UniversalClient interface {
 
 // ChainConfig represents the configuration for a blockchain
 type ChainConfig struct {
-	Name                 string        `mapstructure:"name"`
-	ChainType            ChainType     `mapstructure:"chain_type"`
-	Environment          Environment   `mapstructure:"environment"`
-	ChainID              string        `mapstructure:"chain_id"`
-	NetworkID            string        `mapstructure:"network_id"`
-	RPCEndpoints         []string      `mapstructure:"rpc_endpoints"`
-	WSEndpoint           string        `mapstructure:"ws_endpoint"`
-	BridgeContract       string        `mapstructure:"bridge_contract"`
-	BridgeProgram        string        `mapstructure:"bridge_program"`
-	StartBlock           uint64        `mapstructure:"start_block"`
-	StartSlot            uint64        `mapstructure:"start_slot"`
-	ConfirmationBlocks   uint64        `mapstructure:"confirmation_blocks"`
-	ConfirmationSlots    uint64        `mapstructure:"confirmation_slots"`
-	BlockTime            string        `mapstructure:"block_time"`
-	MaxGasPrice          string        `mapstructure:"max_gas_price"`
-	GasLimitMultiplier   float64       `mapstructure:"gas_limit_multiplier"`
-	MaxReorgDepth        uint64        `mapstructure:"max_reorg_depth"`
-	PollInterval         string        `mapstructure:"poll_interval"`
-	Commitment           string        `mapstructure:"commitment"`
-	ComputeUnitPrice     string        `mapstructure:"compute_unit_price"`
-	MaxRetries           int           `mapstructure:"max_retries"`
-	Enabled              bool          `mapstructure:"enabled"`
+	Name               string      `mapstructure:"name"`
+	ChainType          ChainType   `mapstructure:"chain_type"`
+	Environment        Environment `mapstructure:"environment"`
+	ChainID            string      `mapstructure:"chain_id"`
+	NetworkID          string      `mapstructure:"network_id"`
+	RPCEndpoints       []string    `mapstructure:"rpc_endpoints"`
+	WSEndpoint         string      `mapstructure:"ws_endpoint"`
+	BridgeContract     string      `mapstructure:"bridge_contract"`
+	BridgeProgram      string      `mapstructure:"bridge_program"`
+	StartBlock         uint64      `mapstructure:"start_block"`
+	StartSlot          uint64      `mapstructure:"start_slot"`
+	ConfirmationBlocks uint64      `mapstructure:"confirmation_blocks"`
+	ConfirmationSlots  uint64      `mapstructure:"confirmation_slots"`
+	BlockTime          string      `mapstructure:"block_time"`
+	MaxGasPrice        string      `mapstructure:"max_gas_price"`
+	GasLimitMultiplier float64     `mapstructure:"gas_limit_multiplier"`
+	MaxReorgDepth      uint64      `mapstructure:"max_reorg_depth"`
+	PollInterval       string      `mapstructure:"poll_interval"`
+	Commitment         string      `mapstructure:"commitment"`
+	ComputeUnitPrice   string      `mapstructure:"compute_unit_price"`
+	MaxRetries         int         `mapstructure:"max_retries"`
+	Enabled            bool        `mapstructure:"enabled"`
 }
 
 // GetBlockTimeDuration returns block time as duration
@@ -133,14 +133,14 @@ func (c *ChainConfig) GetPollIntervalDuration() time.Duration {
 
 // ClientHealth represents the health status of a blockchain client
 type ClientHealth struct {
-	ChainName     string        `json:"chain_name"`
-	ChainType     ChainType     `json:"chain_type"`
-	IsHealthy     bool          `json:"is_healthy"`
-	LatestBlock   uint64        `json:"latest_block"`
-	SyncedBlock   uint64        `json:"synced_block"`
-	BlockLag      uint64        `json:"block_lag"`
-	LastChecked   time.Time     `json:"last_checked"`
-	Error         string        `json:"error,omitempty"`
-	RPCEndpoint   string        `json:"rpc_endpoint"`
-	ResponseTime  time.Duration `json:"response_time"`
+	ChainName    string        `json:"chain_name"`
+	ChainType    ChainType     `json:"chain_type"`
+	IsHealthy    bool          `json:"is_healthy"`
+	LatestBlock  uint64        `json:"latest_block"`
+	SyncedBlock  uint64        `json:"synced_block"`
+	BlockLag     uint64        `json:"block_lag"`
+	LastChecked  time.Time     `json:"last_checked"`
+	Error        string        `json:"error,omitempty"`
+	RPCEndpoint  string        `json:"rpc_endpoint"`
+	ResponseTime time.Duration `json:"response_time"`
 }

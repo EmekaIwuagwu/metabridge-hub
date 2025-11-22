@@ -51,15 +51,15 @@ type FeeBreakdown struct {
 
 // FeeEstimateRequest contains parameters for fee estimation
 type FeeEstimateRequest struct {
-	SourceChain      string
-	DestChain        string
-	TokenAddress     string
-	Amount           *big.Int
-	MessageType      types.MessageType
-	UseBatching      bool
-	Priority         string // "low", "normal", "high"
-	IsMultiHop       bool
-	HopCount         int
+	SourceChain  string
+	DestChain    string
+	TokenAddress string
+	Amount       *big.Int
+	MessageType  types.MessageType
+	UseBatching  bool
+	Priority     string // "low", "normal", "high"
+	IsMultiHop   bool
+	HopCount     int
 }
 
 // NewCalculator creates a new fee calculator
@@ -348,12 +348,12 @@ func (c *Calculator) applyMultiHopMultiplier(breakdown *FeeBreakdown, hopCount i
 // getDefaultGasCost returns default gas cost when estimation fails
 func (c *Calculator) getDefaultGasCost(chainName string) *big.Int {
 	defaults := map[string]int64{
-		"polygon-amoy":      5000000000000000,   // 0.005 POL
-		"bnb-testnet":       10000000000000000,  // 0.01 BNB
-		"avalanche-fuji":    20000000000000000,  // 0.02 AVAX
-		"ethereum-sepolia":  50000000000000000,  // 0.05 ETH
-		"solana-devnet":     5000000,            // 0.000005 SOL
-		"near-testnet":      1000000000000000000000, // 0.001 NEAR
+		"polygon-amoy":     5000000000000000,       // 0.005 POL
+		"bnb-testnet":      10000000000000000,      // 0.01 BNB
+		"avalanche-fuji":   20000000000000000,      // 0.02 AVAX
+		"ethereum-sepolia": 50000000000000000,      // 0.05 ETH
+		"solana-devnet":    5000000,                // 0.000005 SOL
+		"near-testnet":     1000000000000000000000, // 0.001 NEAR
 	}
 
 	if cost, ok := defaults[chainName]; ok {
@@ -368,12 +368,12 @@ func (c *Calculator) getExchangeRates(sourceChain, destChain string) (float64, f
 	// In production, fetch from oracle like Chainlink or API
 	// For now, use approximate rates
 	rates := map[string]float64{
-		"polygon-amoy":      0.50,   // POL ~ $0.50
-		"bnb-testnet":       300.0,  // BNB ~ $300
-		"avalanche-fuji":    20.0,   // AVAX ~ $20
-		"ethereum-sepolia":  2000.0, // ETH ~ $2000
-		"solana-devnet":     100.0,  // SOL ~ $100
-		"near-testnet":      3.0,    // NEAR ~ $3
+		"polygon-amoy":     0.50,   // POL ~ $0.50
+		"bnb-testnet":      300.0,  // BNB ~ $300
+		"avalanche-fuji":   20.0,   // AVAX ~ $20
+		"ethereum-sepolia": 2000.0, // ETH ~ $2000
+		"solana-devnet":    100.0,  // SOL ~ $100
+		"near-testnet":     3.0,    // NEAR ~ $3
 	}
 
 	sourceRate := rates[sourceChain]

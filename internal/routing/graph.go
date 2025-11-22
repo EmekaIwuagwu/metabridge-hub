@@ -387,7 +387,7 @@ func (gb *GraphBuilder) createDefaultEdges() {
 				SourceChain: source,
 				DestChain:   dest,
 				Cost:        big.NewInt(1e16), // 0.01 ETH
-				Time:        300,               // 5 minutes
+				Time:        300,              // 5 minutes
 				Liquidity:   liq,
 				SuccessRate: 0.98,
 				LastUpdated: time.Now().UTC(),

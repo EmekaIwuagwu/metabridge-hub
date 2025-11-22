@@ -31,9 +31,9 @@ const (
 // CrossChainMessage represents a universal cross-chain message
 type CrossChainMessage struct {
 	// Message identification
-	ID        string      `json:"id" db:"id"`
-	Type      MessageType `json:"type" db:"message_type"`
-	Nonce     uint64      `json:"nonce" db:"nonce"`
+	ID    string      `json:"id" db:"id"`
+	Type  MessageType `json:"type" db:"message_type"`
+	Nonce uint64      `json:"nonce" db:"nonce"`
 
 	// Source chain info
 	SourceChain  ChainInfo `json:"source_chain" db:"-"`
@@ -50,14 +50,14 @@ type CrossChainMessage struct {
 	Recipient Address `json:"recipient" db:"-"`
 
 	// Payload (serialized)
-	Payload         json.RawMessage        `json:"payload" db:"payload"`
-	DecodedPayload  interface{}            `json:"decoded_payload,omitempty" db:"-"`
-	Metadata        map[string]interface{} `json:"metadata,omitempty" db:"metadata"`
+	Payload        json.RawMessage        `json:"payload" db:"payload"`
+	DecodedPayload interface{}            `json:"decoded_payload,omitempty" db:"-"`
+	Metadata       map[string]interface{} `json:"metadata,omitempty" db:"metadata"`
 
 	// Processing state
-	Status          MessageStatus `json:"status" db:"status"`
-	Attempts        int           `json:"attempts" db:"attempts"`
-	LastError       string        `json:"last_error,omitempty" db:"last_error"`
+	Status    MessageStatus `json:"status" db:"status"`
+	Attempts  int           `json:"attempts" db:"attempts"`
+	LastError string        `json:"last_error,omitempty" db:"last_error"`
 
 	// Validation
 	ValidatorSignatures []ValidatorSignature `json:"validator_signatures" db:"-"`
@@ -126,7 +126,7 @@ func (m *CrossChainMessage) DecodePayload() error {
 // TokenTransferPayload represents a token transfer payload
 type TokenTransferPayload struct {
 	TokenAddress  Address `json:"token_address"`
-	Amount        string  `json:"amount"` // String to handle different decimals
+	Amount        string  `json:"amount"`         // String to handle different decimals
 	TokenStandard string  `json:"token_standard"` // ERC20, SPL, NEP141
 	Decimals      uint8   `json:"decimals"`
 	Symbol        string  `json:"symbol,omitempty"`
