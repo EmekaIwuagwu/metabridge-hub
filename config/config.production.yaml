@@ -9,11 +9,11 @@ server:
   max_header_bytes: 1048576
 
 database:
-  host: "localhost"
-  port: 5432
-  database: "metabridge_production"
-  username: "postgres"
-  password: "postgres_admin_password"
+  host: "/var/run/postgresql"
+  port: 5433
+  database: "metabridge_prod"
+  username: "metabridge"
+  password: "metabridge"
   ssl_mode: "disable"
   max_open_conns: 25
   max_idle_conns: 5

@@ -14,6 +14,8 @@ sed -i 's|host: "127.0.0.1"|host: "/var/run/postgresql"|' config/config.producti
 sed -i 's|host: ""|host: "/var/run/postgresql"|' config/config.production.yaml
 sed -i 's|port: 5432|port: 5433|' config/config.production.yaml
 sed -i 's|database: "metabridge_production"|database: "metabridge_prod"|' config/config.production.yaml
+sed -i 's|username: "postgres"|username: "metabridge"|' config/config.production.yaml
+sed -i 's|password: "postgres_admin_password"|password: "metabridge"|' config/config.production.yaml
 
 echo "   ✓ Configuration updated"
 echo ""
@@ -28,6 +30,7 @@ echo ""
 # 3. Ensure database exists
 echo "3️⃣  Ensuring database exists..."
 sudo -u postgres psql -c "CREATE DATABASE metabridge_prod;" 2>/dev/null || echo "   Database metabridge_prod already exists"
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE metabridge_prod TO metabridge;" 2>/dev/null || echo "   Permissions already granted"
 echo ""
 
 # 4. Run migrations
