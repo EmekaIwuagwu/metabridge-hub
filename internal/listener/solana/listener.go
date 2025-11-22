@@ -3,6 +3,7 @@ package solana
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -168,11 +169,11 @@ func (l *Listener) processSlotRange(ctx context.Context, fromSlot, toSlot uint64
 		Msg("Program accounts retrieved")
 
 	// Process each account for events
-	for pubkey, accountInfo := range accounts {
-		if err := l.processAccount(ctx, pubkey, accountInfo); err != nil {
+	for _, result := range accounts {
+		if err := l.processAccount(ctx, result.Pubkey, result.Account); err != nil {
 			l.logger.Error().
 				Err(err).
-				Str("account", pubkey.String()).
+				Str("account", result.Pubkey.String()).
 				Msg("Error processing account")
 			continue
 		}
@@ -182,7 +183,7 @@ func (l *Listener) processSlotRange(ctx context.Context, fromSlot, toSlot uint64
 }
 
 // processAccount processes a single program account
-func (l *Listener) processAccount(ctx context.Context, pubkey solanago.PublicKey, account solanago.AccountInfo) error {
+func (l *Listener) processAccount(ctx context.Context, pubkey solanago.PublicKey, account *rpc.Account) error {
 	// Parse account data to detect lock events
 	// Account data structure depends on your Solana program implementation
 
@@ -296,14 +297,31 @@ func (l *Listener) parseTokenLockedEvent(data []byte, account solanago.PublicKey
 	destChain := string(data[offset : offset+destChainLen])
 
 	// Build cross-chain message
-	payload := types.TokenTransferPayload{
-		TokenAddress: tokenMint,
-		Amount:       amount,
+	tokenAddr, err := types.NewAddress(tokenMint, types.ChainTypeSolana)
+	if err != nil {
+		return nil, fmt.Errorf("invalid token address: %w", err)
 	}
 
-	payloadBytes, err := fmt.Appendf(nil, `{"token_address":"%s","amount":%d}`, tokenMint, amount)
+	payload := types.TokenTransferPayload{
+		TokenAddress:  tokenAddr,
+		Amount:        fmt.Sprintf("%d", amount),
+		TokenStandard: "SPL",
+	}
+
+	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create payload: %w", err)
+		return nil, fmt.Errorf("failed to marshal payload: %w", err)
+	}
+
+	// Build addresses
+	senderAddr, err := types.NewAddress(sender, types.ChainTypeSolana)
+	if err != nil {
+		return nil, fmt.Errorf("invalid sender address: %w", err)
+	}
+
+	recipientAddr, err := types.NewAddress(recipient, types.ChainTypeSolana)
+	if err != nil {
+		return nil, fmt.Errorf("invalid recipient address: %w", err)
 	}
 
 	msg := &types.CrossChainMessage{
@@ -317,19 +335,13 @@ func (l *Listener) parseTokenLockedEvent(data []byte, account solanago.PublicKey
 		DestinationChain: types.ChainInfo{
 			Name: destChain,
 		},
-		Sender: types.UniversalAddress{
-			Raw:         sender,
-			ChainType:   types.ChainTypeSolana,
-			ChainID:     l.config.NetworkID,
-			NativeChain: l.config.Name,
-		},
-		Recipient: types.UniversalAddress{
-			Raw: recipient,
-		},
+		Sender:    senderAddr,
+		Recipient: recipientAddr,
 		Payload:   payloadBytes,
 		Nonce:     0, // Would extract from account
-		Timestamp: time.Now().Unix(),
 		Status:    types.MessageStatusPending,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}
 
 	l.logger.Info().

@@ -126,7 +126,7 @@ func main() {
 					Msg("Failed to cast client to Solana client")
 			}
 
-			listener, err := solanalistener.NewListener(solanaClient.Client, &chainCfg, logger)
+			listener, err := solanalistener.NewListener(solanaClient.GetUnderlyingClient(), &chainCfg, logger)
 			if err != nil {
 				logger.Fatal().
 					Err(err).
@@ -157,7 +157,7 @@ func main() {
 					Msg("Failed to cast client to NEAR client")
 			}
 
-			listener, err := nearlistener.NewListener(nearClient.Client, &chainCfg, logger)
+			listener, err := nearlistener.NewListener(nearClient.GetUnderlyingClient(), &chainCfg, logger)
 			if err != nil {
 				logger.Fatal().
 					Err(err).

@@ -234,7 +234,7 @@ func (a *Aggregator) storeBatch(ctx context.Context, batch *Batch, merkleData *B
 		ID:               batch.ID,
 		Status:           string(batch.Status),
 		SourceChain:      batch.SourceChain,
-		DestinationChain: batch.DestinationChain,
+		DestinationChain: batch.DestChain,
 		MessageCount:     len(batch.Messages),
 		TotalGasSaved:    batch.GasCostSaved.String(),
 		CreatedAt:        batch.CreatedAt,

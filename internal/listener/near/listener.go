@@ -332,14 +332,30 @@ func (l *Listener) parseTokenLockedEvent(data map[string]interface{}) (*types.Cr
 	}
 
 	// Build payload
+	tokenAddr, err := types.NewAddress(token, types.ChainTypeNEAR)
+	if err != nil {
+		return nil, fmt.Errorf("invalid token address: %w", err)
+	}
+
 	payload := types.TokenTransferPayload{
-		TokenAddress: token,
-		Amount:       amount,
+		TokenAddress: tokenAddr,
+		Amount:       fmt.Sprintf("%d", amount),
 	}
 
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal payload: %w", err)
+	}
+
+	// Build addresses
+	senderAddr, err := types.NewAddress(sender, types.ChainTypeNEAR)
+	if err != nil {
+		return nil, fmt.Errorf("invalid sender address: %w", err)
+	}
+
+	recipientAddr, err := types.NewAddress(recipient, types.ChainTypeNEAR)
+	if err != nil {
+		return nil, fmt.Errorf("invalid recipient address: %w", err)
 	}
 
 	// Build cross-chain message
@@ -354,19 +370,13 @@ func (l *Listener) parseTokenLockedEvent(data map[string]interface{}) (*types.Cr
 		DestinationChain: types.ChainInfo{
 			Name: destChain,
 		},
-		Sender: types.UniversalAddress{
-			Raw:         sender,
-			ChainType:   types.ChainTypeNEAR,
-			ChainID:     l.config.NetworkID,
-			NativeChain: l.config.Name,
-		},
-		Recipient: types.UniversalAddress{
-			Raw: recipient,
-		},
+		Sender:    senderAddr,
+		Recipient: recipientAddr,
 		Payload:   payloadBytes,
 		Nonce:     0, // Would extract from event
-		Timestamp: time.Now().Unix(),
 		Status:    types.MessageStatusPending,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}
 
 	l.logger.Info().
@@ -415,14 +425,31 @@ func (l *Listener) parseNFTLockedEvent(data map[string]interface{}) (*types.Cros
 	}
 
 	// Build payload
+	contractAddr, err := types.NewAddress(nftContract, types.ChainTypeNEAR)
+	if err != nil {
+		return nil, fmt.Errorf("invalid NFT contract address: %w", err)
+	}
+
 	payload := types.NFTTransferPayload{
-		NFTContract: nftContract,
-		TokenID:     tokenID,
+		ContractAddress: contractAddr,
+		TokenID:         tokenID,
+		Standard:        "NEP171",
 	}
 
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal payload: %w", err)
+	}
+
+	// Build addresses
+	senderAddr, err := types.NewAddress(sender, types.ChainTypeNEAR)
+	if err != nil {
+		return nil, fmt.Errorf("invalid sender address: %w", err)
+	}
+
+	recipientAddr, err := types.NewAddress(recipient, types.ChainTypeNEAR)
+	if err != nil {
+		return nil, fmt.Errorf("invalid recipient address: %w", err)
 	}
 
 	// Build cross-chain message
@@ -437,19 +464,13 @@ func (l *Listener) parseNFTLockedEvent(data map[string]interface{}) (*types.Cros
 		DestinationChain: types.ChainInfo{
 			Name: destChain,
 		},
-		Sender: types.UniversalAddress{
-			Raw:         sender,
-			ChainType:   types.ChainTypeNEAR,
-			ChainID:     l.config.NetworkID,
-			NativeChain: l.config.Name,
-		},
-		Recipient: types.UniversalAddress{
-			Raw: recipient,
-		},
+		Sender:    senderAddr,
+		Recipient: recipientAddr,
 		Payload:   payloadBytes,
 		Nonce:     0, // Would extract from event
-		Timestamp: time.Now().Unix(),
 		Status:    types.MessageStatusPending,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}
 
 	l.logger.Info().
