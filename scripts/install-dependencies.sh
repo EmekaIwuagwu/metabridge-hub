@@ -78,16 +78,52 @@ else
     echo "   ✓ Redis installed"
 fi
 
-# Start and enable Redis
-systemctl start redis-server
-systemctl enable redis-server
-echo "   ✓ Redis started and enabled"
-
-# Configure Redis
+# Configure Redis before starting
 echo "   🔧 Configuring Redis..."
-sed -i 's/^# bind 127.0.0.1/bind 127.0.0.1/' /etc/redis/redis.conf 2>/dev/null || true
-systemctl restart redis-server
-echo "   ✓ Redis configured"
+
+# Ensure Redis directories exist with correct permissions
+mkdir -p /var/lib/redis /var/log/redis
+chown -R redis:redis /var/lib/redis /var/log/redis 2>/dev/null || true
+chmod 755 /var/lib/redis /var/log/redis
+
+# Fix Redis configuration
+if [ -f /etc/redis/redis.conf ]; then
+    # Backup original config
+    cp /etc/redis/redis.conf /etc/redis/redis.conf.backup
+
+    # Set bind to localhost
+    sed -i 's/^bind .*/bind 127.0.0.1/' /etc/redis/redis.conf
+    sed -i 's/^# bind 127.0.0.1/bind 127.0.0.1/' /etc/redis/redis.conf
+
+    # Set supervised to systemd
+    sed -i 's/^supervised no/supervised systemd/' /etc/redis/redis.conf
+    sed -i 's/^supervised auto/supervised systemd/' /etc/redis/redis.conf
+
+    # Disable protected mode for local development
+    sed -i 's/^protected-mode yes/protected-mode no/' /etc/redis/redis.conf
+fi
+
+# Start and enable Redis
+systemctl enable redis-server
+systemctl stop redis-server 2>/dev/null || true
+sleep 2
+systemctl start redis-server
+
+# Check if Redis started successfully
+if systemctl is-active --quiet redis-server; then
+    echo "   ✓ Redis started and enabled"
+
+    # Test Redis connection
+    if redis-cli ping 2>/dev/null | grep -q "PONG"; then
+        echo "   ✓ Redis is responding to PING"
+    else
+        echo "   ⚠️  Redis started but not responding to PING"
+    fi
+else
+    echo "   ⚠️  Redis failed to start automatically"
+    echo "   Running Redis troubleshooter..."
+    bash scripts/fix-redis.sh
+fi
 
 # Install NATS
 echo ""
