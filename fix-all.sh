@@ -77,16 +77,31 @@ echo ""
 
 # 9. Test API
 echo "9️⃣  Testing API endpoint..."
-if curl -s http://localhost:8080/api/v1/health > /dev/null 2>&1; then
+if curl -s http://localhost:8080/health > /dev/null 2>&1; then
     echo "  ✅ API is responding!"
     echo ""
     echo "API Health Response:"
-    curl -s http://localhost:8080/api/v1/health | jq . 2>/dev/null || curl -s http://localhost:8080/api/v1/health
+    curl -s http://localhost:8080/health | jq . 2>/dev/null || curl -s http://localhost:8080/health
 else
     echo "  ⚠️  API is not responding yet"
     echo ""
     echo "Check logs with:"
     echo "  sudo journalctl -u metabridge-api -n 50 --no-pager"
+fi
+
+# 10. Check for failed services
+echo ""
+echo "🔍 Checking for failed services..."
+if ! systemctl is-active metabridge-listener > /dev/null 2>&1; then
+    echo ""
+    echo "⚠️  Listener service failed. Last 20 log lines:"
+    sudo journalctl -u metabridge-listener -n 20 --no-pager
+fi
+
+if ! systemctl is-active metabridge-batcher > /dev/null 2>&1; then
+    echo ""
+    echo "⚠️  Batcher service failed. Last 20 log lines:"
+    sudo journalctl -u metabridge-batcher -n 20 --no-pager
 fi
 
 echo ""
@@ -97,5 +112,9 @@ echo ""
 echo "Useful commands:"
 echo "  systemctl status metabridge-api"
 echo "  sudo journalctl -u metabridge-api -f"
-echo "  curl http://localhost:8080/api/v1/health"
+echo "  curl http://localhost:8080/health"
+echo ""
+echo "Service logs:"
+echo "  sudo journalctl -u metabridge-listener -f"
+echo "  sudo journalctl -u metabridge-batcher -f"
 echo ""
