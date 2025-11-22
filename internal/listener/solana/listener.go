@@ -32,11 +32,17 @@ func NewListener(
 	config *types.ChainConfig,
 	logger zerolog.Logger,
 ) (*Listener, error) {
-	if config.BridgeContract == "" {
+	// Check BridgeProgram for Solana chains
+	programID := config.BridgeProgram
+	if programID == "" {
+		// Fallback to BridgeContract for backward compatibility
+		programID = config.BridgeContract
+	}
+	if programID == "" {
 		return nil, fmt.Errorf("bridge program ID not configured")
 	}
 
-	bridgeProgramID, err := solanago.PublicKeyFromBase58(config.BridgeContract)
+	bridgeProgramID, err := solanago.PublicKeyFromBase58(programID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid bridge program ID: %w", err)
 	}
