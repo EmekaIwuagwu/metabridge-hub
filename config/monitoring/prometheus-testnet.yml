@@ -3,25 +3,25 @@ global:
   evaluation_interval: 15s
   external_labels:
     environment: 'testnet'
-    service: 'metabridge'
+    service: 'articium'
 
 scrape_configs:
   # API Server
-  - job_name: 'metabridge-api'
+  - job_name: 'articium-api'
     static_configs:
       - targets: ['api:9092']
         labels:
           service: 'api'
 
   # Listener Service
-  - job_name: 'metabridge-listener'
+  - job_name: 'articium-listener'
     static_configs:
       - targets: ['listener:9090']
         labels:
           service: 'listener'
 
   # Relayer Service
-  - job_name: 'metabridge-relayer'
+  - job_name: 'articium-relayer'
     static_configs:
       - targets: ['relayer:9091']
         labels:

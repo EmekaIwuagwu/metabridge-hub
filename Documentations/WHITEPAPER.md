@@ -1,4 +1,4 @@
-# Metabridge Engine: Universal Cross-Chain Bridge Protocol
+# Articium: Universal Cross-Chain Bridge Protocol
 
 ## Technical Whitepaper v1.0
 
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-Metabridge Engine is a production-grade, multi-chain blockchain bridge protocol that enables secure cross-chain asset transfers and messaging across heterogeneous blockchain architectures. Unlike traditional bridges that rely on third-party infrastructure, Metabridge provides a self-hosted, enterprise-grade solution with support for both EVM-based chains (Ethereum, Polygon, BNB Chain, Avalanche) and non-EVM chains (Solana, NEAR Protocol).
+Articium is a production-grade, multi-chain blockchain bridge protocol that enables secure cross-chain asset transfers and messaging across heterogeneous blockchain architectures. Unlike traditional bridges that rely on third-party infrastructure, Articium provides a self-hosted, enterprise-grade solution with support for both EVM-based chains (Ethereum, Polygon, BNB Chain, Avalanche) and non-EVM chains (Solana, NEAR Protocol).
 
 ### Key Differentiators
 
@@ -83,7 +83,7 @@ Existing bridges struggle to balance:
 2. **Speed**: Fast finality without long fraud proof windows
 3. **Cost**: Affordable transaction fees at scale
 
-Metabridge solves this through a **hybrid validator architecture** with multi-signature consensus and transaction batching.
+Articium solves this through a **hybrid validator architecture** with multi-signature consensus and transaction batching.
 
 ---
 
@@ -91,7 +91,7 @@ Metabridge solves this through a **hybrid validator architecture** with multi-si
 
 ### 2.1 System Overview
 
-Metabridge employs a **microservices architecture** with five core services:
+Articium employs a **microservices architecture** with five core services:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -136,7 +136,7 @@ Metabridge employs a **microservices architecture** with five core services:
 
 #### 2.2.1 Universal Client Interface
 
-Metabridge abstracts blockchain differences through a unified interface:
+Articium abstracts blockchain differences through a unified interface:
 
 ```go
 type UniversalClient interface {
@@ -892,7 +892,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
-      POSTGRES_DB: metabridge
+      POSTGRES_DB: articium
       POSTGRES_USER: bridge
       POSTGRES_PASSWORD: ${DB_PASSWORD}
 
@@ -948,7 +948,7 @@ spec:
     spec:
       containers:
       - name: relayer
-        image: metabridge/relayer:v1.0.0
+        image: articium/relayer:v1.0.0
         resources:
           requests:
             cpu: 1000m
@@ -1044,7 +1044,7 @@ Total Cost: $20.05 (0.20%)
 Comparison:
 - Centralized Exchange: 0.5-1.0% + withdrawal fees
 - Other Bridges: 0.3-0.5% + gas
-- Metabridge: 0.20% all-in
+- Articium: 0.20% all-in
 ```
 
 ### 8.2 Revenue Model
@@ -1131,7 +1131,7 @@ Vesting Schedule:
 
 ### 9.1 Market Positioning
 
-| Feature | Metabridge | Wormhole | LayerZero | Multichain | Axelar |
+| Feature | Articium | Wormhole | LayerZero | Multichain | Axelar |
 |---------|-----------|----------|-----------|------------|--------|
 | **EVM Chains** | ✅ 4 | ✅ 7 | ✅ 15+ | ✅ 50+ | ✅ 20+ |
 | **Non-EVM** | ✅ Solana, NEAR | ✅ Solana | ✅ Aptos | ❌ Limited | ✅ Cosmos |
@@ -1230,7 +1230,7 @@ Current State:
 
 Process:
 1. User locks $100K USDC on Ethereum bridge contract
-2. Metabridge validates and relays message
+2. Articium validates and relays message
 3. User receives $100K USDC on Polygon (< 5 minutes)
 4. User deposits into Polygon Aave for 8% APY
 
@@ -1249,7 +1249,7 @@ Arbitrage Opportunity:
 
 Process:
 1. Buy NFT on Polygon for $1,000
-2. Bridge NFT to Ethereum via Metabridge ($20 fee)
+2. Bridge NFT to Ethereum via Articium ($20 fee)
 3. Sell NFT on Ethereum for $3,000
 
 Net Profit: $1,980 (198% ROI)
@@ -1266,7 +1266,7 @@ Use Case: Axie Infinity-style game
 - Marketplace on Ethereum (high liquidity)
 - Breeding mechanics on BNB Chain (fast transactions)
 
-Metabridge enables:
+Articium enables:
 - Seamless asset migration between chains
 - Users trade where liquidity is highest
 - Developers optimize for each chain's strengths
@@ -1284,7 +1284,7 @@ Target Allocation:
 - 20% on BNB Chain (liquidity)
 - 10% on Avalanche (diversification)
 
-Metabridge Solution:
+Articium Solution:
 - Batch transfers to minimize gas costs
 - Multi-sig governance for security
 - Automated rebalancing via smart contracts
@@ -1298,7 +1298,7 @@ Metabridge Solution:
 Company: Global e-commerce platform
 Requirement: Pay suppliers in different regions using stablecoins
 
-Solution with Metabridge:
+Solution with Articium:
 - Receive USDC payments on Ethereum (US customers)
 - Bridge to Polygon for European suppliers (low fees)
 - Bridge to BNB Chain for Asian suppliers (fast settlement)
@@ -1644,7 +1644,7 @@ Benefits:
 
 ## 15. Conclusion
 
-Metabridge Engine represents a **production-ready solution** to the blockchain interoperability problem, with a unique focus on **self-hosted infrastructure**, **security-first design**, and **cost optimization** through transaction batching.
+Articium represents a **production-ready solution** to the blockchain interoperability problem, with a unique focus on **self-hosted infrastructure**, **security-first design**, and **cost optimization** through transaction batching.
 
 ### Key Strengths
 
@@ -1703,7 +1703,7 @@ Metabridge Engine represents a **production-ready solution** to the blockchain i
    - Scale to $500M+ Total Value Bridged
    - Expand to 15+ blockchain networks
    - Launch token for governance and staking
-   - Establish Metabridge as the standard for enterprise cross-chain infrastructure
+   - Establish Articium as the standard for enterprise cross-chain infrastructure
 
 ---
 
@@ -1731,14 +1731,14 @@ Metabridge Engine represents a **production-ready solution** to the blockchain i
 
 ## Appendix C: Contact Information
 
-**Project**: Metabridge Engine
-**Repository**: https://github.com/EmekaIwuagwu/metabridge-engine-hub
-**Documentation**: https://docs.metabridge.io
-**Contact**: team@metabridge.io
+**Project**: Articium
+**Repository**: https://github.com/EmekaIwuagwu/articium
+**Documentation**: https://docs.articium.io
+**Contact**: team@articium.io
 
 ---
 
-*This whitepaper represents the technical architecture and capabilities of Metabridge Engine as of November 2025. The protocol is under active development, and specifications are subject to change.*
+*This whitepaper represents the technical architecture and capabilities of Articium as of November 2025. The protocol is under active development, and specifications are subject to change.*
 
 **Version**: 1.0
 **Last Updated**: November 19, 2025

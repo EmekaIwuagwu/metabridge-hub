@@ -2,11 +2,11 @@
 set -e
 
 ##############################################################################
-# Metabridge Engine - Production Mainnet Deployment Script
+# Articium - Production Mainnet Deployment Script
 #
 # ⚠️  CRITICAL: This script deploys to MAINNET with REAL FUNDS
 #
-# This script deploys the entire Metabridge infrastructure for production:
+# This script deploys the entire Articium infrastructure for production:
 # - Infrastructure (PostgreSQL, NATS, Redis, Monitoring)
 # - Database schema and migrations
 # - All backend services (API, Listener, Relayer)
@@ -76,7 +76,7 @@ print_banner() {
     echo -e "${RED}  ⚠️  MAINNET DEPLOYMENT - REAL FUNDS AT RISK ⚠️${NC}"
     echo -e "${RED}======================================================================${NC}"
     echo ""
-    echo -e "${YELLOW}This script will deploy Metabridge Engine to PRODUCTION MAINNET.${NC}"
+    echo -e "${YELLOW}This script will deploy Articium to PRODUCTION MAINNET.${NC}"
     echo -e "${YELLOW}All transactions will use REAL cryptocurrency.${NC}"
     echo ""
     echo -e "${CYAN}Prerequisites Checklist:${NC}"
@@ -369,9 +369,9 @@ backup_existing_data() {
     mkdir -p "$BACKUP_PATH"
 
     # Backup database if exists
-    if docker ps | grep -q metabridge-postgres; then
+    if docker ps | grep -q articium-postgres; then
         log_info "Backing up database..."
-        docker exec metabridge-postgres pg_dump -U metabridge metabridge_mainnet > "$BACKUP_PATH/database.sql"
+        docker exec articium-postgres pg_dump -U articium articium_mainnet > "$BACKUP_PATH/database.sql"
         log_success "Database backed up to $BACKUP_PATH/database.sql"
     fi
 
@@ -398,7 +398,7 @@ start_infrastructure() {
     log_info "Waiting for PostgreSQL..."
     POSTGRES_READY=false
     for i in {1..30}; do
-        if docker-compose -f docker-compose.infrastructure.yaml exec -T postgres pg_isready -U metabridge > /dev/null 2>&1; then
+        if docker-compose -f docker-compose.infrastructure.yaml exec -T postgres pg_isready -U articium > /dev/null 2>&1; then
             POSTGRES_READY=true
             break
         fi
@@ -457,12 +457,12 @@ run_migrations() {
     cd "$PROJECT_ROOT"
 
     # Create mainnet database if not exists
-    docker exec metabridge-postgres psql -U metabridge -tc "SELECT 1 FROM pg_database WHERE datname = 'metabridge_mainnet'" | grep -q 1 || \
-    docker exec metabridge-postgres psql -U metabridge -c "CREATE DATABASE metabridge_mainnet;"
+    docker exec articium-postgres psql -U articium -tc "SELECT 1 FROM pg_database WHERE datname = 'articium_mainnet'" | grep -q 1 || \
+    docker exec articium-postgres psql -U articium -c "CREATE DATABASE articium_mainnet;"
 
     # Run SQL schema
     if [ -f "$PROJECT_ROOT/internal/database/migrations/schema.sql" ]; then
-        docker exec -i metabridge-postgres psql -U metabridge -d metabridge_mainnet < "$PROJECT_ROOT/internal/database/migrations/schema.sql"
+        docker exec -i articium-postgres psql -U articium -d articium_mainnet < "$PROJECT_ROOT/internal/database/migrations/schema.sql"
         log_success "Database schema applied"
     else
         log_error "Schema file not found"
@@ -470,14 +470,14 @@ run_migrations() {
     fi
 
     # Verify migration
-    TABLE_COUNT=$(docker exec metabridge-postgres psql -U metabridge -d metabridge_mainnet -t -c "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public';")
+    TABLE_COUNT=$(docker exec articium-postgres psql -U articium -d articium_mainnet -t -c "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public';")
     log_info "Database tables created: $TABLE_COUNT"
 
     log_success "Database migrations completed"
 }
 
 start_services() {
-    log_info "Starting Metabridge services..."
+    log_info "Starting Articium services..."
 
     cd "$PROJECT_ROOT"
 
@@ -490,8 +490,8 @@ start_services() {
     export BRIDGE_ENVIRONMENT=mainnet
     export DATABASE_HOST=localhost
     export DATABASE_PORT=5432
-    export DATABASE_USER=metabridge
-    export DATABASE_NAME=metabridge_mainnet
+    export DATABASE_USER=articium
+    export DATABASE_NAME=articium_mainnet
     export NATS_URL=nats://localhost:4222
     export REDIS_URL=redis://localhost:6379
 
@@ -569,7 +569,7 @@ verify_deployment() {
 
     # Check database connection
     log_info "Checking database connection..."
-    if docker exec metabridge-postgres psql -U metabridge -d metabridge_mainnet -c "SELECT 1;" > /dev/null 2>&1; then
+    if docker exec articium-postgres psql -U articium -d articium_mainnet -c "SELECT 1;" > /dev/null 2>&1; then
         log_success "Database is accessible"
     else
         log_critical "Database connection failed"
@@ -578,7 +578,7 @@ verify_deployment() {
 
     # Check NATS
     log_info "Checking NATS connection..."
-    if docker exec metabridge-nats nats stream ls > /dev/null 2>&1; then
+    if docker exec articium-nats nats stream ls > /dev/null 2>&1; then
         log_success "NATS is running"
     else
         log_critical "NATS check failed"
@@ -587,7 +587,7 @@ verify_deployment() {
 
     # Check Redis
     log_info "Checking Redis connection..."
-    if docker exec metabridge-redis redis-cli ping | grep -q "PONG"; then
+    if docker exec articium-redis redis-cli ping | grep -q "PONG"; then
         log_success "Redis is running"
     else
         log_critical "Redis check failed"
@@ -649,7 +649,7 @@ setup_monitoring() {
 show_status() {
     echo ""
     echo "======================================================================"
-    echo -e "${GREEN}Metabridge Engine Mainnet - Deployment Complete!${NC}"
+    echo -e "${GREEN}Articium Mainnet - Deployment Complete!${NC}"
     echo "======================================================================"
     echo ""
     echo -e "${CYAN}📊 Service URLs:${NC}"
@@ -748,7 +748,7 @@ fi
 # Restore database
 if [ -f "backups/$LATEST_BACKUP/database.sql" ]; then
     echo "Restoring database..."
-    docker exec -i metabridge-postgres psql -U metabridge metabridge_mainnet < "backups/$LATEST_BACKUP/database.sql"
+    docker exec -i articium-postgres psql -U articium articium_mainnet < "backups/$LATEST_BACKUP/database.sql"
     echo -e "${GREEN}Database restored${NC}"
 fi
 

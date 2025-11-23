@@ -11,9 +11,9 @@ server:
 database:
   host: "/var/run/postgresql"
   port: 5433
-  database: "metabridge_prod"
-  username: "metabridge"
-  password: "metabridge"
+  database: "articium_prod"
+  username: "articium"
+  password: "articium"
   ssl_mode: "disable"
   max_open_conns: 25
   max_idle_conns: 5

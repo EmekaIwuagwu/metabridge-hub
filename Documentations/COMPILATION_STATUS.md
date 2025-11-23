@@ -17,7 +17,7 @@
 import (
     "strconv"   // For string to int conversions
     "strings"   // For string manipulation
-    "github.com/EmekaIwuagwu/metabridge-hub/internal/types"  // Internal types
+    "github.com/EmekaIwuagwu/articium-hub/internal/types"  // Internal types
 )
 ```
 
@@ -65,8 +65,8 @@ Once you have internet connectivity (or on your local machine with internet):
 
 ```bash
 # 1. Clone the repository (if not already done)
-git clone https://github.com/EmekaIwuagwu/metabridge-engine-hub.git
-cd metabridge-engine-hub
+git clone https://github.com/EmekaIwuagwu/articium.git
+cd articium
 
 # 2. Checkout the branch
 git checkout claude/audit-implement-missing-01DzNLjrumgdhWkEg2N447LP
@@ -78,19 +78,19 @@ go mod download
 mkdir -p bin
 
 # Build API server
-go build -o bin/metabridge-api cmd/api/main.go
+go build -o bin/articium-api cmd/api/main.go
 
 # Build Relayer service
-go build -o bin/metabridge-relayer cmd/relayer/main.go
+go build -o bin/articium-relayer cmd/relayer/main.go
 
 # Build Listener service
-go build -o bin/metabridge-listener cmd/listener/main.go
+go build -o bin/articium-listener cmd/listener/main.go
 
 # Build Migrator tool
-go build -o bin/metabridge-migrator cmd/migrator/main.go
+go build -o bin/articium-migrator cmd/migrator/main.go
 
 # Build Batcher service
-go build -o bin/metabridge-batcher cmd/batcher/main.go
+go build -o bin/articium-batcher cmd/batcher/main.go
 
 # 5. Verify builds
 ls -lh bin/
@@ -106,16 +106,16 @@ If you have Go dependencies cached elsewhere, you can copy the `pkg` directory:
 scp -r user@other-machine:/root/go/pkg /root/go/
 
 # Then build
-go build -o bin/metabridge-api cmd/api/main.go
+go build -o bin/articium-api cmd/api/main.go
 ```
 
 ### Alternative: Use Docker with Cached Layers
 
 ```bash
 # Build in Docker with internet access
-docker build -t metabridge-api:latest -f Dockerfile.api .
-docker build -t metabridge-relayer:latest -f Dockerfile.relayer .
-docker build -t metabridge-listener:latest -f Dockerfile.listener .
+docker build -t articium-api:latest -f Dockerfile.api .
+docker build -t articium-relayer:latest -f Dockerfile.relayer .
+docker build -t articium-listener:latest -f Dockerfile.listener .
 ```
 
 ---
@@ -136,7 +136,7 @@ docker build -t metabridge-listener:latest -f Dockerfile.listener .
 ### Successful Services ✅
 Based on your earlier test, the **relayer** compiled successfully:
 ```bash
-root@metabridgeengine:~/projects/metabridge-engine-hub# go build -o bin/metabridge-relayer cmd/relayer/main.go
+root@articiumengine:~/projects/articium# go build -o bin/articium-relayer cmd/relayer/main.go
 # ✅ No errors - relayer built successfully!
 ```
 
@@ -169,11 +169,11 @@ All properly specified in `go.mod`:
 ### Option 1: Build on Your Local Machine (Recommended)
 ```bash
 # On your local machine with internet:
-git clone https://github.com/EmekaIwuagwu/metabridge-engine-hub.git
-cd metabridge-engine-hub
+git clone https://github.com/EmekaIwuagwu/articium.git
+cd articium
 git checkout claude/audit-implement-missing-01DzNLjrumgdhWkEg2N447LP
 go mod download
-go build -o bin/metabridge-api cmd/api/main.go
+go build -o bin/articium-api cmd/api/main.go
 # ✅ Should compile successfully
 ```
 
@@ -189,7 +189,7 @@ echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf
 ping storage.googleapis.com
 
 # Retry build
-go build -o bin/metabridge-api cmd/api/main.go
+go build -o bin/articium-api cmd/api/main.go
 ```
 
 ### Option 3: Use Go Module Proxy Cache
@@ -200,7 +200,7 @@ export GOPROXY=https://goproxy.io,direct
 export GOPROXY=https://goproxy.cn,direct
 
 # Retry build
-go build -o bin/metabridge-api cmd/api/main.go
+go build -o bin/articium-api cmd/api/main.go
 ```
 
 ### Option 4: Use Docker Build

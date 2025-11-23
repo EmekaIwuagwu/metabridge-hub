@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/types"
+	"github.com/EmekaIwuagwu/articium-hub/internal/types"
 )
 
 // MerkleTree represents a Merkle tree for batch verification

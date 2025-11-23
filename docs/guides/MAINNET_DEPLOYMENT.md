@@ -2,7 +2,7 @@
 
 **⚠️ CRITICAL: Production Mainnet Deployment with Real Funds**
 
-This guide covers the complete process for deploying Metabridge Engine to production mainnet networks. This deployment will handle real cryptocurrency transactions and requires extensive preparation.
+This guide covers the complete process for deploying Articium to production mainnet networks. This deployment will handle real cryptocurrency transactions and requires extensive preparation.
 
 ## Table of Contents
 
@@ -168,10 +168,10 @@ validators:
 # Create KMS key for each validator
 for i in {1..5}; do
   aws kms create-key \
-    --description "Metabridge Mainnet Validator $i" \
+    --description "Articium Mainnet Validator $i" \
     --key-usage SIGN_VERIFY \
     --customer-master-key-spec ECC_SECG_P256K1 \
-    --tags TagKey=Project,TagValue=Metabridge \
+    --tags TagKey=Project,TagValue=Articium \
            TagKey=Environment,TagValue=Mainnet \
            TagKey=Validator,TagValue=$i
 done
@@ -194,7 +194,7 @@ done
       "Resource": "arn:aws:kms:us-east-1:*:key/*",
       "Condition": {
         "StringEquals": {
-          "kms:RequestAlias": "alias/metabridge-mainnet-*"
+          "kms:RequestAlias": "alias/articium-mainnet-*"
         }
       }
     }
@@ -224,41 +224,41 @@ For maximum security, consider using a Hardware Security Module:
 ```bash
 # Create Resource Group
 az group create \
-  --name metabridge-mainnet-rg \
+  --name articium-mainnet-rg \
   --location eastus
 
 # Create Virtual Network
 az network vnet create \
-  --resource-group metabridge-mainnet-rg \
-  --name metabridge-vnet \
+  --resource-group articium-mainnet-rg \
+  --name articium-vnet \
   --address-prefix 10.0.0.0/16 \
-  --subnet-name metabridge-subnet \
+  --subnet-name articium-subnet \
   --subnet-prefix 10.0.1.0/24
 
 # Create VM
 az vm create \
-  --resource-group metabridge-mainnet-rg \
-  --name metabridge-mainnet-vm \
+  --resource-group articium-mainnet-rg \
+  --name articium-mainnet-vm \
   --image UbuntuLTS \
   --size Standard_E8s_v5 \
-  --admin-username metabridge-admin \
+  --admin-username articium-admin \
   --ssh-key-values @~/.ssh/id_rsa.pub \
   --public-ip-address-allocation static \
   --public-ip-sku Standard
 
 # Attach Premium SSD Data Disk (2TB)
 az vm disk attach \
-  --resource-group metabridge-mainnet-rg \
-  --vm-name metabridge-mainnet-vm \
-  --name metabridge-data-disk \
+  --resource-group articium-mainnet-rg \
+  --vm-name articium-mainnet-vm \
+  --name articium-data-disk \
   --size-gb 2048 \
   --sku Premium_LRS \
   --new
 
 # Configure NSG Rules
 az network nsg rule create \
-  --resource-group metabridge-mainnet-rg \
-  --nsg-name metabridge-mainnet-vmNSG \
+  --resource-group articium-mainnet-rg \
+  --nsg-name articium-mainnet-vmNSG \
   --name AllowHTTPS \
   --priority 1000 \
   --destination-port-ranges 443 \
@@ -289,7 +289,7 @@ sudo ufw allow from YOUR_IP_ADDRESS to any port 22
 ### 1. Copy and Configure Environment File
 
 ```bash
-cd /home/metabridge-admin/metabridge-hub
+cd /home/articium-admin/articium-hub
 cp .env.mainnet.example .env.mainnet
 ```
 
@@ -336,7 +336,7 @@ EMAIL_ALERTS=ops@yourdomain.com,security@yourdomain.com
 
 ```bash
 chmod 600 .env.mainnet
-chown metabridge-admin:metabridge-admin .env.mainnet
+chown articium-admin:articium-admin .env.mainnet
 ```
 
 ---
@@ -463,7 +463,7 @@ EOF
 ### 2. Run Deployment Script
 
 ```bash
-cd /home/metabridge-admin/metabridge-hub
+cd /home/articium-admin/articium-hub
 
 # Source environment
 export $(cat .env.mainnet | grep -v '^#' | xargs)
@@ -495,7 +495,7 @@ The script will:
   ⚠️  MAINNET DEPLOYMENT - REAL FUNDS AT RISK ⚠️
 ======================================================================
 
-This script will deploy Metabridge Engine to PRODUCTION MAINNET.
+This script will deploy Articium to PRODUCTION MAINNET.
 All transactions will use REAL cryptocurrency.
 
 Prerequisites Checklist:
@@ -512,7 +512,7 @@ DEPLOY TO MAINNET
 [SUCCESS] All deployment verification checks passed!
 
 ======================================================================
-  Metabridge Engine Mainnet - Deployment Complete!
+  Articium Mainnet - Deployment Complete!
 ======================================================================
 ```
 
@@ -562,13 +562,13 @@ node scripts/cross-chain-transfer.js \
 
 ```bash
 # Check database tables
-docker exec metabridge-postgres psql -U metabridge -d metabridge_mainnet -c "\dt"
+docker exec articium-postgres psql -U articium -d articium_mainnet -c "\dt"
 
 # Check validators
-docker exec metabridge-postgres psql -U metabridge -d metabridge_mainnet -c "SELECT * FROM validators;"
+docker exec articium-postgres psql -U articium -d articium_mainnet -c "SELECT * FROM validators;"
 
 # Check initial state
-docker exec metabridge-postgres psql -U metabridge -d metabridge_mainnet -c "SELECT COUNT(*) FROM messages;"
+docker exec articium-postgres psql -U articium -d articium_mainnet -c "SELECT COUNT(*) FROM messages;"
 ```
 
 ---
@@ -685,7 +685,7 @@ ls -l rollback-mainnet.sh
 ls -lt backups/
 
 # 3. Restore database
-docker exec -i metabridge-postgres psql -U metabridge metabridge_mainnet < \
+docker exec -i articium-postgres psql -U articium articium_mainnet < \
   backups/pre-deployment-20240115_103045/database.sql
 
 # 4. Restore config
@@ -757,7 +757,7 @@ DAILY_VOLUME_LIMIT_USD=1000000
 
 ```bash
 # Configure automated backups every 6 hours
-0 */6 * * * /home/metabridge-admin/metabridge-hub/scripts/backup.sh
+0 */6 * * * /home/articium-admin/articium-hub/scripts/backup.sh
 
 # Keep backups for 30 days
 find /backups/* -mtime +30 -delete

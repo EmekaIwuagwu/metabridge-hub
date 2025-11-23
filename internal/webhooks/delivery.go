@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/database"
+	"github.com/EmekaIwuagwu/articium-hub/internal/database"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 )
@@ -210,7 +210,7 @@ func (s *DeliveryService) deliverEvent(event *WebhookEvent, attemptNumber int) {
 
 	// Set headers
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", "Metabridge-Webhook/1.0")
+	req.Header.Set("User-Agent", "Articium-Webhook/1.0")
 	req.Header.Set("X-Webhook-ID", event.WebhookID)
 	req.Header.Set("X-Event-ID", event.ID)
 	req.Header.Set("X-Event-Type", string(event.EventType))

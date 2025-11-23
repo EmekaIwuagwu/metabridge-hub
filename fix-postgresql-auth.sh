@@ -3,7 +3,7 @@
 set -e
 
 echo "╔════════════════════════════════════════════════════════════╗"
-echo "║     PostgreSQL Authentication Fix - Metabridge             ║"
+echo "║     PostgreSQL Authentication Fix - Articium             ║"
 echo "╚════════════════════════════════════════════════════════════╝"
 echo ""
 
@@ -46,44 +46,44 @@ sleep 2
 echo "   ✓ PostgreSQL restarted"
 echo ""
 
-# 4. Ensure metabridge user exists with correct password
+# 4. Ensure articium user exists with correct password
 echo "4️⃣  Setting up database user..."
 sudo -u postgres psql << EOF
 -- Drop and recreate user to ensure password is correct
-DROP USER IF EXISTS metabridge;
-CREATE USER metabridge WITH PASSWORD 'metabridge' SUPERUSER;
+DROP USER IF EXISTS articium;
+CREATE USER articium WITH PASSWORD 'articium' SUPERUSER;
 
 -- Grant permissions
-GRANT ALL PRIVILEGES ON DATABASE metabridge_prod TO metabridge;
+GRANT ALL PRIVILEGES ON DATABASE articium_prod TO articium;
 
 -- Show user
-\du metabridge
+\du articium
 EOF
 
 # Grant schema permissions
 echo "4️⃣b Granting schema permissions..."
-sudo -u postgres psql -d metabridge_prod << EOF
+sudo -u postgres psql -d articium_prod << EOF
 -- Grant all privileges on public schema
-GRANT ALL ON SCHEMA public TO metabridge;
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO metabridge;
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO metabridge;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO metabridge;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO metabridge;
+GRANT ALL ON SCHEMA public TO articium;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO articium;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO articium;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO articium;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO articium;
 EOF
 echo ""
 
 # 5. Test connection
 echo "5️⃣  Testing database connection..."
-if PGPASSWORD=metabridge psql -h /var/run/postgresql -p 5433 -U metabridge -d metabridge_prod -c "SELECT version();" > /dev/null 2>&1; then
+if PGPASSWORD=articium psql -h /var/run/postgresql -p 5433 -U articium -d articium_prod -c "SELECT version();" > /dev/null 2>&1; then
     echo "   ✅ Connection successful!"
 else
     echo "   ❌ Connection failed!"
     echo ""
     echo "Trying TCP connection instead..."
-    if PGPASSWORD=metabridge psql -h 127.0.0.1 -p 5433 -U metabridge -d metabridge_prod -c "SELECT version();" > /dev/null 2>&1; then
+    if PGPASSWORD=articium psql -h 127.0.0.1 -p 5433 -U articium -d articium_prod -c "SELECT version();" > /dev/null 2>&1; then
         echo "   ✅ TCP connection works!"
         echo "   📝 Updating config to use 127.0.0.1 instead of socket..."
-        sed -i 's|host: "/var/run/postgresql"|host: "127.0.0.1"|' /root/projects/metabridge-engine-hub/config/config.production.yaml
+        sed -i 's|host: "/var/run/postgresql"|host: "127.0.0.1"|' /root/projects/articium/config/config.production.yaml
     fi
 fi
 echo ""

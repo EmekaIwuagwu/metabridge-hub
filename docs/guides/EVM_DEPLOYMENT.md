@@ -1,6 +1,6 @@
-# Metabridge EVM Contracts - Deployment Guide
+# Articium EVM Contracts - Deployment Guide
 
-Complete guide for deploying Metabridge bridge contracts to all supported EVM chains.
+Complete guide for deploying Articium bridge contracts to all supported EVM chains.
 
 ## Table of Contents
 

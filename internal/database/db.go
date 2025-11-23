@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/config"
+	"github.com/EmekaIwuagwu/articium-hub/internal/config"
 	_ "github.com/lib/pq"
 	"github.com/rs/zerolog"
 )

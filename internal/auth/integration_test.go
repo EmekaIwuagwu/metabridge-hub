@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/auth"
+	"github.com/EmekaIwuagwu/articium-hub/internal/auth"
 )
 
 // TestAuthenticationFlow demonstrates the complete authentication flow

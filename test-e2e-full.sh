@@ -2,9 +2,9 @@
 set -e
 
 ##############################################################################
-# Metabridge Engine - Automated End-to-End Test Suite
+# Articium - Automated End-to-End Test Suite
 #
-# This script performs a complete E2E test of the Metabridge system:
+# This script performs a complete E2E test of the Articium system:
 # 1. Requests testnet tokens from faucets
 # 2. Deploys smart contracts to all testnets
 # 3. Deploys and starts backend services
@@ -76,7 +76,7 @@ log_step() {
 print_banner() {
     echo ""
     echo "========================================================================"
-    echo "  Metabridge Engine - Automated E2E Test Suite"
+    echo "  Articium - Automated E2E Test Suite"
     echo "  Timestamp: $TIMESTAMP"
     echo "========================================================================"
     echo ""
@@ -349,7 +349,7 @@ deploy_backend_services() {
     cd "$PROJECT_ROOT"
 
     # Use testnet deployment script
-    log_info "Starting Metabridge testnet deployment..."
+    log_info "Starting Articium testnet deployment..."
 
     # Run deployment in background to capture output
     ./deploy-testnet.sh >> "$TEST_LOG" 2>&1
@@ -482,7 +482,7 @@ verify_system_health() {
     fi
 
     # Check database
-    if docker exec metabridge-postgres psql -U metabridge -d metabridge_testnet -c "SELECT 1;" > /dev/null 2>&1; then
+    if docker exec articium-postgres psql -U articium -d articium_testnet -c "SELECT 1;" > /dev/null 2>&1; then
         log_success "Database connection: PASS"
     else
         log_error "Database connection: FAIL"
@@ -490,14 +490,14 @@ verify_system_health() {
     fi
 
     # Check NATS
-    if docker exec metabridge-nats nats stream ls > /dev/null 2>&1; then
+    if docker exec articium-nats nats stream ls > /dev/null 2>&1; then
         log_success "NATS connection: PASS"
     else
         log_warning "NATS connection: WARNING"
     fi
 
     # Check Redis
-    if docker exec metabridge-redis redis-cli ping | grep -q "PONG"; then
+    if docker exec articium-redis redis-cli ping | grep -q "PONG"; then
         log_success "Redis connection: PASS"
     else
         log_warning "Redis connection: WARNING"
@@ -514,7 +514,7 @@ generate_test_report() {
 
     cat > "$report_file" << EOF
 ========================================================================
-Metabridge Engine - E2E Test Report
+Articium - E2E Test Report
 ========================================================================
 Timestamp: $TIMESTAMP
 Test Wallet: $WALLET_ADDRESS

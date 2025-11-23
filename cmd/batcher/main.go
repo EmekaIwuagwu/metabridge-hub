@@ -8,9 +8,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/batching"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/config"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/database"
+	"github.com/EmekaIwuagwu/articium-hub/internal/batching"
+	"github.com/EmekaIwuagwu/articium-hub/internal/config"
+	"github.com/EmekaIwuagwu/articium-hub/internal/database"
 	"github.com/rs/zerolog"
 )
 
@@ -27,7 +27,7 @@ func main() {
 	logger.Info().
 		Str("service", "batcher").
 		Str("config", *configPath).
-		Msg("Starting Metabridge Batch Aggregator")
+		Msg("Starting Articium Batch Aggregator")
 
 	// Load configuration
 	cfg, err := config.LoadConfig(*configPath)

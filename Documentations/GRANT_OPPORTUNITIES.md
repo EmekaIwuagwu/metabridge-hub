@@ -1,8 +1,8 @@
-# Metabridge Engine: Grant & Infrastructure Investment Opportunities
+# Articium: Grant & Infrastructure Investment Opportunities
 
 ## Executive Summary
 
-Metabridge Engine is **production-ready** and **highly suitable** for blockchain infrastructure grants from major ecosystems. This document outlines specific opportunities, application strategies, and expected outcomes.
+Articium is **production-ready** and **highly suitable** for blockchain infrastructure grants from major ecosystems. This document outlines specific opportunities, application strategies, and expected outcomes.
 
 ## Priority Grant Opportunities (Ranked by Fit)
 
@@ -378,7 +378,7 @@ Metabridge Engine is **production-ready** and **highly suitable** for blockchain
 
 ## Conclusion
 
-Metabridge Engine is **exceptionally well-positioned** for blockchain infrastructure grants. Our production-ready codebase, self-hosted architecture, and multi-chain support make us an attractive candidate for ecosystem growth funding.
+Articium is **exceptionally well-positioned** for blockchain infrastructure grants. Our production-ready codebase, self-hosted architecture, and multi-chain support make us an attractive candidate for ecosystem growth funding.
 
 ### Recommended Immediate Actions
 
@@ -409,4 +409,4 @@ Expected return: **$10M+ TVL per $100K of grant funding** (10-100x ROI)
 *This assessment is based on current grant program criteria as of November 2025. Programs and eligibility may change. Always verify current requirements before applying.*
 
 **Last Updated**: November 19, 2025
-**Contact**: team@metabridge.io
+**Contact**: team@articium.io

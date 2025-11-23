@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Install all required dependencies for Metabridge on Ubuntu/Debian
+# Install all required dependencies for Articium on Ubuntu/Debian
 
 set -e
 
 echo "╔════════════════════════════════════════════════════════════╗"
-echo "║        Metabridge Dependency Installer                     ║"
+echo "║        Articium Dependency Installer                     ║"
 echo "╚════════════════════════════════════════════════════════════╝"
 echo ""
 
@@ -42,8 +42,8 @@ echo "   ✓ PostgreSQL started and enabled"
 echo "   🔧 Configuring PostgreSQL..."
 
 # Create database and user
-sudo -u postgres psql -c "SELECT 1 FROM pg_database WHERE datname = 'metabridge_production'" | grep -q 1 || \
-    sudo -u postgres psql -c "CREATE DATABASE metabridge_production;"
+sudo -u postgres psql -c "SELECT 1 FROM pg_database WHERE datname = 'articium_production'" | grep -q 1 || \
+    sudo -u postgres psql -c "CREATE DATABASE articium_production;"
 
 sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD 'postgres_admin_password';"
 
@@ -213,8 +213,8 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo "5️⃣  Creating application directories..."
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-mkdir -p /root/projects/metabridge-engine-hub/logs
-chmod 755 /root/projects/metabridge-engine-hub/logs
+mkdir -p /root/projects/articium/logs
+chmod 755 /root/projects/articium/logs
 echo "   ✓ Logs directory created"
 
 # Summary
@@ -237,7 +237,7 @@ echo "Next steps:"
 echo "  1. Run migrations: ./bin/migrator -config config/config.production.yaml"
 echo "  2. Copy service files: sudo cp systemd/*.service /etc/systemd/system/"
 echo "  3. Reload systemd: sudo systemctl daemon-reload"
-echo "  4. Start services: sudo systemctl start metabridge-api"
+echo "  4. Start services: sudo systemctl start articium-api"
 echo ""
 echo "Or run the quick test:"
 echo "  bash scripts/check-dependencies.sh"

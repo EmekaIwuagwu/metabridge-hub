@@ -1,6 +1,6 @@
-# Metabridge Engine Hub - Production Deployment Guide
+# Articium Hub - Production Deployment Guide
 
-This guide covers deploying the Metabridge Engine Hub to production with all security features enabled.
+This guide covers deploying the Articium Hub to production with all security features enabled.
 
 ## Table of Contents
 
@@ -67,13 +67,13 @@ sudo -u postgres psql
 
 ```sql
 -- Create database
-CREATE DATABASE metabridge;
+CREATE DATABASE articium;
 
 -- Create user with strong password
-CREATE USER metabridge_user WITH ENCRYPTED PASSWORD 'YOUR_VERY_STRONG_PASSWORD_HERE';
+CREATE USER articium_user WITH ENCRYPTED PASSWORD 'YOUR_VERY_STRONG_PASSWORD_HERE';
 
 -- Grant permissions
-GRANT ALL PRIVILEGES ON DATABASE metabridge TO metabridge_user;
+GRANT ALL PRIVILEGES ON DATABASE articium TO articium_user;
 
 -- Exit
 \q
@@ -83,11 +83,11 @@ GRANT ALL PRIVILEGES ON DATABASE metabridge TO metabridge_user;
 
 ```bash
 # Run migrations in order
-psql -U metabridge_user -d metabridge -f internal/database/schema.sql
-psql -U metabridge_user -d metabridge -f internal/database/auth.sql
-psql -U metabridge_user -d metabridge -f internal/database/batches.sql
-psql -U metabridge_user -d metabridge -f internal/database/webhooks.sql
-psql -U metabridge_user -d metabridge -f internal/database/routes.sql
+psql -U articium_user -d articium -f internal/database/schema.sql
+psql -U articium_user -d articium -f internal/database/auth.sql
+psql -U articium_user -d articium -f internal/database/batches.sql
+psql -U articium_user -d articium -f internal/database/webhooks.sql
+psql -U articium_user -d articium -f internal/database/routes.sql
 ```
 
 ### 4. Create Admin User
@@ -103,18 +103,18 @@ go install github.com/bitnami/bcrypt-cli/cmd/bcrypt-cli@latest
 bcrypt-cli hash your_secure_password
 
 # Update admin user in database
-psql -U metabridge_user -d metabridge
+psql -U articium_user -d articium
 ```
 
 ```sql
 UPDATE users
 SET password_hash = '$2a$10$YOUR_BCRYPT_HASH_HERE'
-WHERE email = 'admin@metabridge.local';
+WHERE email = 'admin@articium.local';
 
 -- Change email to your actual email
 UPDATE users
 SET email = 'admin@yourdomain.com'
-WHERE email = 'admin@metabridge.local';
+WHERE email = 'admin@articium.local';
 ```
 
 ### 5. Configure PostgreSQL for Production
@@ -163,7 +163,7 @@ host    all             all             127.0.0.1/32            scram-sha-256
 host    all             all             ::1/128                 scram-sha-256
 
 # Allow from application servers (adjust IP range)
-host    metabridge      metabridge_user 10.0.0.0/8              scram-sha-256
+host    articium      articium_user 10.0.0.0/8              scram-sha-256
 ```
 
 Restart PostgreSQL:
@@ -179,7 +179,7 @@ sudo systemctl restart postgresql
 ### 1. Create .env File
 
 ```bash
-cd /opt/metabridge
+cd /opt/articium
 cp .env.example .env
 chmod 600 .env  # Protect secrets
 ```
@@ -198,9 +198,9 @@ JWT_SECRET=<your_generated_secret_here>
 # Set production database
 DB_HOST=localhost
 DB_PORT=5432
-DB_USER=metabridge_user
+DB_USER=articium_user
 DB_PASSWORD=YOUR_VERY_STRONG_PASSWORD_HERE
-DB_NAME=metabridge
+DB_NAME=articium
 DB_SSLMODE=require  # IMPORTANT: Enable SSL
 
 # Production CORS
@@ -218,7 +218,7 @@ SERVER_ENV=production
 ### 3. Set File Permissions
 
 ```bash
-sudo chown metabridge:metabridge .env
+sudo chown articium:articium .env
 sudo chmod 400 .env  # Read-only for owner
 ```
 
@@ -276,33 +276,33 @@ npx hardhat verify --network polygon <CONTRACT_ADDRESS> <CONSTRUCTOR_ARGS>
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/metabridge-engine-hub.git
-cd metabridge-engine-hub
+git clone https://github.com/yourusername/articium.git
+cd articium
 
 # Build server
-go build -o metabridge-server cmd/server/main.go
+go build -o articium-server cmd/server/main.go
 
 # Build batcher service
-go build -o metabridge-batcher cmd/batcher/main.go
+go build -o articium-batcher cmd/batcher/main.go
 ```
 
 ### 2. Create Systemd Services
 
-**Main Server**: `/etc/systemd/system/metabridge-server.service`
+**Main Server**: `/etc/systemd/system/articium-server.service`
 
 ```ini
 [Unit]
-Description=Metabridge Engine Hub Server
+Description=Articium Hub Server
 After=network.target postgresql.service
 
 [Service]
 Type=simple
-User=metabridge
-Group=metabridge
-WorkingDirectory=/opt/metabridge
+User=articium
+Group=articium
+WorkingDirectory=/opt/articium
 Environment="PATH=/usr/local/go/bin:/usr/bin"
-EnvironmentFile=/opt/metabridge/.env
-ExecStart=/opt/metabridge/metabridge-server
+EnvironmentFile=/opt/articium/.env
+ExecStart=/opt/articium/articium-server
 Restart=always
 RestartSec=10
 
@@ -311,32 +311,32 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths=/opt/metabridge/logs
+ReadWritePaths=/opt/articium/logs
 
 # Logging
 StandardOutput=journal
 StandardError=journal
-SyslogIdentifier=metabridge-server
+SyslogIdentifier=articium-server
 
 [Install]
 WantedBy=multi-user.target
 ```
 
-**Batcher Service**: `/etc/systemd/system/metabridge-batcher.service`
+**Batcher Service**: `/etc/systemd/system/articium-batcher.service`
 
 ```ini
 [Unit]
-Description=Metabridge Transaction Batcher
-After=network.target metabridge-server.service
+Description=Articium Transaction Batcher
+After=network.target articium-server.service
 
 [Service]
 Type=simple
-User=metabridge
-Group=metabridge
-WorkingDirectory=/opt/metabridge
+User=articium
+Group=articium
+WorkingDirectory=/opt/articium
 Environment="PATH=/usr/local/go/bin:/usr/bin"
-EnvironmentFile=/opt/metabridge/.env
-ExecStart=/opt/metabridge/metabridge-batcher
+EnvironmentFile=/opt/articium/.env
+ExecStart=/opt/articium/articium-batcher
 Restart=always
 RestartSec=10
 
@@ -351,20 +351,20 @@ WantedBy=multi-user.target
 sudo systemctl daemon-reload
 
 # Enable services
-sudo systemctl enable metabridge-server
-sudo systemctl enable metabridge-batcher
+sudo systemctl enable articium-server
+sudo systemctl enable articium-batcher
 
 # Start services
-sudo systemctl start metabridge-server
-sudo systemctl start metabridge-batcher
+sudo systemctl start articium-server
+sudo systemctl start articium-batcher
 
 # Check status
-sudo systemctl status metabridge-server
-sudo systemctl status metabridge-batcher
+sudo systemctl status articium-server
+sudo systemctl status articium-batcher
 
 # View logs
-sudo journalctl -u metabridge-server -f
-sudo journalctl -u metabridge-batcher -f
+sudo journalctl -u articium-server -f
+sudo journalctl -u articium-batcher -f
 ```
 
 ---
@@ -379,7 +379,7 @@ Install Nginx and Certbot:
 sudo apt install nginx certbot python3-certbot-nginx
 ```
 
-Configure Nginx (`/etc/nginx/sites-available/metabridge`):
+Configure Nginx (`/etc/nginx/sites-available/articium`):
 
 ```nginx
 # HTTP -> HTTPS redirect
@@ -453,7 +453,7 @@ sudo certbot --nginx -d api.yourdomain.com
 Enable and start Nginx:
 
 ```bash
-sudo ln -s /etc/nginx/sites-available/metabridge /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/articium /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo systemctl enable nginx
 sudo systemctl restart nginx
@@ -485,23 +485,23 @@ sudo ufw enable
 
 ### 3. Database Backup
 
-Create backup script (`/opt/metabridge/scripts/backup-db.sh`):
+Create backup script (`/opt/articium/scripts/backup-db.sh`):
 
 ```bash
 #!/bin/bash
-BACKUP_DIR="/opt/metabridge/backups"
+BACKUP_DIR="/opt/articium/backups"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-DB_NAME="metabridge"
-DB_USER="metabridge_user"
+DB_NAME="articium"
+DB_USER="articium_user"
 
 # Create backup
-pg_dump -U $DB_USER -Fc $DB_NAME > $BACKUP_DIR/metabridge_$TIMESTAMP.dump
+pg_dump -U $DB_USER -Fc $DB_NAME > $BACKUP_DIR/articium_$TIMESTAMP.dump
 
 # Keep only last 30 days
-find $BACKUP_DIR -name "metabridge_*.dump" -mtime +30 -delete
+find $BACKUP_DIR -name "articium_*.dump" -mtime +30 -delete
 
 # Upload to S3 (optional)
-# aws s3 cp $BACKUP_DIR/metabridge_$TIMESTAMP.dump s3://your-bucket/backups/
+# aws s3 cp $BACKUP_DIR/articium_$TIMESTAMP.dump s3://your-bucket/backups/
 ```
 
 Add to crontab:
@@ -510,7 +510,7 @@ Add to crontab:
 sudo crontab -e
 
 # Daily backup at 2 AM
-0 2 * * * /opt/metabridge/scripts/backup-db.sh
+0 2 * * * /opt/articium/scripts/backup-db.sh
 ```
 
 ---
@@ -527,19 +527,19 @@ global:
   evaluation_interval: 15s
 
 scrape_configs:
-  - job_name: 'metabridge-server'
+  - job_name: 'articium-server'
     static_configs:
       - targets: ['localhost:9090']
         labels:
           instance: 'production'
-          service: 'metabridge-server'
+          service: 'articium-server'
 
-  - job_name: 'metabridge-batcher'
+  - job_name: 'articium-batcher'
     static_configs:
       - targets: ['localhost:9091']
         labels:
           instance: 'production'
-          service: 'metabridge-batcher'
+          service: 'articium-batcher'
 
   - job_name: 'node'
     static_configs:
@@ -561,7 +561,7 @@ Create `/etc/prometheus/alerts.yml`:
 
 ```yaml
 groups:
-  - name: metabridge_alerts
+  - name: articium_alerts
     rules:
       - alert: HighErrorRate
         expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.05
@@ -601,17 +601,17 @@ groups:
 grep JWT_SECRET .env
 
 # Verify user exists
-psql -U metabridge_user -d metabridge -c "SELECT * FROM users;"
+psql -U articium_user -d articium -c "SELECT * FROM users;"
 
 # Check auth logs
-sudo journalctl -u metabridge-server | grep auth
+sudo journalctl -u articium-server | grep auth
 ```
 
 **2. Database Connection Errors**
 
 ```bash
 # Test connection
-psql -U metabridge_user -h localhost -d metabridge
+psql -U articium_user -h localhost -d articium
 
 # Check PostgreSQL is running
 sudo systemctl status postgresql
@@ -636,13 +636,13 @@ grep BRIDGE_CONTRACT .env
 
 ```bash
 # Check process memory
-ps aux | grep metabridge
+ps aux | grep articium
 
 # Adjust PostgreSQL shared_buffers if needed
 sudo vim /etc/postgresql/14/main/postgresql.conf
 
 # Restart services
-sudo systemctl restart metabridge-server
+sudo systemctl restart articium-server
 ```
 
 ---
@@ -667,6 +667,6 @@ sudo systemctl restart metabridge-server
 ## Support
 
 For issues and questions:
-- GitHub Issues: https://github.com/yourusername/metabridge-engine-hub/issues
-- Documentation: https://docs.metabridge.io
-- Email: support@metabridge.io
+- GitHub Issues: https://github.com/yourusername/articium/issues
+- Documentation: https://docs.articium.io
+- Email: support@articium.io

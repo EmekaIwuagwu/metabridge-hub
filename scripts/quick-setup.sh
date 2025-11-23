@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Quick setup script for Metabridge - Run this first!
+# Quick setup script for Articium - Run this first!
 
 set -e
 
 echo "╔════════════════════════════════════════════════════════════╗"
-echo "║           Metabridge Quick Setup                           ║"
+echo "║           Articium Quick Setup                           ║"
 echo "╚════════════════════════════════════════════════════════════╝"
 echo ""
 
@@ -44,21 +44,21 @@ echo ""
 # Step 4: Enable services
 echo "Step 4/5: Enabling services for auto-start..."
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-systemctl enable metabridge-api
-systemctl enable metabridge-relayer
-systemctl enable metabridge-listener
-systemctl enable metabridge-batcher
+systemctl enable articium-api
+systemctl enable articium-relayer
+systemctl enable articium-listener
+systemctl enable articium-batcher
 echo "✓ Services enabled"
 echo ""
 
 # Step 5: Start services
 echo "Step 5/5: Starting services..."
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-systemctl start metabridge-api
+systemctl start articium-api
 sleep 3
-systemctl start metabridge-relayer
-systemctl start metabridge-listener
-systemctl start metabridge-batcher
+systemctl start articium-relayer
+systemctl start articium-listener
+systemctl start articium-batcher
 echo "✓ Services started"
 echo ""
 
@@ -66,10 +66,10 @@ echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "Service Status:"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-systemctl is-active metabridge-api && echo "  ✓ API:      running" || echo "  ✗ API:      failed"
-systemctl is-active metabridge-relayer && echo "  ✓ Relayer:  running" || echo "  ✗ Relayer:  failed"
-systemctl is-active metabridge-listener && echo "  ✓ Listener: running" || echo "  ✗ Listener: failed"
-systemctl is-active metabridge-batcher && echo "  ✓ Batcher:  running" || echo "  ✗ Batcher:  failed"
+systemctl is-active articium-api && echo "  ✓ API:      running" || echo "  ✗ API:      failed"
+systemctl is-active articium-relayer && echo "  ✓ Relayer:  running" || echo "  ✗ Relayer:  failed"
+systemctl is-active articium-listener && echo "  ✓ Listener: running" || echo "  ✗ Listener: failed"
+systemctl is-active articium-batcher && echo "  ✓ Batcher:  running" || echo "  ✗ Batcher:  failed"
 echo ""
 
 # Test API
@@ -84,7 +84,7 @@ if curl -s http://localhost:8080/api/v1/health > /dev/null 2>&1; then
     curl -s http://localhost:8080/api/v1/health | jq . 2>/dev/null || curl -s http://localhost:8080/api/v1/health
 else
     echo "⚠️  API is not responding yet. Check logs:"
-    echo "   sudo journalctl -u metabridge-api -n 50"
+    echo "   sudo journalctl -u articium-api -n 50"
 fi
 echo ""
 
@@ -93,8 +93,8 @@ echo "║                 ✅ SETUP COMPLETE!                         ║"
 echo "╚════════════════════════════════════════════════════════════╝"
 echo ""
 echo "Useful commands:"
-echo "  Check status:  systemctl status metabridge-api"
-echo "  View logs:     sudo journalctl -u metabridge-api -f"
-echo "  Restart:       sudo systemctl restart metabridge-api"
+echo "  Check status:  systemctl status articium-api"
+echo "  View logs:     sudo journalctl -u articium-api -f"
+echo "  Restart:       sudo systemctl restart articium-api"
 echo "  Check health:  curl http://localhost:8080/api/v1/health"
 echo ""

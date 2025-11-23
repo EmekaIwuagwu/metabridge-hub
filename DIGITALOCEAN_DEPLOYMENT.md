@@ -1,4 +1,4 @@
-# Complete DigitalOcean Deployment Guide for Metabridge
+# Complete DigitalOcean Deployment Guide for Articium
 
 **⚠️ THIS GUIDE HAS BEEN COMPLETELY REWRITTEN WITH CORRECT, TESTED STEPS**
 
@@ -11,7 +11,7 @@ All instructions in this document have been verified on Ubuntu 24.04 and will wo
 **For a fully automated deployment, run:**
 
 ```bash
-cd ~/projects/metabridge-engine-hub
+cd ~/projects/articium
 sudo bash deploy-digitalocean.sh
 ```
 
@@ -111,12 +111,12 @@ mkdir -p /root/projects
 cd /root/projects
 
 # Clone repository
-git clone https://github.com/EmekaIwuagwu/metabridge-engine-hub.git
-cd metabridge-engine-hub
+git clone https://github.com/EmekaIwuagwu/articium.git
+cd articium
 
 # Verify
 pwd
-# Expected: /root/projects/metabridge-engine-hub
+# Expected: /root/projects/articium
 ```
 
 ---
@@ -216,7 +216,7 @@ curl -s http://localhost:8222/varz | jq '.version'
 # Expected: "2.10.0"
 
 # Cleanup
-cd /root/projects/metabridge-engine-hub
+cd /root/projects/articium
 rm -rf /tmp/nats-server-*
 ```
 
@@ -286,29 +286,29 @@ pg_lsclusters
 
 **IMPORTANT: Use these exact credentials (they're hardcoded in the config)**
 
-- Database: `metabridge_prod`
-- User: `metabridge`
-- Password: `metabridge`
+- Database: `articium_prod`
+- User: `articium`
+- Password: `articium`
 
 ```bash
 # Create user with SUPERUSER privileges
 sudo -u postgres psql << 'EOF'
 -- Drop user if exists
-DROP USER IF EXISTS metabridge;
+DROP USER IF EXISTS articium;
 
 -- Create user with SUPERUSER privilege
-CREATE USER metabridge WITH PASSWORD 'metabridge' SUPERUSER;
+CREATE USER articium WITH PASSWORD 'articium' SUPERUSER;
 
 -- Create database
-DROP DATABASE IF EXISTS metabridge_prod;
-CREATE DATABASE metabridge_prod OWNER metabridge;
+DROP DATABASE IF EXISTS articium_prod;
+CREATE DATABASE articium_prod OWNER articium;
 
 -- Grant permissions
-GRANT ALL PRIVILEGES ON DATABASE metabridge_prod TO metabridge;
+GRANT ALL PRIVILEGES ON DATABASE articium_prod TO articium;
 
 -- Verify
-\du metabridge
-\l metabridge_prod
+\du articium
+\l articium_prod
 EOF
 ```
 
@@ -316,13 +316,13 @@ EOF
 
 ```bash
 # Grant all privileges on public schema
-sudo -u postgres psql -d metabridge_prod << 'EOF'
+sudo -u postgres psql -d articium_prod << 'EOF'
 -- Grant all privileges on public schema
-GRANT ALL ON SCHEMA public TO metabridge;
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO metabridge;
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO metabridge;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO metabridge;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO metabridge;
+GRANT ALL ON SCHEMA public TO articium;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO articium;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO articium;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO articium;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO articium;
 EOF
 ```
 
@@ -330,7 +330,7 @@ EOF
 
 ```bash
 # Test connection using password authentication
-PGPASSWORD=metabridge psql -h /var/run/postgresql -p 5433 -U metabridge -d metabridge_prod -c "SELECT version();"
+PGPASSWORD=articium psql -h /var/run/postgresql -p 5433 -U articium -d articium_prod -c "SELECT version();"
 
 # Expected: Shows PostgreSQL version without errors
 ```
@@ -349,7 +349,7 @@ PGPASSWORD=metabridge psql -h /var/run/postgresql -p 5433 -U metabridge -d metab
 **IMPORTANT: Build in this exact order**
 
 ```bash
-cd /root/projects/metabridge-engine-hub
+cd /root/projects/articium
 
 # Create bin directory
 mkdir -p bin
@@ -400,13 +400,13 @@ ls -lh bin/
 **⚠️ CRITICAL: Migrations must run successfully before starting services**
 
 ```bash
-cd /root/projects/metabridge-engine-hub
+cd /root/projects/articium
 
 # Run migrator
 ./bin/migrator -config config/config.production.yaml
 
 # Expected output:
-# Starting Metabridge Database Migrator...
+# Starting Articium Database Migrator...
 # Configuration loaded
 # Database connection established
 # Applying schema schema_file=internal/database/schema.sql
@@ -422,7 +422,7 @@ cd /root/projects/metabridge-engine-hub
 # All database schemas applied successfully
 
 # Verify tables were created
-PGPASSWORD=metabridge psql -h /var/run/postgresql -p 5433 -U metabridge -d metabridge_prod -c "\dt"
+PGPASSWORD=articium psql -h /var/run/postgresql -p 5433 -U articium -d articium_prod -c "\dt"
 
 # Expected: List of tables (messages, batches, chains, users, etc.)
 ```
@@ -430,12 +430,12 @@ PGPASSWORD=metabridge psql -h /var/run/postgresql -p 5433 -U metabridge -d metab
 **❌ If migrations fail with "permission denied for schema public":**
 ```bash
 # Re-run Step 3 from PostgreSQL Setup
-sudo -u postgres psql -d metabridge_prod << 'EOF'
-GRANT ALL ON SCHEMA public TO metabridge;
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO metabridge;
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO metabridge;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO metabridge;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO metabridge;
+sudo -u postgres psql -d articium_prod << 'EOF'
+GRANT ALL ON SCHEMA public TO articium;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO articium;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO articium;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO articium;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO articium;
 EOF
 
 # Then retry migrations
@@ -451,7 +451,7 @@ EOF
 **⚠️ IMPORTANT: The systemd files have been corrected to work on Ubuntu 24.04**
 
 ```bash
-cd /root/projects/metabridge-engine-hub
+cd /root/projects/articium
 
 # Copy service files to systemd directory
 sudo cp systemd/*.service /etc/systemd/system/
@@ -460,43 +460,43 @@ sudo cp systemd/*.service /etc/systemd/system/
 sudo systemctl daemon-reload
 
 # Verify service files are installed
-ls -la /etc/systemd/system/metabridge-*.service
+ls -la /etc/systemd/system/articium-*.service
 
 # Expected: 4 service files
-# metabridge-api.service
-# metabridge-relayer.service
-# metabridge-listener.service
-# metabridge-batcher.service
+# articium-api.service
+# articium-relayer.service
+# articium-listener.service
+# articium-batcher.service
 ```
 
 ### Step 2: Start All Services
 
 ```bash
 # Start services in order
-sudo systemctl start metabridge-api
+sudo systemctl start articium-api
 sleep 3
 
-sudo systemctl start metabridge-relayer
+sudo systemctl start articium-relayer
 sleep 3
 
-sudo systemctl start metabridge-batcher
+sudo systemctl start articium-batcher
 sleep 3
 
-sudo systemctl start metabridge-listener
+sudo systemctl start articium-listener
 sleep 3
 
 # Enable services to start on boot
-sudo systemctl enable metabridge-api
-sudo systemctl enable metabridge-relayer
-sudo systemctl enable metabridge-batcher
-sudo systemctl enable metabridge-listener
+sudo systemctl enable articium-api
+sudo systemctl enable articium-relayer
+sudo systemctl enable articium-batcher
+sudo systemctl enable articium-listener
 
 # Check status of all services
 echo "=== Service Status ==="
-sudo systemctl is-active metabridge-api && echo "✅ API: Running" || echo "❌ API: Failed"
-sudo systemctl is-active metabridge-relayer && echo "✅ Relayer: Running" || echo "❌ Relayer: Failed"
-sudo systemctl is-active metabridge-batcher && echo "✅ Batcher: Running" || echo "❌ Batcher: Failed"
-sudo systemctl is-active metabridge-listener && echo "✅ Listener: Running" || echo "❌ Listener: Failed"
+sudo systemctl is-active articium-api && echo "✅ API: Running" || echo "❌ API: Failed"
+sudo systemctl is-active articium-relayer && echo "✅ Relayer: Running" || echo "❌ Relayer: Failed"
+sudo systemctl is-active articium-batcher && echo "✅ Batcher: Running" || echo "❌ Batcher: Failed"
+sudo systemctl is-active articium-listener && echo "✅ Listener: Running" || echo "❌ Listener: Failed"
 ```
 
 **✅ Expected Output:**
@@ -510,10 +510,10 @@ sudo systemctl is-active metabridge-listener && echo "✅ Listener: Running" || 
 **❌ If any service fails, check logs:**
 ```bash
 # Check specific service logs
-sudo journalctl -u metabridge-api -n 50 --no-pager
-sudo journalctl -u metabridge-listener -n 50 --no-pager
-sudo journalctl -u metabridge-batcher -n 50 --no-pager
-sudo journalctl -u metabridge-relayer -n 50 --no-pager
+sudo journalctl -u articium-api -n 50 --no-pager
+sudo journalctl -u articium-listener -n 50 --no-pager
+sudo journalctl -u articium-batcher -n 50 --no-pager
+sudo journalctl -u articium-relayer -n 50 --no-pager
 ```
 
 ---
@@ -524,7 +524,7 @@ sudo journalctl -u metabridge-relayer -n 50 --no-pager
 
 ```bash
 # Run comprehensive service check
-cd /root/projects/metabridge-engine-hub
+cd /root/projects/articium
 bash check-services.sh
 ```
 
@@ -537,7 +537,7 @@ curl -s http://localhost:8080/health | jq '.'
 # Expected:
 # {
 #   "environment": "testnet",
-#   "service": "metabridge-api",
+#   "service": "articium-api",
 #   "status": "healthy",
 #   "timestamp": "2025-11-22T19:27:49Z"
 # }
@@ -610,12 +610,12 @@ pq: permission denied for schema public
 **Solution:**
 ```bash
 # Grant schema permissions
-sudo -u postgres psql -d metabridge_prod << 'EOF'
-GRANT ALL ON SCHEMA public TO metabridge;
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO metabridge;
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO metabridge;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO metabridge;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO metabridge;
+sudo -u postgres psql -d articium_prod << 'EOF'
+GRANT ALL ON SCHEMA public TO articium;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO articium;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO articium;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO articium;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO articium;
 EOF
 
 # Retry operation
@@ -632,12 +632,12 @@ Main process exited, code=exited, status=203/EXEC
 ```bash
 # This was caused by systemd security restrictions (now fixed)
 # Update service files
-cd /root/projects/metabridge-engine-hub
+cd /root/projects/articium
 git pull
 sudo cp systemd/*.service /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl restart metabridge-listener
-sudo systemctl restart metabridge-batcher
+sudo systemctl restart articium-listener
+sudo systemctl restart articium-batcher
 ```
 
 ### Issue 4: Bridge Program ID Not Configured
@@ -650,10 +650,10 @@ error="bridge program ID not configured" chain="solana-devnet"
 **Solution:**
 ```bash
 # This is already fixed in the latest code
-cd /root/projects/metabridge-engine-hub
+cd /root/projects/articium
 git pull
 CGO_ENABLED=0 go build -o bin/listener ./cmd/listener
-sudo systemctl restart metabridge-listener
+sudo systemctl restart articium-listener
 ```
 
 ### Issue 5: NEAR RPC Errors
@@ -673,7 +673,7 @@ This is normal - public NEAR RPC endpoints have rate limiting. The service will 
 For convenience, use the automated script that handles everything:
 
 ```bash
-cd /root/projects/metabridge-engine-hub
+cd /root/projects/articium
 sudo bash deploy-digitalocean.sh
 ```
 
@@ -708,26 +708,26 @@ After deployment, verify:
 
 ```bash
 # Restart all services
-sudo systemctl restart metabridge-api metabridge-relayer metabridge-batcher metabridge-listener
+sudo systemctl restart articium-api articium-relayer articium-batcher articium-listener
 
 # View logs
-sudo journalctl -u metabridge-api -f
-sudo journalctl -u metabridge-listener -f
+sudo journalctl -u articium-api -f
+sudo journalctl -u articium-listener -f
 
 # Check service status
-sudo systemctl status metabridge-api
+sudo systemctl status articium-api
 
 # Rebuild after code changes
-cd /root/projects/metabridge-engine-hub
+cd /root/projects/articium
 git pull
 CGO_ENABLED=0 go build -o bin/api ./cmd/api
-sudo systemctl restart metabridge-api
+sudo systemctl restart articium-api
 
 # Database backup
-PGPASSWORD=metabridge pg_dump -h /var/run/postgresql -p 5433 -U metabridge metabridge_prod > backup.sql
+PGPASSWORD=articium pg_dump -h /var/run/postgresql -p 5433 -U articium articium_prod > backup.sql
 
 # Database restore
-PGPASSWORD=metabridge psql -h /var/run/postgresql -p 5433 -U metabridge metabridge_prod < backup.sql
+PGPASSWORD=articium psql -h /var/run/postgresql -p 5433 -U articium articium_prod < backup.sql
 ```
 
 ---
@@ -735,10 +735,10 @@ PGPASSWORD=metabridge psql -h /var/run/postgresql -p 5433 -U metabridge metabrid
 ## Support
 
 For issues:
-- Check logs: `sudo journalctl -u metabridge-api -n 100`
+- Check logs: `sudo journalctl -u articium-api -n 100`
 - Run diagnostics: `bash check-services.sh`
-- GitHub Issues: https://github.com/EmekaIwuagwu/metabridge-engine-hub/issues
+- GitHub Issues: https://github.com/EmekaIwuagwu/articium/issues
 
 ---
 
-**✅ Your Metabridge deployment on DigitalOcean is now complete!**
+**✅ Your Articium deployment on DigitalOcean is now complete!**

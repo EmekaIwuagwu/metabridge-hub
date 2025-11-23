@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/types"
+	"github.com/EmekaIwuagwu/articium-hub/internal/types"
 )
 
 // SaveMessage saves a cross-chain message to the database

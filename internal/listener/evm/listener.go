@@ -6,9 +6,9 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/blockchain/evm"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/monitoring"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/types"
+	"github.com/EmekaIwuagwu/articium-hub/internal/blockchain/evm"
+	"github.com/EmekaIwuagwu/articium-hub/internal/monitoring"
+	"github.com/EmekaIwuagwu/articium-hub/internal/types"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"

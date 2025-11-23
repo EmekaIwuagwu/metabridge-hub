@@ -82,7 +82,7 @@ cat > cover.tex << 'EOF'
 \begin{titlepage}
 \centering
 \vspace*{2cm}
-{\Huge\bfseries Metabridge Engine\par}
+{\Huge\bfseries Articium\par}
 \vspace{0.5cm}
 {\LARGE Universal Cross-Chain Bridge Protocol\par}
 \vspace{1cm}
@@ -111,8 +111,8 @@ pandoc WHITEPAPER.md -o WHITEPAPER.pdf \
   -V urlcolor=blue \
   -V toccolor=black \
   --include-before-body=cover.tex \
-  --metadata title="Metabridge Engine" \
-  --metadata author="Metabridge Team" \
+  --metadata title="Articium" \
+  --metadata author="Articium Team" \
   --metadata date="November 2025"
 ```
 
@@ -123,7 +123,7 @@ pandoc WHITEPAPER.md -o WHITEPAPER.pdf \
 cat > custom.tex << 'EOF'
 \usepackage{fancyhdr}
 \pagestyle{fancy}
-\fancyhead[L]{Metabridge Engine}
+\fancyhead[L]{Articium}
 \fancyhead[R]{Technical Whitepaper v1.0}
 \fancyfoot[C]{\thepage}
 EOF
@@ -259,8 +259,8 @@ pandoc WHITEPAPER.md -o WHITEPAPER.pdf \
   -V papersize=letter \
   -V colorlinks=true \
   -V mainfont="Times New Roman" \
-  --metadata title="Metabridge Engine - Technical Whitepaper" \
-  --metadata author="Metabridge Team" \
+  --metadata title="Articium - Technical Whitepaper" \
+  --metadata author="Articium Team" \
   --metadata date="November 2025"
 ```
 

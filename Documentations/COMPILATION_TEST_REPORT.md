@@ -1,4 +1,4 @@
-# Metabridge Compilation Test Report
+# Articium Compilation Test Report
 
 **Date:** November 22, 2025
 **Test Environment:** Linux 4.4.0 / Ubuntu
@@ -207,12 +207,12 @@ bin/migrator --help
 
 All systemd service files in `systemd/` directory have been verified to use correct binary names:
 
-- `systemd/metabridge-api.service` ✅
-- `systemd/metabridge-relayer.service` ✅
+- `systemd/articium-api.service` ✅
+- `systemd/articium-relayer.service` ✅
 
 **Binary References:**
-- Uses `/root/projects/metabridge-engine-hub/bin/api`
-- Uses `/root/projects/metabridge-engine-hub/bin/relayer`
+- Uses `/root/projects/articium/bin/api`
+- Uses `/root/projects/articium/bin/relayer`
 
 ---
 
@@ -255,7 +255,7 @@ All systemd service files in `systemd/` directory have been verified to use corr
    make build
    sudo cp systemd/*.service /etc/systemd/system/
    sudo systemctl daemon-reload
-   sudo systemctl start metabridge-api metabridge-relayer
+   sudo systemctl start articium-api articium-relayer
    ```
 
 2. **Run integration tests**

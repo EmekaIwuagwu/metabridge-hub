@@ -1,6 +1,6 @@
-# Deploying Metabridge on Render.com
+# Deploying Articium on Render.com
 
-Complete guide to deploy Metabridge bridge protocol on Render for testing and production.
+Complete guide to deploy Articium bridge protocol on Render for testing and production.
 
 ## What You'll Deploy
 
@@ -19,8 +19,8 @@ Complete guide to deploy Metabridge bridge protocol on Render for testing and pr
 
 ```bash
 # If you haven't already, push your code to GitHub
-cd ~/metabridge/metabridge-engine-hub
-git remote set-url origin https://github.com/YOUR_USERNAME/metabridge-engine-hub.git
+cd ~/articium/articium
+git remote set-url origin https://github.com/YOUR_USERNAME/articium.git
 git push origin main
 ```
 
@@ -34,9 +34,9 @@ git push origin main
 
 1. In Render Dashboard, click **"New +"** → **"PostgreSQL"**
 2. Configure database:
-   - **Name**: `metabridge-db`
-   - **Database**: `metabridge`
-   - **User**: `metabridge_user` (auto-generated)
+   - **Name**: `articium-db`
+   - **Database**: `articium`
+   - **User**: `articium_user` (auto-generated)
    - **Region**: Choose closest to you
    - **Plan**: Free (for testing) or Starter ($7/month for production)
 3. Click **"Create Database"**
@@ -106,8 +106,8 @@ Create `build.sh` in your repo root:
 #!/bin/bash
 set -e
 
-echo "Building Metabridge API Server..."
-go build -o bin/metabridge-api cmd/api/main.go
+echo "Building Articium API Server..."
+go build -o bin/articium-api cmd/api/main.go
 
 echo "Build complete!"
 ```
@@ -128,7 +128,7 @@ Create `start.sh` in your repo root:
 #!/bin/bash
 set -e
 
-echo "Starting Metabridge API Server..."
+echo "Starting Articium API Server..."
 
 # Parse DATABASE_URL to individual components for compatibility
 if [ -n "$DATABASE_URL" ]; then
@@ -148,7 +148,7 @@ fi
 
 # Start the API server
 echo "Starting API server on port ${PORT:-8080}..."
-exec ./bin/metabridge-api
+exec ./bin/articium-api
 ```
 
 Make it executable:
@@ -166,7 +166,7 @@ git push
 3. Configure the web service:
 
 **Basic Settings**:
-- **Name**: `metabridge-api`
+- **Name**: `articium-api`
 - **Region**: Same as database
 - **Branch**: `main`
 - **Root Directory**: (leave empty)
@@ -188,7 +188,7 @@ Add all variables from your `.env` file above, PLUS:
    - Clone your repo
    - Run `./build.sh` to compile Go binary
    - Run `./start.sh` to start server
-   - Assign you a URL like: `https://metabridge-api.onrender.com`
+   - Assign you a URL like: `https://articium-api.onrender.com`
 
 ## Step 8: Verify Deployment
 
@@ -196,7 +196,7 @@ Once deployed (5-10 minutes), test your API:
 
 ```bash
 # Replace with your Render URL
-export RENDER_URL=https://metabridge-api.onrender.com
+export RENDER_URL=https://articium-api.onrender.com
 
 # Test health endpoint
 curl $RENDER_URL/health
@@ -227,7 +227,7 @@ psql <your-database-url>
 INSERT INTO users (id, email, name, password_hash, role, active, created_at, updated_at)
 VALUES (
   'admin-001',
-  'admin@metabridge.local',
+  'admin@articium.local',
   'Admin User',
   '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',  -- "admin123"
   'admin',
@@ -244,11 +244,11 @@ VALUES (
 3. Configure:
 
 **Basic Settings**:
-- **Name**: `metabridge-relayer`
+- **Name**: `articium-relayer`
 - **Region**: Same as API
 - **Branch**: `main`
-- **Build Command**: `go build -o bin/metabridge-relayer cmd/relayer/main.go`
-- **Start Command**: `./bin/metabridge-relayer --config config/config.testnet.yaml`
+- **Build Command**: `go build -o bin/articium-relayer cmd/relayer/main.go`
+- **Start Command**: `./bin/articium-relayer --config config/config.testnet.yaml`
 
 **Environment Variables**:
 Copy all environment variables from API service
@@ -271,7 +271,7 @@ curl https://your-app.onrender.com/v1/chains/status
 ```bash
 curl -X POST https://your-app.onrender.com/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@metabridge.local","password":"admin123"}'
+  -d '{"email":"admin@articium.local","password":"admin123"}'
 ```
 
 ### Test 4: Get Bridge Stats
@@ -367,7 +367,7 @@ Create `render.yaml`:
 ```yaml
 services:
   - type: web
-    name: metabridge-api
+    name: articium-api
     runtime: go
     buildCommand: ./build.sh
     startCommand: ./start.sh
@@ -378,13 +378,13 @@ services:
         generateValue: true
       - key: DATABASE_URL
         fromDatabase:
-          name: metabridge-db
+          name: articium-db
           property: connectionString
 
 databases:
-  - name: metabridge-db
-    databaseName: metabridge
-    user: metabridge_user
+  - name: articium-db
+    databaseName: articium
+    user: articium_user
 ```
 
 ## Troubleshooting

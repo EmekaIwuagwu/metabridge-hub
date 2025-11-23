@@ -1,6 +1,6 @@
-# Azure Deployment Guide - Metabridge Engine
+# Azure Deployment Guide - Articium
 
-Complete step-by-step guide to deploy Metabridge Engine on Azure from scratch.
+Complete step-by-step guide to deploy Articium on Azure from scratch.
 
 ## Table of Contents
 
@@ -59,10 +59,10 @@ Complete step-by-step guide to deploy Metabridge Engine on Azure from scratch.
 
 2. **Project details:**
    - Subscription: Select your subscription
-   - Resource group: **Create new** → Name: `metabridge-testnet-rg`
+   - Resource group: **Create new** → Name: `articium-testnet-rg`
 
 3. **Instance details:**
-   - Virtual machine name: `metabridge-testnet-vm`
+   - Virtual machine name: `articium-testnet-vm`
    - Region: **East US** (or closest to your location)
    - Availability options: **No infrastructure redundancy required** (for testnet)
    - Security type: **Standard**
@@ -77,7 +77,7 @@ Complete step-by-step guide to deploy Metabridge Engine on Azure from scratch.
    - Authentication type: **SSH public key**
    - Username: `azureuser`
    - SSH public key source:
-     - **Option A**: **Generate new key pair** → Key pair name: `metabridge-key`
+     - **Option A**: **Generate new key pair** → Key pair name: `articium-key`
      - **Option B**: **Use existing public key** → Paste your public key
 
 5. **Inbound port rules:**
@@ -96,7 +96,7 @@ Complete step-by-step guide to deploy Metabridge Engine on Azure from scratch.
 
 2. **Data disks:**
    - Click **"Create and attach a new disk"**
-   - Name: `metabridge-data-disk`
+   - Name: `articium-data-disk`
    - Size: **512 GiB**
    - Disk SKU: **Premium SSD LRS**
    - Click **"OK"**
@@ -104,9 +104,9 @@ Complete step-by-step guide to deploy Metabridge Engine on Azure from scratch.
 **2.3. Networking Tab:**
 
 1. **Network interface:**
-   - Virtual network: **Create new** → Name: `metabridge-vnet`
+   - Virtual network: **Create new** → Name: `articium-vnet`
    - Subnet: **default** (10.0.0.0/24)
-   - Public IP: **Create new** → Name: `metabridge-public-ip`
+   - Public IP: **Create new** → Name: `articium-public-ip`
      - SKU: **Standard**
      - Assignment: **Static**
    - NIC network security group: **Basic**
@@ -145,13 +145,13 @@ Complete step-by-step guide to deploy Metabridge Engine on Azure from scratch.
 1. Review all settings
 2. Click **"Create"**
 3. If you chose "Generate new key pair":
-   - **Download private key** (metabridge-key.pem)
+   - **Download private key** (articium-key.pem)
    - **SAVE THIS FILE SECURELY** - you cannot download it again!
 4. Wait 3-5 minutes for deployment
 
 ### Step 3: Get VM Details
 
-1. Go to **Virtual machines** → **metabridge-testnet-vm**
+1. Go to **Virtual machines** → **articium-testnet-vm**
 2. Note down:
    - **Public IP address**: `XX.XX.XX.XX` (you'll use this for SSH)
    - **Private IP address**: `10.0.0.4` (for internal use)
@@ -166,24 +166,24 @@ Complete step-by-step guide to deploy Metabridge Engine on Azure from scratch.
 
 ```bash
 # Set permissions on private key
-chmod 400 metabridge-key.pem
+chmod 400 articium-key.pem
 
 # Connect to VM
-ssh -i metabridge-key.pem azureuser@XX.XX.XX.XX
+ssh -i articium-key.pem azureuser@XX.XX.XX.XX
 ```
 
 **On Windows (PowerShell):**
 
 ```powershell
 # Connect to VM
-ssh -i metabridge-key.pem azureuser@XX.XX.XX.XX
+ssh -i articium-key.pem azureuser@XX.XX.XX.XX
 ```
 
 **Expected output:**
 ```
 Welcome to Ubuntu 22.04.3 LTS (GNU/Linux 5.15.0-1045-azure x86_64)
 ...
-azureuser@metabridge-testnet-vm:~$
+azureuser@articium-testnet-vm:~$
 ```
 
 ✅ **You're now connected to your Azure VM!**
@@ -249,36 +249,36 @@ lsblk
 sudo mkfs.ext4 /dev/sdb
 
 # Create mount point
-sudo mkdir -p /mnt/metabridge-data
+sudo mkdir -p /mnt/articium-data
 
 # Mount disk
-sudo mount /dev/sdb /mnt/metabridge-data
+sudo mount /dev/sdb /mnt/articium-data
 
 # Get UUID
 sudo blkid /dev/sdb
 # Output: /dev/sdb: UUID="xxxx-xxxx-xxxx-xxxx" TYPE="ext4"
 
 # Add to fstab for auto-mount
-echo "UUID=xxxx-xxxx-xxxx-xxxx /mnt/metabridge-data ext4 defaults 0 2" | sudo tee -a /etc/fstab
+echo "UUID=xxxx-xxxx-xxxx-xxxx /mnt/articium-data ext4 defaults 0 2" | sudo tee -a /etc/fstab
 
 # Verify mount
-df -h /mnt/metabridge-data
+df -h /mnt/articium-data
 ```
 
 ### Step 5: Create Application Directory
 
 ```bash
 # Create app directory
-sudo mkdir -p /mnt/metabridge-data/metabridge
+sudo mkdir -p /mnt/articium-data/articium
 
 # Set ownership
-sudo chown -R azureuser:azureuser /mnt/metabridge-data/metabridge
+sudo chown -R azureuser:azureuser /mnt/articium-data/articium
 
 # Create subdirectories
-mkdir -p /mnt/metabridge-data/metabridge/{data,logs,config,backups}
+mkdir -p /mnt/articium-data/articium/{data,logs,config,backups}
 
 # Create symlink for easy access
-ln -s /mnt/metabridge-data/metabridge ~/metabridge
+ln -s /mnt/articium-data/articium ~/articium
 ```
 
 ---
@@ -407,11 +407,11 @@ redis-cli --version
 
 ```bash
 # Navigate to app directory
-cd ~/metabridge
+cd ~/articium
 
 # Clone repository
-git clone https://github.com/EmekaIwuagwu/metabridge-engine-hub.git
-cd metabridge-engine-hub
+git clone https://github.com/EmekaIwuagwu/articium.git
+cd articium
 
 # Checkout your branch (or main)
 git checkout claude/multi-chain-bridge-protocol-014mAq2r9WZ9CyBp9wSuuMGe
@@ -431,9 +431,9 @@ BRIDGE_ENVIRONMENT=testnet
 # Database
 DATABASE_HOST=localhost
 DATABASE_PORT=5432
-DATABASE_USER=metabridge
+DATABASE_USER=articium
 DATABASE_PASSWORD=CHANGE_THIS_PASSWORD
-DATABASE_NAME=metabridge_testnet
+DATABASE_NAME=articium_testnet
 DB_PASSWORD=CHANGE_THIS_PASSWORD
 
 # NATS
@@ -479,8 +479,8 @@ nano .env
 
 ```bash
 # Update paths to use data disk
-export DATA_DIR=/mnt/metabridge-data/metabridge/data
-export LOG_DIR=/mnt/metabridge-data/metabridge/logs
+export DATA_DIR=/mnt/articium-data/articium/data
+export LOG_DIR=/mnt/articium-data/articium/logs
 
 # Create directories
 mkdir -p $DATA_DIR/{postgres,redis,nats,prometheus,grafana}
@@ -573,7 +573,7 @@ near call bridge.YOUR_ACCOUNT.testnet new \
 ### Step 4: Update Configuration
 
 ```bash
-cd ~/metabridge/metabridge-engine-hub
+cd ~/articium/articium
 
 # Update config with contract addresses
 nano config/config.testnet.yaml
@@ -598,7 +598,7 @@ nano deployments/docker/docker-compose.infrastructure.yaml
 # Change:
 #   - ../../data/postgres:/var/lib/postgresql/data
 # To:
-#   - /mnt/metabridge-data/metabridge/data/postgres:/var/lib/postgresql/data
+#   - /mnt/articium-data/articium/data/postgres:/var/lib/postgresql/data
 ```
 
 ### Step 2: Start Infrastructure
@@ -621,7 +621,7 @@ docker compose -f docker-compose.infrastructure.yaml logs -f
 ### Step 3: Build and Start Backend Services
 
 ```bash
-cd ~/metabridge/metabridge-engine-hub
+cd ~/articium/articium
 
 # Run deployment script
 ./deploy-testnet.sh
@@ -646,7 +646,7 @@ curl http://localhost:8080/v1/chains | jq '.'
 docker ps
 
 # Check processes
-ps aux | grep metabridge
+ps aux | grep articium
 ```
 
 ---
@@ -657,7 +657,7 @@ ps aux | grep metabridge
 
 ```bash
 # Test 1: Check all Docker containers
-cd ~/metabridge/metabridge-engine-hub/deployments/docker
+cd ~/articium/articium/deployments/docker
 docker compose -f docker-compose.infrastructure.yaml ps
 
 # Expected: All services "Up" and "healthy"
@@ -668,7 +668,7 @@ docker compose -f docker-compose.infrastructure.yaml ps
 # - grafana (healthy)
 
 # Test 2: Verify PostgreSQL
-docker exec -it metabridge-postgres psql -U metabridge -d metabridge_testnet -c "SELECT version();"
+docker exec -it articium-postgres psql -U articium -d articium_testnet -c "SELECT version();"
 
 # Expected: PostgreSQL 15.x version info
 
@@ -678,7 +678,7 @@ curl -s http://localhost:8222/varz | jq '.version'
 # Expected: NATS version 2.10.x
 
 # Test 4: Verify Redis
-docker exec -it metabridge-redis redis-cli ping
+docker exec -it articium-redis redis-cli ping
 
 # Expected: PONG
 
@@ -747,11 +747,11 @@ curl http://$VM_IP:8080/v1/tokens | jq '.'
 
 ```bash
 # Test 1: Create admin user (if not exists)
-docker exec -i metabridge-postgres psql -U metabridge -d metabridge_testnet << 'EOF'
+docker exec -i articium-postgres psql -U articium -d articium_testnet << 'EOF'
 INSERT INTO users (id, email, name, password_hash, role, active, created_at, updated_at)
 VALUES (
   'admin-001',
-  'admin@metabridge.local',
+  'admin@articium.local',
   'System Administrator',
   '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
   'admin',
@@ -766,7 +766,7 @@ EOF
 RESPONSE=$(curl -s -X POST http://$VM_IP:8080/auth/login \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "admin@metabridge.local",
+    "email": "admin@articium.local",
     "password": "admin123"
   }')
 
@@ -777,7 +777,7 @@ echo $RESPONSE | jq '.'
 #   "token": "eyJhbGciOi...",
 #   "user": {
 #     "id": "admin-001",
-#     "email": "admin@metabridge.local",
+#     "email": "admin@articium.local",
 #     "role": "admin"
 #   }
 # }
@@ -814,7 +814,7 @@ curl -s http://$VM_IP:8080/v1/admin/users \
 
 ```bash
 # Test 1: List all tables
-docker exec -it metabridge-postgres psql -U metabridge -d metabridge_testnet << 'EOF'
+docker exec -it articium-postgres psql -U articium -d articium_testnet << 'EOF'
 SELECT schemaname, tablename, pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) AS size
 FROM pg_tables
 WHERE schemaname = 'public'
@@ -824,7 +824,7 @@ EOF
 # Expected: All bridge tables with sizes
 
 # Test 2: Check table counts
-docker exec -it metabridge-postgres psql -U metabridge -d metabridge_testnet << 'EOF'
+docker exec -it articium-postgres psql -U articium -d articium_testnet << 'EOF'
 SELECT
   (SELECT COUNT(*) FROM messages) as total_messages,
   (SELECT COUNT(*) FROM batches) as total_batches,
@@ -837,7 +837,7 @@ EOF
 # Expected: Record counts for all tables
 
 # Test 3: Database performance
-docker exec -it metabridge-postgres psql -U metabridge -d metabridge_testnet << 'EOF'
+docker exec -it articium-postgres psql -U articium -d articium_testnet << 'EOF'
 \timing on
 EXPLAIN ANALYZE SELECT * FROM messages WHERE status = 'pending' LIMIT 100;
 EOF
@@ -845,18 +845,18 @@ EOF
 # Expected: Query execution time < 10ms
 
 # Test 4: Check database connections
-docker exec -it metabridge-postgres psql -U metabridge -d metabridge_testnet -c \
-  "SELECT count(*) as active_connections FROM pg_stat_activity WHERE datname = 'metabridge_testnet';"
+docker exec -it articium-postgres psql -U articium -d articium_testnet -c \
+  "SELECT count(*) as active_connections FROM pg_stat_activity WHERE datname = 'articium_testnet';"
 
 # Expected: Active connections count (should be < 10 for testnet)
 
 # Test 5: Database size
-docker exec -it metabridge-postgres psql -U metabridge -d metabridge_testnet << 'EOF'
+docker exec -it articium-postgres psql -U articium -d articium_testnet << 'EOF'
 SELECT
   pg_database.datname,
   pg_size_pretty(pg_database_size(pg_database.datname)) AS size
 FROM pg_database
-WHERE datname = 'metabridge_testnet';
+WHERE datname = 'articium_testnet';
 EOF
 
 # Expected: Total database size (~50MB for fresh install)
@@ -866,14 +866,14 @@ EOF
 
 ```bash
 # Test 1: Check systemd services
-sudo systemctl status metabridge-api --no-pager
-sudo systemctl status metabridge-listener --no-pager
-sudo systemctl status metabridge-relayer --no-pager
+sudo systemctl status articium-api --no-pager
+sudo systemctl status articium-listener --no-pager
+sudo systemctl status articium-relayer --no-pager
 
 # Expected: All active (running)
 
 # Test 2: Check service logs
-sudo journalctl -u metabridge-api --since "10 minutes ago" --no-pager | tail -20
+sudo journalctl -u articium-api --since "10 minutes ago" --no-pager | tail -20
 
 # Expected to see:
 # - "API server started"
@@ -882,7 +882,7 @@ sudo journalctl -u metabridge-api --since "10 minutes ago" --no-pager | tail -20
 # - "Listening on :8080"
 
 # Test 3: Check for errors
-sudo journalctl -u metabridge-api --since "1 hour ago" --no-pager | grep -i error | wc -l
+sudo journalctl -u articium-api --since "1 hour ago" --no-pager | grep -i error | wc -l
 
 # Expected: 0 or very low count
 
@@ -894,7 +894,7 @@ echo "=== Memory Usage ==="
 free -h
 
 echo "=== Disk Usage ==="
-df -h /mnt/metabridge-data
+df -h /mnt/articium-data
 
 # Expected:
 # - CPU: < 50% average
@@ -1007,7 +1007,7 @@ watch -n 1 'ps aux | grep -E "(api|listener|relayer)" | grep -v grep'
 # These tests require deployed contracts
 
 # Test 1: Check contract addresses in config
-cat ~/metabridge/metabridge-engine-hub/config/config.testnet.yaml | grep -A 5 "bridge_contract"
+cat ~/articium/articium/config/config.testnet.yaml | grep -A 5 "bridge_contract"
 
 # Expected: Contract addresses for all chains
 
@@ -1040,10 +1040,10 @@ curl -s http://localhost:8080/v1/messages?status=pending | jq '.messages[0]'
 
 ```bash
 # Test 1: Manual database backup
-BACKUP_DIR=/mnt/metabridge-data/metabridge/backups
+BACKUP_DIR=/mnt/articium-data/articium/backups
 mkdir -p $BACKUP_DIR
 
-docker exec metabridge-postgres pg_dump -U metabridge metabridge_testnet > \
+docker exec articium-postgres pg_dump -U articium articium_testnet > \
   $BACKUP_DIR/test_backup_$(date +%Y%m%d_%H%M%S).sql
 
 # Verify backup
@@ -1052,7 +1052,7 @@ ls -lh $BACKUP_DIR/test_backup_*.sql
 # Expected: Backup file > 0 bytes
 
 # Test 2: Insert test data
-docker exec -i metabridge-postgres psql -U metabridge -d metabridge_testnet << 'EOF'
+docker exec -i articium-postgres psql -U articium -d articium_testnet << 'EOF'
 CREATE TABLE IF NOT EXISTS test_recovery (
   id SERIAL PRIMARY KEY,
   data TEXT,
@@ -1063,27 +1063,27 @@ INSERT INTO test_recovery (data) VALUES ('Test backup and recovery');
 EOF
 
 # Verify
-docker exec -it metabridge-postgres psql -U metabridge -d metabridge_testnet -c \
+docker exec -it articium-postgres psql -U articium -d articium_testnet -c \
   "SELECT * FROM test_recovery;"
 
 # Expected: Test record
 
 # Test 3: Simulate failure and restore
-docker exec -it metabridge-postgres psql -U metabridge -d metabridge_testnet -c \
+docker exec -it articium-postgres psql -U articium -d articium_testnet -c \
   "DROP TABLE test_recovery;"
 
 # Restore from backup
 LATEST_BACKUP=$(ls -t $BACKUP_DIR/test_backup_*.sql | head -1)
-docker exec -i metabridge-postgres psql -U metabridge -d metabridge_testnet < $LATEST_BACKUP
+docker exec -i articium-postgres psql -U articium -d articium_testnet < $LATEST_BACKUP
 
 # Verify restoration
-docker exec -it metabridge-postgres psql -U metabridge -d metabridge_testnet -c \
+docker exec -it articium-postgres psql -U articium -d articium_testnet -c \
   "SELECT * FROM test_recovery;"
 
 # Expected: Test record restored
 
 # Clean up
-docker exec -it metabridge-postgres psql -U metabridge -d metabridge_testnet -c \
+docker exec -it articium-postgres psql -U articium -d articium_testnet -c \
   "DROP TABLE IF EXISTS test_recovery;"
 rm $BACKUP_DIR/test_backup_*.sql
 
@@ -1110,7 +1110,7 @@ curl -s 'http://localhost:9090/api/v1/query?query=up' | jq '.data.result[] | {jo
 # Expected: All services showing "1" (up)
 
 # Test 3: Check custom metrics
-curl -s 'http://localhost:9090/api/v1/query?query=metabridge_api_requests_total' | jq '.'
+curl -s 'http://localhost:9090/api/v1/query?query=articium_api_requests_total' | jq '.'
 
 # Expected: API request metrics
 
@@ -1123,7 +1123,7 @@ curl -s http://localhost:3000/api/health | jq '.'
 # Open: http://$VM_IP:3000
 # Login: admin / (password you set)
 # Navigate to Dashboards
-# Expected: Metabridge dashboards visible
+# Expected: Articium dashboards visible
 
 # Test 6: Test alerts (if configured)
 curl -s 'http://localhost:9090/api/v1/rules' | jq '.data.groups[].rules[] | {alert: .name, state: .state}'
@@ -1140,13 +1140,13 @@ cat << 'EOF' > ~/test-summary.sh
 #!/bin/bash
 
 echo "=========================================="
-echo "METABRIDGE DEPLOYMENT TEST SUMMARY"
+echo "ARTICIUM DEPLOYMENT TEST SUMMARY"
 echo "=========================================="
 echo ""
 
 # Infrastructure
 echo "1. Infrastructure Services:"
-docker compose -f ~/metabridge/metabridge-engine-hub/deployments/docker/docker-compose.infrastructure.yaml ps | grep -E "(postgres|nats|redis)" && echo "   ✅ All services running" || echo "   ❌ Some services down"
+docker compose -f ~/articium/articium/deployments/docker/docker-compose.infrastructure.yaml ps | grep -E "(postgres|nats|redis)" && echo "   ✅ All services running" || echo "   ❌ Some services down"
 
 # API Health
 echo ""
@@ -1156,19 +1156,19 @@ curl -sf http://localhost:8080/health > /dev/null && echo "   ✅ API responding
 # Database
 echo ""
 echo "3. Database:"
-docker exec metabridge-postgres psql -U metabridge -d metabridge_testnet -c "SELECT 1;" > /dev/null 2>&1 && echo "   ✅ Database accessible" || echo "   ❌ Database not accessible"
+docker exec articium-postgres psql -U articium -d articium_testnet -c "SELECT 1;" > /dev/null 2>&1 && echo "   ✅ Database accessible" || echo "   ❌ Database not accessible"
 
 # Systemd Services
 echo ""
 echo "4. Systemd Services:"
-sudo systemctl is-active metabridge-api > /dev/null 2>&1 && echo "   ✅ API service active" || echo "   ❌ API service inactive"
-sudo systemctl is-active metabridge-listener > /dev/null 2>&1 && echo "   ✅ Listener service active" || echo "   ❌ Listener service inactive"
-sudo systemctl is-active metabridge-relayer > /dev/null 2>&1 && echo "   ✅ Relayer service active" || echo "   ❌ Relayer service inactive"
+sudo systemctl is-active articium-api > /dev/null 2>&1 && echo "   ✅ API service active" || echo "   ❌ API service inactive"
+sudo systemctl is-active articium-listener > /dev/null 2>&1 && echo "   ✅ Listener service active" || echo "   ❌ Listener service inactive"
+sudo systemctl is-active articium-relayer > /dev/null 2>&1 && echo "   ✅ Relayer service active" || echo "   ❌ Relayer service inactive"
 
 # Disk Space
 echo ""
 echo "5. Disk Space:"
-AVAILABLE=$(df -BG /mnt/metabridge-data | awk 'NR==2 {print $4}' | sed 's/G//')
+AVAILABLE=$(df -BG /mnt/articium-data | awk 'NR==2 {print $4}' | sed 's/G//')
 if [ "$AVAILABLE" -gt 50 ]; then
   echo "   ✅ Sufficient disk space: ${AVAILABLE}GB"
 else
@@ -1209,7 +1209,7 @@ chmod +x ~/test-summary.sh
 **Expected Output:**
 ```
 ==========================================
-METABRIDGE DEPLOYMENT TEST SUMMARY
+ARTICIUM DEPLOYMENT TEST SUMMARY
 ==========================================
 
 1. Infrastructure Services:
@@ -1294,7 +1294,7 @@ sudo certbot renew --dry-run
 
 ```bash
 # Edit Nginx config
-sudo nano /etc/nginx/sites-available/metabridge
+sudo nano /etc/nginx/sites-available/articium
 
 # Add this configuration:
 ```
@@ -1349,7 +1349,7 @@ sudo apt install -y apache2-utils
 sudo htpasswd -c /etc/nginx/.htpasswd admin
 
 # Enable site
-sudo ln -s /etc/nginx/sites-available/metabridge /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/articium /etc/nginx/sites-enabled/
 
 # Test configuration
 sudo nginx -t
@@ -1366,7 +1366,7 @@ sudo systemctl reload nginx
 
 ```bash
 # Get Grafana admin password
-docker exec metabridge-grafana grafana-cli admin reset-admin-password NewPassword123
+docker exec articium-grafana grafana-cli admin reset-admin-password NewPassword123
 ```
 
 **Access:** https://bridge.yourdomain.com/grafana
@@ -1398,20 +1398,20 @@ Configure alerts for:
 
 ```bash
 # Create service files
-sudo nano /etc/systemd/system/metabridge-api.service
+sudo nano /etc/systemd/system/articium-api.service
 ```
 
 ```ini
 [Unit]
-Description=Metabridge API Service
+Description=Articium API Service
 After=network.target docker.service
 
 [Service]
 Type=simple
 User=azureuser
-WorkingDirectory=/home/azureuser/metabridge/metabridge-engine-hub
-EnvironmentFile=/home/azureuser/metabridge/metabridge-engine-hub/.env
-ExecStart=/home/azureuser/metabridge/metabridge-engine-hub/bin/api --config /home/azureuser/metabridge/metabridge-engine-hub/config/config.testnet.yaml
+WorkingDirectory=/home/azureuser/articium/articium
+EnvironmentFile=/home/azureuser/articium/articium/.env
+ExecStart=/home/azureuser/articium/articium/bin/api --config /home/azureuser/articium/articium/config/config.testnet.yaml
 Restart=always
 RestartSec=10
 
@@ -1424,27 +1424,27 @@ WantedBy=multi-user.target
 sudo systemctl daemon-reload
 
 # Enable services
-sudo systemctl enable metabridge-api
-sudo systemctl enable metabridge-listener
-sudo systemctl enable metabridge-relayer
+sudo systemctl enable articium-api
+sudo systemctl enable articium-listener
+sudo systemctl enable articium-relayer
 
 # Start services
-sudo systemctl start metabridge-api
-sudo systemctl start metabridge-listener
-sudo systemctl start metabridge-relayer
+sudo systemctl start articium-api
+sudo systemctl start articium-listener
+sudo systemctl start articium-relayer
 
 # Check status
-sudo systemctl status metabridge-api
+sudo systemctl status articium-api
 ```
 
 ### Step 2: Setup Log Rotation
 
 ```bash
-sudo nano /etc/logrotate.d/metabridge
+sudo nano /etc/logrotate.d/articium
 ```
 
 ```
-/mnt/metabridge-data/metabridge/logs/*.log {
+/mnt/articium-data/articium/logs/*.log {
     daily
     rotate 30
     compress
@@ -1453,7 +1453,7 @@ sudo nano /etc/logrotate.d/metabridge
     create 0640 azureuser azureuser
     sharedscripts
     postrotate
-        systemctl reload metabridge-api
+        systemctl reload articium-api
     endscript
 }
 ```
@@ -1479,10 +1479,10 @@ nano ~/backup-database.sh
 
 ```bash
 #!/bin/bash
-BACKUP_DIR=/mnt/metabridge-data/metabridge/backups
+BACKUP_DIR=/mnt/articium-data/articium/backups
 DATE=$(date +%Y%m%d_%H%M%S)
 
-docker exec metabridge-postgres pg_dump -U metabridge metabridge_testnet > \
+docker exec articium-postgres pg_dump -U articium articium_testnet > \
   $BACKUP_DIR/db_backup_$DATE.sql
 
 # Keep only last 7 days
@@ -1512,16 +1512,16 @@ az login
 
 # Create storage account
 az storage account create \
-  --name metabridgebackups \
-  --resource-group metabridge-testnet-rg \
+  --name articiumbackups \
+  --resource-group articium-testnet-rg \
   --location eastus \
   --sku Standard_LRS
 
 # Upload backups
 az storage blob upload-batch \
   --destination backups \
-  --source /mnt/metabridge-data/metabridge/backups \
-  --account-name metabridgebackups
+  --source /mnt/articium-data/articium/backups \
+  --account-name articiumbackups
 ```
 
 ---
@@ -1551,7 +1551,7 @@ After deployment, verify:
 ./stop-testnet.sh && ./deploy-testnet.sh
 
 # View logs
-tail -f /mnt/metabridge-data/metabridge/logs/*.log
+tail -f /mnt/articium-data/articium/logs/*.log
 
 # Check Docker logs
 docker compose -f deployments/docker/docker-compose.infrastructure.yaml logs -f
@@ -1563,13 +1563,13 @@ htop
 df -h
 
 # Check database size
-docker exec -it metabridge-postgres psql -U metabridge -d metabridge_testnet -c "SELECT pg_size_pretty(pg_database_size('metabridge_testnet'));"
+docker exec -it articium-postgres psql -U articium -d articium_testnet -c "SELECT pg_size_pretty(pg_database_size('articium_testnet'));"
 
 # Manual backup
 ~/backup-database.sh
 
 # Update code
-cd ~/metabridge/metabridge-engine-hub
+cd ~/articium/articium
 git pull
 ./stop-testnet.sh
 go build -o bin/api cmd/api/main.go
@@ -1608,13 +1608,13 @@ sudo journalctl --vacuum-time=3d
 **Solution:**
 ```bash
 # Check logs
-sudo journalctl -u metabridge-api -n 50
+sudo journalctl -u articium-api -n 50
 
 # Check config
 cat config/config.testnet.yaml
 
 # Restart
-sudo systemctl restart metabridge-api
+sudo systemctl restart articium-api
 ```
 
 ---
@@ -1641,4 +1641,4 @@ sudo systemctl restart metabridge-api
 
 ---
 
-**Congratulations!** Your Metabridge Engine is now running on Azure! 🎉
+**Congratulations!** Your Articium is now running on Azure! 🎉

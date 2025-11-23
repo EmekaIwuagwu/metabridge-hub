@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/blockchain/near"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/monitoring"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/types"
+	"github.com/EmekaIwuagwu/articium-hub/internal/blockchain/near"
+	"github.com/EmekaIwuagwu/articium-hub/internal/monitoring"
+	"github.com/EmekaIwuagwu/articium-hub/internal/types"
 	"github.com/rs/zerolog"
 )
 

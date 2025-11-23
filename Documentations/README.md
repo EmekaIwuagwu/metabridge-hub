@@ -1,16 +1,16 @@
-# Metabridge Documentation
+# Articium Documentation
 
-This folder contains comprehensive documentation for the Metabridge project.
+This folder contains comprehensive documentation for the Articium project.
 
 ## Deployment Guides
 
-- **[DEPLOYMENT.md](DEPLOYMENT.md)** - General deployment instructions for Metabridge
+- **[DEPLOYMENT.md](DEPLOYMENT.md)** - General deployment instructions for Articium
 - **[DEPLOYMENT_DIAGNOSIS.md](DEPLOYMENT_DIAGNOSIS.md)** - Troubleshooting guide for deployment issues
 - **[RENDER_DEPLOYMENT.md](RENDER_DEPLOYMENT.md)** - Deployment guide for Render platform
 
 ## Quick Start
 
-- **[QUICKSTART.md](QUICKSTART.md)** - Quick start guide to get Metabridge running locally
+- **[QUICKSTART.md](QUICKSTART.md)** - Quick start guide to get Articium running locally
 
 ## Root Documentation
 

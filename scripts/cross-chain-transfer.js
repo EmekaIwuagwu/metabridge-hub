@@ -4,7 +4,7 @@
  * Cross-Chain Transfer Example
  *
  * This script demonstrates how to perform a cross-chain token transfer
- * from one chain to another using the Metabridge Engine.
+ * from one chain to another using the Articium Engine.
  *
  * Example: Transfer tokens from Polygon to Avalanche
  */
@@ -195,7 +195,7 @@ async function estimateFees() {
 async function main() {
   console.log('');
   console.log('========================================');
-  console.log('  Metabridge Cross-Chain Transfer');
+  console.log('  Articium Cross-Chain Transfer');
   console.log('========================================');
 
   // Step 1: Check health

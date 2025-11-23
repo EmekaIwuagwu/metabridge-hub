@@ -1,6 +1,6 @@
 # Deployment Runbook
 
-This runbook guides you through deploying the Metabridge Engine bridge protocol to testnet and mainnet environments.
+This runbook guides you through deploying the Articium bridge protocol to testnet and mainnet environments.
 
 ## Table of Contents
 
@@ -42,10 +42,10 @@ This runbook guides you through deploying the Metabridge Engine bridge protocol 
 
 ```bash
 # Create PostgreSQL database
-createdb metabridge_testnet  # or metabridge_mainnet
+createdb articium_testnet  # or articium_mainnet
 
 # Run migrations
-cd /path/to/metabridge-hub
+cd /path/to/articium-hub
 go run cmd/migrator/main.go --config config/config.testnet.yaml
 ```
 
@@ -189,11 +189,11 @@ cd contracts/near
 
 # Deploy to testnet
 near deploy \
-  --accountId metabridge.testnet \
+  --accountId articium.testnet \
   --wasmFile ./res/near_bridge.wasm
 
 # Initialize contract
-near call metabridge.testnet new \
+near call articium.testnet new \
   '{
     "owner": "admin.testnet",
     "validators": ["ed25519:..."],
@@ -207,18 +207,18 @@ near call metabridge.testnet new \
 ```bash
 # Deploy to mainnet account
 near deploy \
-  --accountId bridge.metabridge.near \
+  --accountId bridge.articium.near \
   --wasmFile ./res/near_bridge.wasm \
   --networkId mainnet
 
 # Initialize with mainnet configuration
-near call bridge.metabridge.near new \
+near call bridge.articium.near new \
   '{
-    "owner": "owner.metabridge.near",
+    "owner": "owner.articium.near",
     "validators": [...],
     "required_signatures": 3
   }' \
-  --accountId owner.metabridge.near \
+  --accountId owner.articium.near \
   --networkId mainnet
 ```
 
@@ -245,23 +245,23 @@ docker-compose logs -f
 cd deployments/kubernetes
 
 # Create namespace
-kubectl create namespace metabridge-mainnet
+kubectl create namespace articium-mainnet
 
 # Create secrets
 kubectl create secret generic bridge-secrets \
   --from-literal=db-password='<DB_PASSWORD>' \
   --from-literal=validator-key='<VALIDATOR_KEY>' \
-  -n metabridge-mainnet
+  -n articium-mainnet
 
 # Deploy services
-kubectl apply -f configmap.yaml -n metabridge-mainnet
-kubectl apply -f api-deployment.yaml -n metabridge-mainnet
-kubectl apply -f listener-deployment.yaml -n metabridge-mainnet
-kubectl apply -f relayer-deployment.yaml -n metabridge-mainnet
+kubectl apply -f configmap.yaml -n articium-mainnet
+kubectl apply -f api-deployment.yaml -n articium-mainnet
+kubectl apply -f listener-deployment.yaml -n articium-mainnet
+kubectl apply -f relayer-deployment.yaml -n articium-mainnet
 
 # Verify deployments
-kubectl get pods -n metabridge-mainnet
-kubectl get services -n metabridge-mainnet
+kubectl get pods -n articium-mainnet
+kubectl get services -n articium-mainnet
 ```
 
 ### Service-by-Service Deployment
@@ -273,7 +273,7 @@ kubectl get services -n metabridge-mainnet
 go build -o bin/api cmd/api/main.go
 
 # Run with systemd
-sudo systemctl start metabridge-api
+sudo systemctl start articium-api
 
 # Verify
 curl http://localhost:8080/health
@@ -286,10 +286,10 @@ curl http://localhost:8080/health
 go build -o bin/listener cmd/listener/main.go
 
 # Run
-sudo systemctl start metabridge-listener
+sudo systemctl start articium-listener
 
 # Check logs
-sudo journalctl -u metabridge-listener -f
+sudo journalctl -u articium-listener -f
 ```
 
 #### 3. Relayer Service
@@ -299,10 +299,10 @@ sudo journalctl -u metabridge-listener -f
 go build -o bin/relayer cmd/relayer/main.go
 
 # Run
-sudo systemctl start metabridge-relayer
+sudo systemctl start articium-relayer
 
 # Monitor
-sudo journalctl -u metabridge-relayer -f
+sudo journalctl -u articium-relayer -f
 ```
 
 ## Post-Deployment Verification
@@ -317,7 +317,7 @@ curl http://localhost:8080/health
 curl http://localhost:8080/v1/chains
 
 # Verify database connection
-psql -h localhost -U metabridge -d metabridge_testnet -c "SELECT COUNT(*) FROM chains;"
+psql -h localhost -U articium -d articium_testnet -c "SELECT COUNT(*) FROM chains;"
 ```
 
 ### 2. Smoke Tests
@@ -369,12 +369,12 @@ docker-compose down
 docker-compose -f docker-compose.testnet.yaml up -d --build --force-recreate
 
 # Kubernetes rollback
-kubectl rollout undo deployment/api -n metabridge-mainnet
-kubectl rollout undo deployment/listener -n metabridge-mainnet
-kubectl rollout undo deployment/relayer -n metabridge-mainnet
+kubectl rollout undo deployment/api -n articium-mainnet
+kubectl rollout undo deployment/listener -n articium-mainnet
+kubectl rollout undo deployment/relayer -n articium-mainnet
 
 # Verify rollback
-kubectl rollout status deployment/api -n metabridge-mainnet
+kubectl rollout status deployment/api -n articium-mainnet
 ```
 
 ### Rolling Back Smart Contracts
@@ -402,7 +402,7 @@ anchor upgrade ./target/previous/solana_bridge.so \
 
 ```bash
 # Redeploy previous version
-near deploy --accountId bridge.metabridge.near \
+near deploy --accountId bridge.articium.near \
   --wasmFile ./previous/near_bridge.wasm \
   --networkId mainnet
 ```
@@ -411,12 +411,12 @@ near deploy --accountId bridge.metabridge.near \
 
 ```bash
 # Restore from backup
-pg_restore -h localhost -U metabridge -d metabridge_mainnet \
+pg_restore -h localhost -U articium -d articium_mainnet \
   --clean --if-exists \
-  backups/metabridge_mainnet_TIMESTAMP.dump
+  backups/articium_mainnet_TIMESTAMP.dump
 
 # Verify restoration
-psql -h localhost -U metabridge -d metabridge_mainnet \
+psql -h localhost -U articium -d articium_mainnet \
   -c "SELECT MAX(created_at) FROM messages;"
 ```
 
@@ -438,7 +438,7 @@ Before going live, verify:
 
 ## Support Contacts
 
-- **Technical Lead**: tech-lead@metabridge.io
-- **DevOps**: devops@metabridge.io
-- **Security**: security@metabridge.io
+- **Technical Lead**: tech-lead@articium.io
+- **DevOps**: devops@articium.io
+- **Security**: security@articium.io
 - **On-Call**: +1-XXX-XXX-XXXX (PagerDuty)

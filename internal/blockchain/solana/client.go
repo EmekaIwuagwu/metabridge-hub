@@ -6,7 +6,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/types"
+	"github.com/EmekaIwuagwu/articium-hub/internal/types"
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/rs/zerolog"

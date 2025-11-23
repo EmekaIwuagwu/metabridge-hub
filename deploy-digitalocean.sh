@@ -3,7 +3,7 @@
 set -e
 
 echo "╔════════════════════════════════════════════════════════════╗"
-echo "║     Metabridge DigitalOcean Automated Deployment          ║"
+echo "║     Articium DigitalOcean Automated Deployment          ║"
 echo "╚════════════════════════════════════════════════════════════╝"
 echo ""
 echo "This script will:"
@@ -118,7 +118,7 @@ curl -s http://localhost:8222/varz > /dev/null && echo "   ✓ NATS server runni
     exit 1
 }
 
-cd /root/projects/metabridge-engine-hub
+cd /root/projects/articium
 echo ""
 
 # ==============================================================================
@@ -191,36 +191,36 @@ echo ""
 
 echo "5️⃣  Creating database and user..."
 
-# Create metabridge user and database
+# Create articium user and database
 sudo -u postgres psql << 'EOF' 2>&1 | grep -v "NOTICE" || true
 -- Drop and recreate user
-DROP USER IF EXISTS metabridge;
-CREATE USER metabridge WITH PASSWORD 'metabridge' SUPERUSER;
+DROP USER IF EXISTS articium;
+CREATE USER articium WITH PASSWORD 'articium' SUPERUSER;
 
 -- Drop and recreate database
-DROP DATABASE IF EXISTS metabridge_prod;
-CREATE DATABASE metabridge_prod OWNER metabridge;
+DROP DATABASE IF EXISTS articium_prod;
+CREATE DATABASE articium_prod OWNER articium;
 
 -- Grant permissions
-GRANT ALL PRIVILEGES ON DATABASE metabridge_prod TO metabridge;
+GRANT ALL PRIVILEGES ON DATABASE articium_prod TO articium;
 EOF
 
-echo "   ✓ Database 'metabridge_prod' created"
-echo "   ✓ User 'metabridge' created with SUPERUSER privileges"
+echo "   ✓ Database 'articium_prod' created"
+echo "   ✓ User 'articium' created with SUPERUSER privileges"
 
 # Grant schema permissions
-sudo -u postgres psql -d metabridge_prod << 'EOF' 2>&1 | grep -v "GRANT" || true
-GRANT ALL ON SCHEMA public TO metabridge;
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO metabridge;
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO metabridge;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO metabridge;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO metabridge;
+sudo -u postgres psql -d articium_prod << 'EOF' 2>&1 | grep -v "GRANT" || true
+GRANT ALL ON SCHEMA public TO articium;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO articium;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO articium;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO articium;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO articium;
 EOF
 
 echo "   ✓ Schema permissions granted"
 
 # Test connection
-PGPASSWORD=metabridge psql -h /var/run/postgresql -p 5433 -U metabridge -d metabridge_prod -c "SELECT 1;" > /dev/null && {
+PGPASSWORD=articium psql -h /var/run/postgresql -p 5433 -U articium -d articium_prod -c "SELECT 1;" > /dev/null && {
     echo "   ✓ Database connection test successful"
 } || {
     echo "   ❌ Database connection failed"
@@ -235,7 +235,7 @@ echo ""
 
 echo "6️⃣  Building all services..."
 
-cd /root/projects/metabridge-engine-hub
+cd /root/projects/articium
 mkdir -p bin
 
 echo "   Building API..."
@@ -280,7 +280,7 @@ echo "   ✓ All database migrations completed successfully"
 echo ""
 
 # Verify tables
-TABLE_COUNT=$(PGPASSWORD=metabridge psql -h /var/run/postgresql -p 5433 -U metabridge -d metabridge_prod -t -c "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public';" | tr -d ' ')
+TABLE_COUNT=$(PGPASSWORD=articium psql -h /var/run/postgresql -p 5433 -U articium -d articium_prod -t -c "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public';" | tr -d ' ')
 echo "   ✓ Created $TABLE_COUNT database tables"
 echo ""
 
@@ -291,10 +291,10 @@ echo ""
 echo "8️⃣  Installing systemd services..."
 
 # Copy service files
-sudo cp systemd/metabridge-api.service /etc/systemd/system/
-sudo cp systemd/metabridge-relayer.service /etc/systemd/system/
-sudo cp systemd/metabridge-batcher.service /etc/systemd/system/
-sudo cp systemd/metabridge-listener.service /etc/systemd/system/
+sudo cp systemd/articium-api.service /etc/systemd/system/
+sudo cp systemd/articium-relayer.service /etc/systemd/system/
+sudo cp systemd/articium-batcher.service /etc/systemd/system/
+sudo cp systemd/articium-listener.service /etc/systemd/system/
 
 # Reload systemd
 sudo systemctl daemon-reload
@@ -309,24 +309,24 @@ echo ""
 echo "9️⃣  Starting all services..."
 
 # Start services
-sudo systemctl start metabridge-api
+sudo systemctl start articium-api
 sleep 2
 echo "   ✓ API service started"
 
-sudo systemctl start metabridge-relayer
+sudo systemctl start articium-relayer
 sleep 2
 echo "   ✓ Relayer service started"
 
-sudo systemctl start metabridge-batcher
+sudo systemctl start articium-batcher
 sleep 2
 echo "   ✓ Batcher service started"
 
-sudo systemctl start metabridge-listener
+sudo systemctl start articium-listener
 sleep 2
 echo "   ✓ Listener service started"
 
 # Enable services for auto-start
-sudo systemctl enable metabridge-api metabridge-relayer metabridge-batcher metabridge-listener > /dev/null 2>&1
+sudo systemctl enable articium-api articium-relayer articium-batcher articium-listener > /dev/null 2>&1
 
 echo "   ✓ All services enabled for auto-start"
 echo ""
@@ -340,10 +340,10 @@ echo ""
 
 # Check service status
 echo "Service Status:"
-sudo systemctl is-active metabridge-api > /dev/null && echo "  ✅ API: Running" || echo "  ❌ API: Failed"
-sudo systemctl is-active metabridge-relayer > /dev/null && echo "  ✅ Relayer: Running" || echo "  ❌ Relayer: Failed"
-sudo systemctl is-active metabridge-batcher > /dev/null && echo "  ✅ Batcher: Running" || echo "  ❌ Batcher: Failed"
-sudo systemctl is-active metabridge-listener > /dev/null && echo "  ✅ Listener: Running" || echo "  ❌ Listener: Failed"
+sudo systemctl is-active articium-api > /dev/null && echo "  ✅ API: Running" || echo "  ❌ API: Failed"
+sudo systemctl is-active articium-relayer > /dev/null && echo "  ✅ Relayer: Running" || echo "  ❌ Relayer: Failed"
+sudo systemctl is-active articium-batcher > /dev/null && echo "  ✅ Batcher: Running" || echo "  ❌ Batcher: Failed"
+sudo systemctl is-active articium-listener > /dev/null && echo "  ✅ Listener: Running" || echo "  ❌ Listener: Failed"
 
 echo ""
 
@@ -355,7 +355,7 @@ if curl -s http://localhost:8080/health | jq -e '.status == "healthy"' > /dev/nu
     curl -s http://localhost:8080/health | jq '.'
 else
     echo "  ⚠️  API health check failed (may still be starting up)"
-    echo "  Check logs: sudo journalctl -u metabridge-api -n 20"
+    echo "  Check logs: sudo journalctl -u articium-api -n 20"
 fi
 
 echo ""
@@ -371,17 +371,17 @@ echo "╔═══════════════════════�
 echo "║             ✅ DEPLOYMENT COMPLETE!                        ║"
 echo "╚════════════════════════════════════════════════════════════╝"
 echo ""
-echo "Access your Metabridge API at:"
+echo "Access your Articium API at:"
 echo "  http://localhost:8080/health"
 echo "  http://localhost:8080/ready"
 echo ""
 echo "View service logs:"
-echo "  sudo journalctl -u metabridge-api -f"
-echo "  sudo journalctl -u metabridge-listener -f"
+echo "  sudo journalctl -u articium-api -f"
+echo "  sudo journalctl -u articium-listener -f"
 echo ""
 echo "Check all services:"
 echo "  bash check-services.sh"
 echo ""
 echo "Restart all services:"
-echo "  sudo systemctl restart metabridge-api metabridge-relayer metabridge-batcher metabridge-listener"
+echo "  sudo systemctl restart articium-api articium-relayer articium-batcher articium-listener"
 echo ""

@@ -9,15 +9,15 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/blockchain"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/config"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/crypto"
-	ed25519Crypto "github.com/EmekaIwuagwu/metabridge-hub/internal/crypto/ed25519"
-	evmCrypto "github.com/EmekaIwuagwu/metabridge-hub/internal/crypto/evm"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/database"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/queue"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/relayer"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/types"
+	"github.com/EmekaIwuagwu/articium-hub/internal/blockchain"
+	"github.com/EmekaIwuagwu/articium-hub/internal/config"
+	"github.com/EmekaIwuagwu/articium-hub/internal/crypto"
+	ed25519Crypto "github.com/EmekaIwuagwu/articium-hub/internal/crypto/ed25519"
+	evmCrypto "github.com/EmekaIwuagwu/articium-hub/internal/crypto/evm"
+	"github.com/EmekaIwuagwu/articium-hub/internal/database"
+	"github.com/EmekaIwuagwu/articium-hub/internal/queue"
+	"github.com/EmekaIwuagwu/articium-hub/internal/relayer"
+	"github.com/EmekaIwuagwu/articium-hub/internal/types"
 	"github.com/rs/zerolog"
 )
 
@@ -34,7 +34,7 @@ func main() {
 	logger.Info().
 		Str("service", "relayer").
 		Str("config", *configPath).
-		Msg("Starting Metabridge Relayer service")
+		Msg("Starting Articium Relayer service")
 
 	// Load configuration
 	cfg, err := config.LoadConfig(*configPath)

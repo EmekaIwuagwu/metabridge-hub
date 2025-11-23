@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/database"
+	"github.com/EmekaIwuagwu/articium-hub/internal/database"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog"

@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/blockchain/evm"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/blockchain/near"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/blockchain/solana"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/types"
+	"github.com/EmekaIwuagwu/articium-hub/internal/blockchain/evm"
+	"github.com/EmekaIwuagwu/articium-hub/internal/blockchain/near"
+	"github.com/EmekaIwuagwu/articium-hub/internal/blockchain/solana"
+	"github.com/EmekaIwuagwu/articium-hub/internal/types"
 	"github.com/rs/zerolog"
 )
 

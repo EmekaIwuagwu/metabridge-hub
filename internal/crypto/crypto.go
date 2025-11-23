@@ -1,9 +1,9 @@
 package crypto
 
 import (
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/crypto/ed25519"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/crypto/evm"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/types"
+	"github.com/EmekaIwuagwu/articium-hub/internal/crypto/ed25519"
+	"github.com/EmekaIwuagwu/articium-hub/internal/crypto/evm"
+	"github.com/EmekaIwuagwu/articium-hub/internal/types"
 )
 
 // NewECDSASigner creates a new ECDSA signer (for EVM chains)

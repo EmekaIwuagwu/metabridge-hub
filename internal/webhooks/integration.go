@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/types"
+	"github.com/EmekaIwuagwu/articium-hub/internal/types"
 	"github.com/rs/zerolog"
 )
 

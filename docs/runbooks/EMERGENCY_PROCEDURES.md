@@ -1,6 +1,6 @@
 # Emergency Procedures
 
-This document outlines procedures for handling critical incidents and emergency situations with the Metabridge Engine.
+This document outlines procedures for handling critical incidents and emergency situations with the Articium.
 
 ## Table of Contents
 
@@ -20,8 +20,8 @@ This document outlines procedures for handling critical incidents and emergency 
 ### On-Call Rotation
 - **Primary**: +1-XXX-XXX-XXXX (PagerDuty)
 - **Secondary**: +1-XXX-XXX-XXXX
-- **Security Team**: security@metabridge.io
-- **Infrastructure**: devops@metabridge.io
+- **Security Team**: security@articium.io
+- **Infrastructure**: devops@articium.io
 
 ### Escalation Path
 1. On-call engineer (immediate)
@@ -32,7 +32,7 @@ This document outlines procedures for handling critical incidents and emergency 
 ### External Contacts
 - **Cloud Provider Support**: AWS/GCP/Azure
 - **Security Auditor**: auditor@example.com
-- **Legal Counsel**: legal@metabridge.io
+- **Legal Counsel**: legal@articium.io
 
 ## Incident Severity Levels
 
@@ -142,13 +142,13 @@ solana program show <PROGRAM_ID>
 
 ```bash
 # Call pause from owner account
-near call bridge.metabridge.near pause '{}' \
-  --accountId owner.metabridge.near \
+near call bridge.articium.near pause '{}' \
+  --accountId owner.articium.near \
   --networkId mainnet \
   --gas 50000000000000
 
 # Verify
-near view bridge.metabridge.near get_config
+near view bridge.articium.near get_config
 ```
 
 ### How to Pause (Backend Services)
@@ -156,15 +156,15 @@ near view bridge.metabridge.near get_config
 ```bash
 # Emergency stop all services
 # Kubernetes
-kubectl scale deployment api --replicas=0 -n metabridge-mainnet
-kubectl scale deployment listener --replicas=0 -n metabridge-mainnet
-kubectl scale deployment relayer --replicas=0 -n metabridge-mainnet
+kubectl scale deployment api --replicas=0 -n articium-mainnet
+kubectl scale deployment listener --replicas=0 -n articium-mainnet
+kubectl scale deployment relayer --replicas=0 -n articium-mainnet
 
 # Docker Compose
 docker-compose down
 
 # Verify
-kubectl get pods -n metabridge-mainnet
+kubectl get pods -n articium-mainnet
 ```
 
 ### Communication During Pause
@@ -176,7 +176,7 @@ kubectl get pods -n metabridge-mainnet
 
 2. **Within 15 minutes**:
    ```
-   Twitter: "The Metabridge is temporarily paused while we investigate
+   Twitter: "The Articium is temporarily paused while we investigate
    an issue. All funds are secure. We will provide updates every 30 minutes."
    ```
 
@@ -199,11 +199,11 @@ kubectl get pods -n metabridge-mainnet
 **Investigation** (< 1 hour):
 ```bash
 # Collect evidence
-cd /var/log/metabridge
+cd /var/log/articium
 tar -czf incident-$(date +%Y%m%d-%H%M%S).tar.gz *.log
 
 # Export database for forensics
-pg_dump -h localhost -U metabridge metabridge_mainnet \
+pg_dump -h localhost -U articium articium_mainnet \
   > incident_db_$(date +%Y%m%d-%H%M%S).sql
 
 # Collect blockchain transaction data
@@ -287,13 +287,13 @@ curl https://api.polygonscan.com/api?module=proxy&action=eth_blockNumber
 export POLYGON_RPC="https://polygon-backup-rpc.example.com"
 
 # 2. Update configuration
-kubectl edit configmap bridge-config -n metabridge-mainnet
+kubectl edit configmap bridge-config -n articium-mainnet
 
 # 3. Restart affected services
-kubectl rollout restart deployment/listener -n metabridge-mainnet
+kubectl rollout restart deployment/listener -n articium-mainnet
 
 # 4. Monitor recovery
-kubectl logs -f deployment/listener -n metabridge-mainnet
+kubectl logs -f deployment/listener -n articium-mainnet
 ```
 
 ### During Network Upgrade
@@ -322,10 +322,10 @@ kubectl logs -f deployment/listener -n metabridge-mainnet
 
 ```bash
 # Check database status
-pg_isready -h db.metabridge.io -U metabridge
+pg_isready -h db.articium.io -U articium
 
 # Attempt connection
-psql -h db.metabridge.io -U metabridge -d metabridge_mainnet
+psql -h db.articium.io -U articium -d articium_mainnet
 
 # If primary database down:
 # 1. Failover to replica
@@ -345,27 +345,27 @@ kubectl set env deployment/api \
 
 ```bash
 # Stop all services immediately
-kubectl scale deployment --all --replicas=0 -n metabridge-mainnet
+kubectl scale deployment --all --replicas=0 -n articium-mainnet
 
 # Restore from last known good backup
 # Find latest backup
-aws s3 ls s3://metabridge-backups/mainnet/ | tail -n 5
+aws s3 ls s3://articium-backups/mainnet/ | tail -n 5
 
 # Restore
-pg_restore -h localhost -U metabridge -d metabridge_mainnet_restored \
+pg_restore -h localhost -U articium -d articium_mainnet_restored \
   --clean --if-exists \
-  s3://metabridge-backups/mainnet/backup_TIMESTAMP.dump
+  s3://articium-backups/mainnet/backup_TIMESTAMP.dump
 
 # Verify data integrity
-psql -h localhost -U metabridge -d metabridge_mainnet_restored \
+psql -h localhost -U articium -d articium_mainnet_restored \
   -c "SELECT COUNT(*), MAX(created_at) FROM messages;"
 
 # Switch to restored database
 kubectl set env deployment --all \
-  DATABASE_NAME=metabridge_mainnet_restored
+  DATABASE_NAME=articium_mainnet_restored
 
 # Restart services
-kubectl scale deployment --all --replicas=1 -n metabridge-mainnet
+kubectl scale deployment --all --replicas=1 -n articium-mainnet
 ```
 
 ## Message Queue Failure
@@ -383,24 +383,24 @@ kubectl rollout restart statefulset/nats -n nats-system
 nats-cli stream ls
 
 # Check message backlog
-nats-cli stream info metabridge
+nats-cli stream info articium
 
 # Resume processing
-kubectl scale deployment/relayer --replicas=3 -n metabridge-mainnet
+kubectl scale deployment/relayer --replicas=3 -n articium-mainnet
 ```
 
 ### Message Backlog
 
 ```bash
 # Check queue depth
-nats-cli stream info metabridge | grep Messages
+nats-cli stream info articium | grep Messages
 
 # If backlog > 10,000:
 # 1. Scale up relayers
-kubectl scale deployment/relayer --replicas=10 -n metabridge-mainnet
+kubectl scale deployment/relayer --replicas=10 -n articium-mainnet
 
 # 2. Monitor processing rate
-watch -n 5 'nats-cli stream info metabridge | grep Messages'
+watch -n 5 'nats-cli stream info articium | grep Messages'
 
 # 3. If still growing, investigate:
 # - Are messages failing?
@@ -408,7 +408,7 @@ watch -n 5 'nats-cli stream info metabridge | grep Messages'
 # - Are chains accepting transactions?
 
 # Check failed messages
-psql -h localhost -U metabridge -d metabridge_mainnet \
+psql -h localhost -U articium -d articium_mainnet \
   -c "SELECT COUNT(*) FROM messages WHERE status = 'failed' AND created_at > NOW() - INTERVAL '1 hour';"
 ```
 
@@ -418,7 +418,7 @@ psql -h localhost -U metabridge -d metabridge_mainnet \
 
 ```bash
 # Find messages pending > 1 hour
-psql -h localhost -U metabridge -d metabridge_mainnet -c "
+psql -h localhost -U articium -d articium_mainnet -c "
 SELECT id, source_chain_name, destination_chain_name, status, created_at
 FROM messages
 WHERE status = 'pending'
@@ -462,10 +462,10 @@ curl https://api.etherscan.io/api?module=gastracker&action=gasoracle
 # Update gas price multiplier
 kubectl set env deployment/relayer \
   GAS_PRICE_MULTIPLIER=1.5 \
-  -n metabridge-mainnet
+  -n articium-mainnet
 
 # Restart relayer
-kubectl rollout restart deployment/relayer -n metabridge-mainnet
+kubectl rollout restart deployment/relayer -n articium-mainnet
 ```
 
 ## Validator Compromise
@@ -484,9 +484,9 @@ kubectl rollout restart deployment/relayer -n metabridge-mainnet
      --validator COMPROMISED_PUBKEY
 
    # NEAR
-   near call bridge.metabridge.near remove_validator \
+   near call bridge.articium.near remove_validator \
      '{"validator": "ed25519:COMPROMISED_KEY"}' \
-     --accountId owner.metabridge.near \
+     --accountId owner.articium.near \
      --networkId mainnet
    ```
 

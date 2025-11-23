@@ -6,13 +6,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/config"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/crypto"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/database"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/monitoring"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/queue"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/security"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/types"
+	"github.com/EmekaIwuagwu/articium-hub/internal/config"
+	"github.com/EmekaIwuagwu/articium-hub/internal/crypto"
+	"github.com/EmekaIwuagwu/articium-hub/internal/database"
+	"github.com/EmekaIwuagwu/articium-hub/internal/monitoring"
+	"github.com/EmekaIwuagwu/articium-hub/internal/queue"
+	"github.com/EmekaIwuagwu/articium-hub/internal/security"
+	"github.com/EmekaIwuagwu/articium-hub/internal/types"
 	"github.com/rs/zerolog"
 )
 

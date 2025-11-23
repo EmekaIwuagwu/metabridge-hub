@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/database"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/types"
+	"github.com/EmekaIwuagwu/articium-hub/internal/database"
+	"github.com/EmekaIwuagwu/articium-hub/internal/types"
 	"github.com/rs/zerolog"
 )
 

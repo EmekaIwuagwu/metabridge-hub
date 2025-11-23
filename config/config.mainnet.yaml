@@ -13,7 +13,7 @@ server:
 database:
   host: "${DB_HOST}"
   port: 5432
-  database: "metabridge_mainnet"
+  database: "articium_mainnet"
   username: "bridge_user"
   password: "${DB_PASSWORD}"
   ssl_mode: "require"

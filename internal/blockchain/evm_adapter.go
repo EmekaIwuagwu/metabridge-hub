@@ -5,8 +5,8 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/blockchain/evm"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/types"
+	"github.com/EmekaIwuagwu/articium-hub/internal/blockchain/evm"
+	"github.com/EmekaIwuagwu/articium-hub/internal/types"
 	"github.com/rs/zerolog"
 )
 

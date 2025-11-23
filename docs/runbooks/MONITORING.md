@@ -1,6 +1,6 @@
 # Monitoring and Observability Runbook
 
-This guide covers monitoring, alerting, and observability for the Metabridge Engine bridge protocol.
+This guide covers monitoring, alerting, and observability for the Articium bridge protocol.
 
 ## Table of Contents
 
@@ -24,9 +24,9 @@ This guide covers monitoring, alerting, and observability for the Metabridge Eng
 
 ### Access
 
-- **Grafana**: https://grafana.metabridge.io
-- **Prometheus**: https://prometheus.metabridge.io
-- **Alertmanager**: https://alertmanager.metabridge.io
+- **Grafana**: https://grafana.articium.io
+- **Prometheus**: https://prometheus.articium.io
+- **Alertmanager**: https://alertmanager.articium.io
 
 ## Key Metrics
 
@@ -268,7 +268,7 @@ rate(nats_redeliveries_total[5m])
 
 ### Main Bridge Dashboard
 
-**URL**: https://grafana.metabridge.io/d/bridge-overview
+**URL**: https://grafana.articium.io/d/bridge-overview
 
 **Panels**:
 1. **Bridge Health**:
@@ -334,13 +334,13 @@ rate(nats_redeliveries_total[5m])
 #### Kubernetes
 ```bash
 # API logs
-kubectl logs -f deployment/api -n metabridge-mainnet
+kubectl logs -f deployment/api -n articium-mainnet
 
 # Relayer logs
-kubectl logs -f deployment/relayer -n metabridge-mainnet
+kubectl logs -f deployment/relayer -n articium-mainnet
 
 # All services
-kubectl logs -f -l app=metabridge -n metabridge-mainnet --all-containers
+kubectl logs -f -l app=articium -n articium-mainnet --all-containers
 ```
 
 #### Docker Compose
@@ -356,34 +356,34 @@ docker-compose logs -f relayer
 
 ```logql
 # All errors in last hour
-{app="metabridge"} |= "error" | json
+{app="articium"} |= "error" | json
 
 # Failed message processing
-{app="metabridge",service="relayer"} |= "failed to process message"
+{app="articium",service="relayer"} |= "failed to process message"
 
 # Slow queries
-{app="metabridge"} |= "slow query" | duration > 1s
+{app="articium"} |= "slow query" | duration > 1s
 
 # Signature verification failures
-{app="metabridge"} |= "signature verification failed"
+{app="articium"} |= "signature verification failed"
 
 # Chain connection issues
-{app="metabridge"} |= "failed to connect" | chain =~ ".*"
+{app="articium"} |= "failed to connect" | chain =~ ".*"
 ```
 
 ### Common Log Patterns
 
 ```bash
 # Find stuck messages
-grep "message_status=pending" /var/log/metabridge/relayer.log | \
+grep "message_status=pending" /var/log/articium/relayer.log | \
   awk '{print $1}' | sort | uniq -c | sort -n
 
 # Identify error spikes
-grep "level=error" /var/log/metabridge/*.log | \
+grep "level=error" /var/log/articium/*.log | \
   cut -d' ' -f1 | uniq -c
 
 # Track transaction confirmations
-grep "transaction_confirmed" /var/log/metabridge/relayer.log | \
+grep "transaction_confirmed" /var/log/articium/relayer.log | \
   grep -oP 'duration=\K[0-9]+' | \
   awk '{sum+=$1; count++} END {print "Average:", sum/count, "seconds"}'
 ```
@@ -447,23 +447,23 @@ database:
 curl http://localhost:9090/api/v1/query?query='relayer_workers_busy/relayer_workers_total'
 
 # If utilization > 0.8, scale up
-kubectl scale deployment/relayer --replicas=5 -n metabridge-mainnet
+kubectl scale deployment/relayer --replicas=5 -n articium-mainnet
 
 # Monitor queue depth after scaling
-watch -n 5 'nats-cli stream info metabridge | grep Messages'
+watch -n 5 'nats-cli stream info articium | grep Messages'
 ```
 
 ### Message Queue Tuning
 
 ```bash
 # Increase consumer ack wait time for slow processing
-nats consumer edit metabridge relayer --ack-wait 60s
+nats consumer edit articium relayer --ack-wait 60s
 
 # Adjust max deliveries to reduce retries
-nats consumer edit metabridge relayer --max-deliver 5
+nats consumer edit articium relayer --max-deliver 5
 
 # Enable flow control for backpressure
-nats consumer edit metabridge relayer --flow-control
+nats consumer edit articium relayer --flow-control
 ```
 
 ## Capacity Planning
@@ -546,7 +546,7 @@ echo "All services healthy"
 ### External Dependencies
 ```bash
 # Database
-pg_isready -h db.metabridge.io -U metabridge
+pg_isready -h db.articium.io -U articium
 
 # NATS
 nats-cli server ping

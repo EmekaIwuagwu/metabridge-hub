@@ -1,4 +1,4 @@
-module github.com/EmekaIwuagwu/metabridge-hub
+module github.com/EmekaIwuagwu/articium-hub
 
 go 1.21
 

@@ -10,7 +10,7 @@ RED := \033[0;31m
 NC := \033[0m # No Color
 
 help: ## Show this help message
-	@echo "$(BLUE)Metabridge Hub - Multi-Chain Bridge Protocol$(NC)"
+	@echo "$(BLUE)Articium Hub - Multi-Chain Bridge Protocol$(NC)"
 	@echo ""
 	@echo "$(GREEN)Available targets:$(NC)"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(BLUE)%-20s$(NC) %s\n", $$1, $$2}'
@@ -58,9 +58,9 @@ lint: ## Run linters
 
 docker-build: ## Build Docker images
 	@echo "$(GREEN)Building Docker images...$(NC)"
-	docker build -t metabridge-listener:latest --target listener .
-	docker build -t metabridge-relayer:latest --target relayer .
-	docker build -t metabridge-api:latest --target api .
+	docker build -t articium-listener:latest --target listener .
+	docker build -t articium-relayer:latest --target relayer .
+	docker build -t articium-api:latest --target api .
 
 docker-up: ## Start services with Docker Compose (testnet)
 	@echo "$(GREEN)Starting services for $(ENV)...$(NC)"
@@ -81,11 +81,11 @@ docker-ps: ## Show running containers
 migrate-up: ## Run database migrations
 	@echo "$(GREEN)Running database migrations for $(ENV)...$(NC)"
 	@if [ "$(ENV)" = "testnet" ]; then \
-		psql -h localhost -U bridge_user -d metabridge_testnet -f internal/database/schema.sql; \
+		psql -h localhost -U bridge_user -d articium_testnet -f internal/database/schema.sql; \
 	elif [ "$(ENV)" = "mainnet" ]; then \
-		psql -h $$DB_HOST -U bridge_user -d metabridge_mainnet -f internal/database/schema.sql; \
+		psql -h $$DB_HOST -U bridge_user -d articium_mainnet -f internal/database/schema.sql; \
 	else \
-		psql -h localhost -U bridge_user -d metabridge_dev -f internal/database/schema.sql; \
+		psql -h localhost -U bridge_user -d articium_dev -f internal/database/schema.sql; \
 	fi
 
 migrate-down: ## Rollback database migrations
@@ -94,11 +94,11 @@ migrate-down: ## Rollback database migrations
 
 db-shell: ## Connect to database shell
 	@if [ "$(ENV)" = "testnet" ]; then \
-		psql -h localhost -U bridge_user -d metabridge_testnet; \
+		psql -h localhost -U bridge_user -d articium_testnet; \
 	elif [ "$(ENV)" = "mainnet" ]; then \
-		psql -h $$DB_HOST -U bridge_user -d metabridge_mainnet; \
+		psql -h $$DB_HOST -U bridge_user -d articium_mainnet; \
 	else \
-		psql -h localhost -U bridge_user -d metabridge_dev; \
+		psql -h localhost -U bridge_user -d articium_dev; \
 	fi
 
 # Smart contract commands
@@ -167,13 +167,13 @@ restart: ## Restart services
 	$(MAKE) dev
 
 logs-listener: ## View listener logs
-	docker logs -f metabridge-listener-$(ENV)
+	docker logs -f articium-listener-$(ENV)
 
 logs-relayer: ## View relayer logs
-	docker logs -f metabridge-relayer-$(ENV)
+	docker logs -f articium-relayer-$(ENV)
 
 logs-api: ## View API logs
-	docker logs -f metabridge-api-$(ENV)
+	docker logs -f articium-api-$(ENV)
 
 # Utility commands
 
@@ -192,7 +192,7 @@ mod-tidy: ## Tidy go modules
 check: fmt vet lint test ## Run all checks
 
 version: ## Show version information
-	@echo "Metabridge Hub v1.0.0"
+	@echo "Articium Hub v1.0.0"
 	@echo "Go version: $$(go version)"
 	@echo "Docker version: $$(docker --version)"
 

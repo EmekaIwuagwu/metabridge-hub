@@ -1,6 +1,6 @@
 # NEAR Bridge Contract
 
-Production-ready NEAR smart contract for the Metabridge Engine cross-chain bridge protocol.
+Production-ready NEAR smart contract for the Articium cross-chain bridge protocol.
 
 ## Features
 
@@ -250,7 +250,7 @@ The contract emits standardized events:
 ### TokenLocked Event
 ```json
 {
-  "standard": "metabridge",
+  "standard": "articium",
   "version": "1.0.0",
   "event": "token_locked",
   "data": {
@@ -269,7 +269,7 @@ The contract emits standardized events:
 ### TokenUnlocked Event
 ```json
 {
-  "standard": "metabridge",
+  "standard": "articium",
   "version": "1.0.0",
   "event": "token_unlocked",
   "data": {

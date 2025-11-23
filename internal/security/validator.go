@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/config"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/monitoring"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/types"
+	"github.com/EmekaIwuagwu/articium-hub/internal/config"
+	"github.com/EmekaIwuagwu/articium-hub/internal/monitoring"
+	"github.com/EmekaIwuagwu/articium-hub/internal/types"
 	"github.com/rs/zerolog"
 )
 

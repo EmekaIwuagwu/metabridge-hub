@@ -1,7 +1,7 @@
 {
-  "name": "metabridge-contracts",
+  "name": "articium-contracts",
   "version": "1.0.0",
-  "description": "Metabridge Engine - Multi-chain Bridge Smart Contracts",
+  "description": "Articium Engine - Multi-chain Bridge Smart Contracts",
   "main": "index.js",
   "scripts": {
     "compile": "hardhat compile",
@@ -28,7 +28,7 @@
     "bnb",
     "avalanche"
   ],
-  "author": "Metabridge Team",
+  "author": "Articium Team",
   "license": "MIT",
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^4.0.0",

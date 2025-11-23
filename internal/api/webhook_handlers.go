@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/webhooks"
+	"github.com/EmekaIwuagwu/articium-hub/internal/webhooks"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )

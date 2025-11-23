@@ -2,9 +2,9 @@
 set -e
 
 ##############################################################################
-# Metabridge Engine - Mainnet Service Shutdown Script
+# Articium - Mainnet Service Shutdown Script
 #
-# Gracefully stops all Metabridge mainnet services with automatic backup
+# Gracefully stops all Articium mainnet services with automatic backup
 ##############################################################################
 
 # Colors
@@ -38,7 +38,7 @@ log_error() {
 
 echo ""
 echo -e "${RED}======================================================================${NC}"
-echo -e "${RED}  Stopping Metabridge Engine Mainnet${NC}"
+echo -e "${RED}  Stopping Articium Mainnet${NC}"
 echo -e "${RED}======================================================================${NC}"
 echo ""
 echo -e "${YELLOW}⚠️  This will stop all mainnet bridge services${NC}"
@@ -59,9 +59,9 @@ BACKUP_PATH="$BACKUP_DIR/pre-shutdown-$TIMESTAMP"
 mkdir -p "$BACKUP_PATH"
 
 # Backup database if running
-if docker ps | grep -q metabridge-postgres; then
+if docker ps | grep -q articium-postgres; then
     log_info "Backing up database..."
-    docker exec metabridge-postgres pg_dump -U metabridge metabridge_mainnet > "$BACKUP_PATH/database.sql" 2>/dev/null || true
+    docker exec articium-postgres pg_dump -U articium articium_mainnet > "$BACKUP_PATH/database.sql" 2>/dev/null || true
     if [ -f "$BACKUP_PATH/database.sql" ]; then
         log_success "Database backed up"
     else

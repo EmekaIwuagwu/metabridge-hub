@@ -219,7 +219,7 @@ Testnet tokens are free but limited:
 - Don't spam faucets
 - Report dry faucets to community
 
-## Required Amounts for Metabridge
+## Required Amounts for Articium
 
 ### Minimum per Chain (for testing)
 - **Deployment**: 0.1-0.2 native tokens

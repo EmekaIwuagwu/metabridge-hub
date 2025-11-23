@@ -2,9 +2,9 @@
 set -e
 
 ##############################################################################
-# Metabridge Engine - Complete Testnet Deployment Script
+# Articium - Complete Testnet Deployment Script
 #
-# This script deploys the entire Metabridge infrastructure for testing:
+# This script deploys the entire Articium infrastructure for testing:
 # - Infrastructure (PostgreSQL, NATS, Redis, Monitoring)
 # - Database schema and migrations
 # - All backend services (API, Listener, Relayer)
@@ -149,7 +149,7 @@ start_infrastructure() {
 
     # Wait for PostgreSQL
     log_info "Waiting for PostgreSQL..."
-    until docker-compose -f docker-compose.infrastructure.yaml exec -T postgres pg_isready -U metabridge > /dev/null 2>&1; do
+    until docker-compose -f docker-compose.infrastructure.yaml exec -T postgres pg_isready -U articium > /dev/null 2>&1; do
         echo -n "."
         sleep 2
     done
@@ -180,13 +180,13 @@ run_migrations() {
     cd "$PROJECT_ROOT"
 
     # Run SQL schema
-    docker exec metabridge-postgres psql -U metabridge -d metabridge_testnet -f /docker-entrypoint-initdb.d/schema.sql
+    docker exec articium-postgres psql -U articium -d articium_testnet -f /docker-entrypoint-initdb.d/schema.sql
 
     log_success "Database migrations completed"
 }
 
 start_services() {
-    log_info "Starting Metabridge services..."
+    log_info "Starting Articium services..."
 
     cd "$PROJECT_ROOT"
 
@@ -194,9 +194,9 @@ start_services() {
     export BRIDGE_ENVIRONMENT=testnet
     export DATABASE_HOST=localhost
     export DATABASE_PORT=5432
-    export DATABASE_USER=metabridge
-    export DATABASE_PASSWORD=metabridge_password
-    export DATABASE_NAME=metabridge_testnet
+    export DATABASE_USER=articium
+    export DATABASE_PASSWORD=articium_password
+    export DATABASE_NAME=articium_testnet
     export NATS_URL=nats://localhost:4222
     export REDIS_URL=redis://localhost:6379
 
@@ -236,7 +236,7 @@ verify_deployment() {
 
     # Check database connection
     log_info "Checking database connection..."
-    if docker exec metabridge-postgres psql -U metabridge -d metabridge_testnet -c "SELECT 1;" > /dev/null 2>&1; then
+    if docker exec articium-postgres psql -U articium -d articium_testnet -c "SELECT 1;" > /dev/null 2>&1; then
         log_success "Database is accessible"
     else
         log_error "Database connection failed"
@@ -245,7 +245,7 @@ verify_deployment() {
 
     # Check NATS
     log_info "Checking NATS connection..."
-    if docker exec metabridge-nats nats-server --signal ping > /dev/null 2>&1; then
+    if docker exec articium-nats nats-server --signal ping > /dev/null 2>&1; then
         log_success "NATS is running"
     else
         log_error "NATS check failed"
@@ -258,7 +258,7 @@ verify_deployment() {
 show_status() {
     echo ""
     echo "======================================================================"
-    echo -e "${GREEN}Metabridge Engine Testnet - Deployment Complete!${NC}"
+    echo -e "${GREEN}Articium Testnet - Deployment Complete!${NC}"
     echo "======================================================================"
     echo ""
     echo "📊 Service URLs:"
@@ -312,7 +312,7 @@ cleanup_on_error() {
 main() {
     echo ""
     echo "======================================================================"
-    echo "  Metabridge Engine - Testnet Deployment"
+    echo "  Articium - Testnet Deployment"
     echo "======================================================================"
     echo ""
 

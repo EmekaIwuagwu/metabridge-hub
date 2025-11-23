@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/types"
+	"github.com/EmekaIwuagwu/articium-hub/internal/types"
 	"github.com/mr-tron/base58"
 )
 

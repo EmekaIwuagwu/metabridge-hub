@@ -1,6 +1,6 @@
-# Metabridge Engine - Quick Start Guide
+# Articium - Quick Start Guide
 
-Get the Metabridge Engine running locally in minutes!
+Get the Articium running locally in minutes!
 
 ## 🚀 One-Command Deployment
 
@@ -92,7 +92,7 @@ Here's how the 8GB minimum is allocated:
 
 ```bash
 # Navigate to project directory
-cd metabridge-hub
+cd articium-hub
 
 # Make scripts executable
 chmod +x deploy-testnet.sh stop-testnet.sh
@@ -181,7 +181,7 @@ curl http://localhost:9090/api/v1/query?query=chain_health
 
 ```bash
 # Connect to database
-docker exec -it metabridge-postgres psql -U metabridge -d metabridge_testnet
+docker exec -it articium-postgres psql -U articium -d articium_testnet
 
 # Inside psql:
 SELECT * FROM chains;
@@ -232,9 +232,9 @@ tail -f logs/*.log
 
 # Check Docker containers
 docker ps -a
-docker logs metabridge-postgres
-docker logs metabridge-nats
-docker logs metabridge-redis
+docker logs articium-postgres
+docker logs articium-nats
+docker logs articium-redis
 
 # Restart infrastructure
 cd deployments/docker
@@ -263,7 +263,7 @@ anchor deploy --provider.cluster devnet
 # NEAR contract
 cd contracts/near
 ./build.sh
-near deploy --accountId metabridge.testnet --wasmFile ./res/near_bridge.wasm
+near deploy --accountId articium.testnet --wasmFile ./res/near_bridge.wasm
 ```
 
 ### 2. Configure RPC Endpoints
@@ -340,7 +340,7 @@ Your deployment is successful when:
 ✅ API responds at http://localhost:8080/health
 ✅ Grafana shows metrics at http://localhost:3000
 ✅ Database has tables: `SELECT COUNT(*) FROM chains;`
-✅ NATS is connected: `docker exec metabridge-nats nats-server --signal ping`
+✅ NATS is connected: `docker exec articium-nats nats-server --signal ping`
 ✅ All services show in logs without errors
 
 ---

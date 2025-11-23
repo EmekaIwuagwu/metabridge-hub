@@ -6,7 +6,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/database"
+	"github.com/EmekaIwuagwu/articium-hub/internal/database"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 )

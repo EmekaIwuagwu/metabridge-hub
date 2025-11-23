@@ -3,7 +3,7 @@ package webhooks
 import (
 	"time"
 
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/types"
+	"github.com/EmekaIwuagwu/articium-hub/internal/types"
 )
 
 // EventType represents different webhook event types

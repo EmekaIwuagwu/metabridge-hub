@@ -1,0 +1,18 @@
+[Unit]
+Description=Articium Relayer Service
+After=network.target postgresql.service articium-api.service
+Wants=postgresql.service articium-api.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/projects/articium
+Environment="PATH=/usr/local/go/bin:/usr/local/bin:/usr/bin:/bin"
+ExecStart=/root/projects/articium/bin/relayer -config config/config.production.yaml
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

@@ -1,6 +1,6 @@
 # End-to-End Testing Guide
 
-Complete guide for running automated E2E tests on the Metabridge Engine.
+Complete guide for running automated E2E tests on the Articium.
 
 ## Table of Contents
 
@@ -19,7 +19,7 @@ Complete guide for running automated E2E tests on the Metabridge Engine.
 
 ## Overview
 
-The automated E2E test suite (`test-e2e-full.sh`) validates the entire Metabridge system from end to end:
+The automated E2E test suite (`test-e2e-full.sh`) validates the entire Articium system from end to end:
 
 1. ✅ Generates test wallet (or uses provided one)
 2. ✅ Guides you through getting testnet tokens from faucets
@@ -37,7 +37,7 @@ The automated E2E test suite (`test-e2e-full.sh`) validates the entire Metabridg
 
 ```bash
 # Navigate to project root
-cd /path/to/metabridge-hub
+cd /path/to/articium-hub
 
 # Run E2E test
 ./test-e2e-full.sh
@@ -248,10 +248,10 @@ ethereum-sepolia: ✓
 
 ```
 [STEP] Deploying backend services...
-[INFO] Starting Metabridge testnet deployment...
+[INFO] Starting Articium testnet deployment...
 
 ======================================================================
-  Metabridge Engine - Testnet Deployment
+  Articium - Testnet Deployment
 ======================================================================
 
 [INFO] Building Go services...
@@ -310,7 +310,7 @@ ethereum-sepolia: ✓
 [STEP] Generating test report...
 
 ========================================================================
-Metabridge Engine - E2E Test Report
+Articium - E2E Test Report
 ========================================================================
 Timestamp: 20240115_143045
 Test Wallet: 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0

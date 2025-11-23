@@ -6,8 +6,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/config"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/database"
+	"github.com/EmekaIwuagwu/articium-hub/internal/config"
+	"github.com/EmekaIwuagwu/articium-hub/internal/database"
 	"github.com/rs/zerolog"
 )
 
@@ -25,7 +25,7 @@ func main() {
 	logger.Info().
 		Str("service", "migrator").
 		Str("config", *configPath).
-		Msg("Starting Metabridge Database Migrator")
+		Msg("Starting Articium Database Migrator")
 
 	// Load configuration
 	cfg, err := config.LoadConfig(*configPath)

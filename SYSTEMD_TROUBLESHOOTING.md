@@ -1,6 +1,6 @@
 # Systemd Service Troubleshooting Guide
 
-This guide helps you troubleshoot and resolve issues when starting Metabridge services.
+This guide helps you troubleshoot and resolve issues when starting Articium services.
 
 ## Quick Diagnosis
 
@@ -70,7 +70,7 @@ This script automatically starts all required services.
 
 1. Check if config file exists:
    ```bash
-   ls -la /root/projects/metabridge-engine-hub/config/config.production.yaml
+   ls -la /root/projects/articium/config/config.production.yaml
    ```
 
 2. If missing, copy from template:
@@ -114,13 +114,13 @@ Expected output: All files should have `rwxr-xr-x` permissions.
 
 2. Create the database:
    ```bash
-   sudo -u postgres psql -c "CREATE DATABASE metabridge_production;"
+   sudo -u postgres psql -c "CREATE DATABASE articium_production;"
    sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD 'postgres_admin_password';"
    ```
 
 3. Test connection:
    ```bash
-   psql -h localhost -U postgres -d metabridge_production -c "SELECT version();"
+   psql -h localhost -U postgres -d articium_production -c "SELECT version();"
    ```
 
 4. Run migrations:
@@ -172,8 +172,8 @@ Expected output: All files should have `rwxr-xr-x` permissions.
 **Solution**:
 
 ```bash
-mkdir -p /root/projects/metabridge-engine-hub/logs
-chmod 755 /root/projects/metabridge-engine-hub/logs
+mkdir -p /root/projects/articium/logs
+chmod 755 /root/projects/articium/logs
 ```
 
 ---
@@ -184,37 +184,37 @@ chmod 755 /root/projects/metabridge-engine-hub/logs
 
 ```bash
 # API logs
-sudo journalctl -u metabridge-api -f
+sudo journalctl -u articium-api -f
 
 # Relayer logs
-sudo journalctl -u metabridge-relayer -f
+sudo journalctl -u articium-relayer -f
 
 # Listener logs
-sudo journalctl -u metabridge-listener -f
+sudo journalctl -u articium-listener -f
 
 # Batcher logs
-sudo journalctl -u metabridge-batcher -f
+sudo journalctl -u articium-batcher -f
 
 # All services
-sudo journalctl -u metabridge-* -f
+sudo journalctl -u articium-* -f
 ```
 
 ### Last 100 Lines
 
 ```bash
-sudo journalctl -u metabridge-api -n 100 --no-pager
+sudo journalctl -u articium-api -n 100 --no-pager
 ```
 
 ### Logs Since Boot
 
 ```bash
-sudo journalctl -u metabridge-api -b --no-pager
+sudo journalctl -u articium-api -b --no-pager
 ```
 
 ### Error Logs Only
 
 ```bash
-sudo journalctl -u metabridge-api -p err --no-pager
+sudo journalctl -u articium-api -p err --no-pager
 ```
 
 ---
@@ -224,49 +224,49 @@ sudo journalctl -u metabridge-api -p err --no-pager
 ### Start Services
 
 ```bash
-sudo systemctl start metabridge-api
-sudo systemctl start metabridge-relayer
-sudo systemctl start metabridge-listener
-sudo systemctl start metabridge-batcher
+sudo systemctl start articium-api
+sudo systemctl start articium-relayer
+sudo systemctl start articium-listener
+sudo systemctl start articium-batcher
 ```
 
 ### Stop Services
 
 ```bash
-sudo systemctl stop metabridge-api
-sudo systemctl stop metabridge-relayer
-sudo systemctl stop metabridge-listener
-sudo systemctl stop metabridge-batcher
+sudo systemctl stop articium-api
+sudo systemctl stop articium-relayer
+sudo systemctl stop articium-listener
+sudo systemctl stop articium-batcher
 ```
 
 ### Restart Services
 
 ```bash
-sudo systemctl restart metabridge-api
+sudo systemctl restart articium-api
 ```
 
 ### Check Status
 
 ```bash
-sudo systemctl status metabridge-api
-sudo systemctl status metabridge-relayer
-sudo systemctl status metabridge-listener
-sudo systemctl status metabridge-batcher
+sudo systemctl status articium-api
+sudo systemctl status articium-relayer
+sudo systemctl status articium-listener
+sudo systemctl status articium-batcher
 ```
 
 ### Enable Auto-start on Boot
 
 ```bash
-sudo systemctl enable metabridge-api
-sudo systemctl enable metabridge-relayer
-sudo systemctl enable metabridge-listener
-sudo systemctl enable metabridge-batcher
+sudo systemctl enable articium-api
+sudo systemctl enable articium-relayer
+sudo systemctl enable articium-listener
+sudo systemctl enable articium-batcher
 ```
 
 ### Disable Auto-start
 
 ```bash
-sudo systemctl disable metabridge-api
+sudo systemctl disable articium-api
 ```
 
 ---
@@ -282,7 +282,7 @@ sudo systemctl daemon-reload
 Then restart the affected service:
 
 ```bash
-sudo systemctl restart metabridge-api
+sudo systemctl restart articium-api
 ```
 
 ---
@@ -294,10 +294,10 @@ Services start in this order:
 1. **PostgreSQL** - Database (required by all services)
 2. **NATS** - Message queue (required by listener)
 3. **Redis** - Cache (optional for API)
-4. **metabridge-api** - API server (required by other services)
-5. **metabridge-listener** - Blockchain listeners
-6. **metabridge-batcher** - Transaction batcher
-7. **metabridge-relayer** - Transaction relayer
+4. **articium-api** - API server (required by other services)
+5. **articium-listener** - Blockchain listeners
+6. **articium-batcher** - Transaction batcher
+7. **articium-relayer** - Transaction relayer
 
 ---
 
@@ -306,7 +306,7 @@ Services start in this order:
 - [ ] PostgreSQL installed and running
 - [ ] NATS installed and running
 - [ ] Redis installed and running
-- [ ] Database created (`metabridge_production`)
+- [ ] Database created (`articium_production`)
 - [ ] Database user configured
 - [ ] Configuration file exists (`config/config.production.yaml`)
 - [ ] Configuration file updated with correct values
@@ -331,7 +331,7 @@ bash scripts/check-dependencies.sh
 ### 2. Test Database Connection
 
 ```bash
-psql -h localhost -U postgres -d metabridge_production -c "SELECT COUNT(*) FROM messages;"
+psql -h localhost -U postgres -d articium_production -c "SELECT COUNT(*) FROM messages;"
 ```
 
 ### 3. Test API Endpoint
@@ -366,21 +366,21 @@ curl http://localhost:9090/metrics
 ### Stop All Services
 
 ```bash
-sudo systemctl stop metabridge-api metabridge-relayer metabridge-listener metabridge-batcher
+sudo systemctl stop articium-api articium-relayer articium-listener articium-batcher
 ```
 
 ### Reset Database (WARNING: Deletes all data)
 
 ```bash
-sudo -u postgres psql -c "DROP DATABASE IF EXISTS metabridge_production;"
-sudo -u postgres psql -c "CREATE DATABASE metabridge_production;"
+sudo -u postgres psql -c "DROP DATABASE IF EXISTS articium_production;"
+sudo -u postgres psql -c "CREATE DATABASE articium_production;"
 ./bin/migrator -config config/config.production.yaml
 ```
 
 ### View All Service Status
 
 ```bash
-systemctl list-units "metabridge-*" --all
+systemctl list-units "articium-*" --all
 ```
 
 ---
@@ -396,12 +396,12 @@ If you're still experiencing issues:
 
 2. Collect service logs:
    ```bash
-   sudo journalctl -u metabridge-* --no-pager > service-logs.txt
+   sudo journalctl -u articium-* --no-pager > service-logs.txt
    ```
 
 3. Check file permissions:
    ```bash
-   ls -laR /root/projects/metabridge-engine-hub/ > file-permissions.txt
+   ls -laR /root/projects/articium/ > file-permissions.txt
    ```
 
 4. Share the output files for support.

@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/blockchain/solana"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/monitoring"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/types"
+	"github.com/EmekaIwuagwu/articium-hub/internal/blockchain/solana"
+	"github.com/EmekaIwuagwu/articium-hub/internal/monitoring"
+	"github.com/EmekaIwuagwu/articium-hub/internal/types"
 	solanago "github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/rs/zerolog"

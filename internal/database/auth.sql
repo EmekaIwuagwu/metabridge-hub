@@ -101,7 +101,7 @@ $$ LANGUAGE plpgsql;
 INSERT INTO users (id, email, name, password_hash, role, active)
 VALUES (
     'admin-default',
-    'admin@metabridge.local',
+    'admin@articium.local',
     'Default Admin',
     '$2a$10$rQ8K3z3z8L3z8z8z8z8z8OvD5fq5fq5fq5fq5fq5fq5fq5fq5fq5e',
     'admin',
@@ -113,7 +113,7 @@ ON CONFLICT (email) DO NOTHING;
 INSERT INTO users (id, email, name, password_hash, role, active)
 VALUES (
     'dev-default',
-    'dev@metabridge.local',
+    'dev@articium.local',
     'Default Developer',
     '$2a$10$Xyz.Xyz.Xyz.Xyz.Xyz.Xyz.OvD5fq5fq5fq5fq5fq5fq5fq5fq5fq5e',
     'developer',

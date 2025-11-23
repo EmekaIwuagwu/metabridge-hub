@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/config"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/types"
+	"github.com/EmekaIwuagwu/articium-hub/internal/config"
+	"github.com/EmekaIwuagwu/articium-hub/internal/types"
 	"github.com/nats-io/nats.go"
 	"github.com/rs/zerolog"
 )
@@ -45,7 +45,7 @@ func NewNATSQueue(cfg *config.QueueConfig, logger zerolog.Logger) (*NATSQueue, e
 
 	// Connect to NATS
 	opts := []nats.Option{
-		nats.Name("metabridge"),
+		nats.Name("articium"),
 		nats.Timeout(10 * time.Second),
 		nats.ReconnectWait(2 * time.Second),
 		nats.MaxReconnects(-1), // Unlimited reconnects
@@ -153,7 +153,7 @@ func (q *NATSQueue) Publish(ctx context.Context, msg *types.CrossChainMessage) e
 // Subscribe subscribes to messages from the queue
 func (q *NATSQueue) Subscribe(ctx context.Context, handler MessageHandler) error {
 	// Create durable consumer
-	consumerName := "metabridge-relayer"
+	consumerName := "articium-relayer"
 
 	// Subscribe to subject
 	sub, err := q.js.QueueSubscribe(

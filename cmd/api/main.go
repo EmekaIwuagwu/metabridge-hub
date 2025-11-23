@@ -9,10 +9,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/api"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/blockchain"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/config"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/database"
+	"github.com/EmekaIwuagwu/articium-hub/internal/api"
+	"github.com/EmekaIwuagwu/articium-hub/internal/blockchain"
+	"github.com/EmekaIwuagwu/articium-hub/internal/config"
+	"github.com/EmekaIwuagwu/articium-hub/internal/database"
 	"github.com/rs/zerolog"
 )
 
@@ -29,7 +29,7 @@ func main() {
 	logger.Info().
 		Str("service", "api").
 		Str("config", *configPath).
-		Msg("Starting Metabridge API server")
+		Msg("Starting Articium API server")
 
 	// Load configuration
 	cfg, err := config.LoadConfig(*configPath)

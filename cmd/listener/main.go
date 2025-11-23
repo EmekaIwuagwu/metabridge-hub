@@ -8,14 +8,14 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/blockchain"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/config"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/database"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/listener/evm"
-	nearlistener "github.com/EmekaIwuagwu/metabridge-hub/internal/listener/near"
-	solanalistener "github.com/EmekaIwuagwu/metabridge-hub/internal/listener/solana"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/queue"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/types"
+	"github.com/EmekaIwuagwu/articium-hub/internal/blockchain"
+	"github.com/EmekaIwuagwu/articium-hub/internal/config"
+	"github.com/EmekaIwuagwu/articium-hub/internal/database"
+	"github.com/EmekaIwuagwu/articium-hub/internal/listener/evm"
+	nearlistener "github.com/EmekaIwuagwu/articium-hub/internal/listener/near"
+	solanalistener "github.com/EmekaIwuagwu/articium-hub/internal/listener/solana"
+	"github.com/EmekaIwuagwu/articium-hub/internal/queue"
+	"github.com/EmekaIwuagwu/articium-hub/internal/types"
 	"github.com/rs/zerolog"
 )
 
@@ -37,7 +37,7 @@ func main() {
 	logger.Info().
 		Str("service", "listener").
 		Str("config", *configPath).
-		Msg("Starting Metabridge Listener service")
+		Msg("Starting Articium Listener service")
 
 	// Load configuration
 	cfg, err := config.LoadConfig(*configPath)

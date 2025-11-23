@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/webhooks"
+	"github.com/EmekaIwuagwu/articium-hub/internal/webhooks"
 	"github.com/gorilla/mux"
 )
 

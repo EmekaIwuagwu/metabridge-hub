@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/types"
+	"github.com/EmekaIwuagwu/articium-hub/internal/types"
 )
 
 // UniversalSigner provides a unified signing interface for all blockchain types

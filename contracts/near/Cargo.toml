@@ -2,8 +2,8 @@
 name = "near-bridge"
 version = "0.1.0"
 edition = "2021"
-authors = ["Metabridge Team"]
-description = "NEAR Bridge Contract for Metabridge Engine"
+authors = ["Articium Team"]
+description = "NEAR Bridge Contract for Articium Engine"
 
 [lib]
 crate-type = ["cdylib", "rlib"]

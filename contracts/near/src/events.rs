@@ -34,7 +34,7 @@ pub fn emit_token_locked_event(event: &TokenLockedEvent) {
         .unwrap_or_else(|_| "{}".to_string());
 
     log!(
-        "EVENT_JSON:{{\"standard\":\"metabridge\",\"version\":\"1.0.0\",\"event\":\"token_locked\",\"data\":{}}}",
+        "EVENT_JSON:{{\"standard\":\"articium\",\"version\":\"1.0.0\",\"event\":\"token_locked\",\"data\":{}}}",
         event_json
     );
 }
@@ -45,7 +45,7 @@ pub fn emit_token_unlocked_event(event: &TokenUnlockedEvent) {
         .unwrap_or_else(|_| "{}".to_string());
 
     log!(
-        "EVENT_JSON:{{\"standard\":\"metabridge\",\"version\":\"1.0.0\",\"event\":\"token_unlocked\",\"data\":{}}}",
+        "EVENT_JSON:{{\"standard\":\"articium\",\"version\":\"1.0.0\",\"event\":\"token_unlocked\",\"data\":{}}}",
         event_json
     );
 }

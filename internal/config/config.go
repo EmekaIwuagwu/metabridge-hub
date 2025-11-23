@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/types"
+	"github.com/EmekaIwuagwu/articium-hub/internal/types"
 	"github.com/spf13/viper"
 )
 

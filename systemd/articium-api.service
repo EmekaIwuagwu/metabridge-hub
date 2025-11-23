@@ -1,14 +1,14 @@
 [Unit]
-Description=Metabridge API Server
+Description=Articium API Server
 After=network.target postgresql.service
 Wants=postgresql.service
 
 [Service]
 Type=simple
 User=root
-WorkingDirectory=/root/projects/metabridge-engine-hub
+WorkingDirectory=/root/projects/articium
 Environment="PATH=/usr/local/go/bin:/usr/local/bin:/usr/bin:/bin"
-ExecStart=/root/projects/metabridge-engine-hub/bin/api -config config/config.production.yaml
+ExecStart=/root/projects/articium/bin/api -config config/config.production.yaml
 Restart=always
 RestartSec=10
 StandardOutput=journal

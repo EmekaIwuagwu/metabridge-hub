@@ -6,7 +6,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/types"
+	"github.com/EmekaIwuagwu/articium-hub/internal/types"
 )
 
 // Batch represents a collection of transactions to be processed together

@@ -1,10 +1,10 @@
-# Metabridge Engine - Production-Grade Multi-Chain Bridge Protocol
+# Articium - Production-Grade Multi-Chain Bridge Protocol
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Go Version](https://img.shields.io/badge/Go-1.21+-blue.svg)](https://golang.org)
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.20-orange.svg)](https://soliditylang.org)
 
-**Metabridge** is a production-ready, enterprise-grade cross-chain messaging and asset bridge protocol written in Golang that supports **heterogeneous blockchain architectures** across both **testnet and mainnet** environments.
+**Articium** is a production-ready, enterprise-grade cross-chain messaging and asset bridge protocol written in Golang that supports **heterogeneous blockchain architectures** across both **testnet and mainnet** environments.
 
 ## 🌟 Key Features
 
@@ -99,7 +99,7 @@
 
 ## 🔄 Self-Hosted Relayer System
 
-Metabridge includes a **production-ready, self-hosted relayer** that eliminates dependency on third-party relayer networks. You control the entire message relay infrastructure.
+Articium includes a **production-ready, self-hosted relayer** that eliminates dependency on third-party relayer networks. You control the entire message relay infrastructure.
 
 ### Relayer Architecture
 
@@ -235,16 +235,16 @@ unlockToken(
 
 ```bash
 # Create systemd service
-sudo cat > /etc/systemd/system/metabridge-relayer.service <<EOF
+sudo cat > /etc/systemd/system/articium-relayer.service <<EOF
 [Unit]
-Description=Metabridge Relayer Service
+Description=Articium Relayer Service
 After=network.target postgresql.service nats.service
 
 [Service]
 Type=simple
 User=bridge
-WorkingDirectory=/opt/metabridge
-ExecStart=/opt/metabridge/relayer --config /opt/metabridge/config/config.mainnet.yaml
+WorkingDirectory=/opt/articium
+ExecStart=/opt/articium/relayer --config /opt/articium/config/config.mainnet.yaml
 Restart=always
 RestartSec=10
 StandardOutput=journal
@@ -256,28 +256,28 @@ WantedBy=multi-user.target
 EOF
 
 # Enable and start
-sudo systemctl enable metabridge-relayer
-sudo systemctl start metabridge-relayer
+sudo systemctl enable articium-relayer
+sudo systemctl start articium-relayer
 
 # Check status
-sudo systemctl status metabridge-relayer
-sudo journalctl -u metabridge-relayer -f
+sudo systemctl status articium-relayer
+sudo journalctl -u articium-relayer -f
 ```
 
 #### Docker Deployment
 
 ```bash
 # Build relayer image
-docker build -t metabridge-relayer:latest -f Dockerfile.relayer .
+docker build -t articium-relayer:latest -f Dockerfile.relayer .
 
 # Run relayer container
 docker run -d \
-  --name metabridge-relayer \
-  --network metabridge-network \
-  -v /opt/metabridge/config:/config:ro \
-  -v /opt/metabridge/keys:/keys:ro \
+  --name articium-relayer \
+  --network articium-network \
+  -v /opt/articium/config:/config:ro \
+  -v /opt/articium/keys:/keys:ro \
   -e BRIDGE_ENVIRONMENT=mainnet \
-  metabridge-relayer:latest \
+  articium-relayer:latest \
   --config /config/config.mainnet.yaml
 ```
 
@@ -377,9 +377,9 @@ signer, _ := hsm.NewHSMSigner(hsmConfig)
 
 **Relayer not processing messages**:
 1. Check NATS connection: `nats stream info BRIDGE_MESSAGES`
-2. Check database connection: `psql -U bridge_user -d metabridge`
+2. Check database connection: `psql -U bridge_user -d articium`
 3. Check RPC endpoints: View health metrics
-4. Check logs: `journalctl -u metabridge-relayer -f`
+4. Check logs: `journalctl -u articium-relayer -f`
 
 **Transactions failing on destination**:
 1. Verify signer has sufficient gas funds
@@ -464,7 +464,7 @@ signer, _ := hsm.NewHSMSigner(hsmConfig)
 
 1. **Push to GitHub** (if not already)
    ```bash
-   git remote add origin https://github.com/YOUR_USERNAME/metabridge-engine-hub.git
+   git remote add origin https://github.com/YOUR_USERNAME/articium.git
    git push origin main
    ```
 
@@ -472,15 +472,15 @@ signer, _ := hsm.NewHSMSigner(hsmConfig)
 
 3. **Create PostgreSQL Database**
    - Click "New +" → "PostgreSQL"
-   - Name: `metabridge-db`
+   - Name: `articium-db`
    - Plan: Free (for testing)
    - Copy the "Internal Database URL"
 
 4. **Deploy API Server**
    - Click "New +" → "Web Service"
    - Connect your GitHub repo
-   - Build Command: `go build -o bin/metabridge-api cmd/api/main.go`
-   - Start Command: `./bin/metabridge-api`
+   - Build Command: `go build -o bin/articium-api cmd/api/main.go`
+   - Start Command: `./bin/articium-api`
    - Add environment variables (see full guide)
 
 5. **Test Your Deployment**
@@ -560,7 +560,7 @@ When you deploy on Render, you get:
 
 ## 🔷 Azure Production Deployment
 
-Complete step-by-step guide to deploy Metabridge on Azure from scratch.
+Complete step-by-step guide to deploy Articium on Azure from scratch.
 
 ### Prerequisites
 
@@ -573,8 +573,8 @@ Complete step-by-step guide to deploy Metabridge on Azure from scratch.
 ```bash
 # From Azure Portal or CLI
 az vm create \
-  --resource-group metabridge-rg \
-  --name metabridge-vm \
+  --resource-group articium-rg \
+  --name articium-vm \
   --image Ubuntu2204 \
   --size Standard_D4s_v3 \
   --admin-username bridge \
@@ -582,7 +582,7 @@ az vm create \
   --public-ip-sku Standard
 
 # Get the public IP
-az vm show -d -g metabridge-rg -n metabridge-vm --query publicIps -o tsv
+az vm show -d -g articium-rg -n articium-vm --query publicIps -o tsv
 ```
 
 **Recommended VM Sizes**:
@@ -698,12 +698,12 @@ docker compose version
 
 ```bash
 # Create project directory
-mkdir -p ~/metabridge
-cd ~/metabridge
+mkdir -p ~/articium
+cd ~/articium
 
 # Clone the repository
-git clone https://github.com/EmekaIwuagwu/metabridge-engine-hub.git
-cd metabridge-engine-hub
+git clone https://github.com/EmekaIwuagwu/articium.git
+cd articium
 
 # Check current branch
 git branch
@@ -722,7 +722,7 @@ cd contracts/evm
 npm install
 
 # Return to project root
-cd ~/metabridge/metabridge-engine-hub
+cd ~/articium/articium
 ```
 
 ### Step 9: Configure Environment
@@ -746,7 +746,7 @@ DB_HOST=localhost
 DB_PORT=5432
 DB_USER=bridge_user
 DB_PASSWORD=<GENERATE_STRONG_PASSWORD>
-DB_NAME=metabridge_production
+DB_NAME=articium_production
 DB_SSLMODE=disable
 
 # Server Configuration
@@ -817,22 +817,22 @@ docker compose -f docker-compose.production.yaml ps
 
 ```bash
 # Create database and user
-docker exec -i metabridge-postgres psql -U postgres <<EOF
-CREATE DATABASE metabridge_production;
+docker exec -i articium-postgres psql -U postgres <<EOF
+CREATE DATABASE articium_production;
 CREATE USER bridge_user WITH ENCRYPTED PASSWORD '<YOUR_DB_PASSWORD>';
-GRANT ALL PRIVILEGES ON DATABASE metabridge_production TO bridge_user;
-ALTER DATABASE metabridge_production OWNER TO bridge_user;
+GRANT ALL PRIVILEGES ON DATABASE articium_production TO bridge_user;
+ALTER DATABASE articium_production OWNER TO bridge_user;
 \q
 EOF
 
 # Run database migrations
-docker exec -i metabridge-postgres psql -U bridge_user -d metabridge_production < internal/database/schema.sql
+docker exec -i articium-postgres psql -U bridge_user -d articium_production < internal/database/schema.sql
 
 # Run authentication schema
-docker exec -i metabridge-postgres psql -U bridge_user -d metabridge_production < internal/database/auth.sql
+docker exec -i articium-postgres psql -U bridge_user -d articium_production < internal/database/auth.sql
 
 # Verify tables created
-docker exec -it metabridge-postgres psql -U bridge_user -d metabridge_production -c "\dt"
+docker exec -it articium-postgres psql -U bridge_user -d articium_production -c "\dt"
 ```
 
 ### Step 12: Create Admin User
@@ -846,11 +846,11 @@ bcrypt-cli <YOUR_ADMIN_PASSWORD>
 # Copy the hash output
 
 # Insert admin user
-docker exec -i metabridge-postgres psql -U bridge_user -d metabridge_production <<EOF
+docker exec -i articium-postgres psql -U bridge_user -d articium_production <<EOF
 INSERT INTO users (id, email, name, password_hash, role, active, created_at, updated_at)
 VALUES (
   'admin-001',
-  'admin@metabridge.local',
+  'admin@articium.local',
   'System Administrator',
   '<YOUR_BCRYPT_HASH>',
   'admin',
@@ -861,7 +861,7 @@ VALUES (
 EOF
 
 # Verify user created
-docker exec -it metabridge-postgres psql -U bridge_user -d metabridge_production -c "SELECT id, email, role FROM users;"
+docker exec -it articium-postgres psql -U bridge_user -d articium_production -c "SELECT id, email, role FROM users;"
 ```
 
 ### Step 13: Deploy Smart Contracts
@@ -869,7 +869,7 @@ docker exec -it metabridge-postgres psql -U bridge_user -d metabridge_production
 #### EVM Contracts (Polygon, BNB, Avalanche, Ethereum)
 
 ```bash
-cd ~/metabridge/metabridge-engine-hub/contracts/evm
+cd ~/articium/articium/contracts/evm
 
 # Create deployment configuration
 cat > hardhat.config.js <<'EOF'
@@ -939,7 +939,7 @@ export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
 # Install Anchor
 cargo install --git https://github.com/coral-xyz/anchor --tag v0.29.0 anchor-cli
 
-cd ~/metabridge/metabridge-engine-hub/contracts/solana
+cd ~/articium/articium/contracts/solana
 
 # Build program
 anchor build
@@ -960,7 +960,7 @@ solana address -k target/deploy/bridge-keypair.json
 # Install NEAR CLI
 npm install -g near-cli
 
-cd ~/metabridge/metabridge-engine-hub/contracts/near
+cd ~/articium/articium/contracts/near
 
 # Build contract
 ./build.sh
@@ -975,16 +975,16 @@ near call bridge.near new '{"owner":"validator.near","required_signatures":3}' -
 ### Step 14: Build Bridge Services
 
 ```bash
-cd ~/metabridge/metabridge-engine-hub
+cd ~/articium/articium
 
 # Build API server
-go build -o bin/metabridge-api cmd/api/main.go
+go build -o bin/articium-api cmd/api/main.go
 
 # Build relayer
-go build -o bin/metabridge-relayer cmd/relayer/main.go
+go build -o bin/articium-relayer cmd/relayer/main.go
 
 # Build batcher (if exists)
-go build -o bin/metabridge-batcher cmd/batcher/main.go
+go build -o bin/articium-batcher cmd/batcher/main.go
 
 # Verify binaries
 ls -lh bin/
@@ -995,17 +995,17 @@ ls -lh bin/
 **API Server Service**:
 
 ```bash
-sudo tee /etc/systemd/system/metabridge-api.service > /dev/null <<EOF
+sudo tee /etc/systemd/system/articium-api.service > /dev/null <<EOF
 [Unit]
-Description=Metabridge API Server
+Description=Articium API Server
 After=network.target postgresql.service nats.service redis.service
 
 [Service]
 Type=simple
 User=bridge
-WorkingDirectory=/home/bridge/metabridge/metabridge-engine-hub
-ExecStart=/home/bridge/metabridge/metabridge-engine-hub/bin/metabridge-api
-EnvironmentFile=/home/bridge/metabridge/metabridge-engine-hub/.env.production
+WorkingDirectory=/home/bridge/articium/articium
+ExecStart=/home/bridge/articium/articium/bin/articium-api
+EnvironmentFile=/home/bridge/articium/articium/.env.production
 Restart=always
 RestartSec=10
 StandardOutput=journal
@@ -1019,17 +1019,17 @@ EOF
 **Relayer Service**:
 
 ```bash
-sudo tee /etc/systemd/system/metabridge-relayer.service > /dev/null <<EOF
+sudo tee /etc/systemd/system/articium-relayer.service > /dev/null <<EOF
 [Unit]
-Description=Metabridge Relayer Service
-After=network.target postgresql.service nats.service metabridge-api.service
+Description=Articium Relayer Service
+After=network.target postgresql.service nats.service articium-api.service
 
 [Service]
 Type=simple
 User=bridge
-WorkingDirectory=/home/bridge/metabridge/metabridge-engine-hub
-ExecStart=/home/bridge/metabridge/metabridge-engine-hub/bin/metabridge-relayer --config /home/bridge/metabridge/metabridge-engine-hub/config/config.mainnet.yaml
-EnvironmentFile=/home/bridge/metabridge/metabridge-engine-hub/.env.production
+WorkingDirectory=/home/bridge/articium/articium
+ExecStart=/home/bridge/articium/articium/bin/articium-relayer --config /home/bridge/articium/articium/config/config.mainnet.yaml
+EnvironmentFile=/home/bridge/articium/articium/.env.production
 Restart=always
 RestartSec=10
 StandardOutput=journal
@@ -1047,20 +1047,20 @@ EOF
 sudo systemctl daemon-reload
 
 # Enable services to start on boot
-sudo systemctl enable metabridge-api
-sudo systemctl enable metabridge-relayer
+sudo systemctl enable articium-api
+sudo systemctl enable articium-relayer
 
 # Start services
-sudo systemctl start metabridge-api
-sudo systemctl start metabridge-relayer
+sudo systemctl start articium-api
+sudo systemctl start articium-relayer
 
 # Check status
-sudo systemctl status metabridge-api
-sudo systemctl status metabridge-relayer
+sudo systemctl status articium-api
+sudo systemctl status articium-relayer
 
 # View logs
-sudo journalctl -u metabridge-api -f --lines=50
-sudo journalctl -u metabridge-relayer -f --lines=50
+sudo journalctl -u articium-api -f --lines=50
+sudo journalctl -u articium-relayer -f --lines=50
 ```
 
 ### Step 16: Configure Firewall
@@ -1098,7 +1098,7 @@ sudo apt install -y nginx
 sudo apt install -y certbot python3-certbot-nginx
 
 # Create Nginx configuration
-sudo tee /etc/nginx/sites-available/metabridge > /dev/null <<EOF
+sudo tee /etc/nginx/sites-available/articium > /dev/null <<EOF
 server {
     listen 80;
     server_name api.yourdomain.com;
@@ -1118,7 +1118,7 @@ server {
 EOF
 
 # Enable site
-sudo ln -s /etc/nginx/sites-available/metabridge /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/articium /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo systemctl restart nginx
 
@@ -1132,7 +1132,7 @@ sudo certbot renew --dry-run
 ### Step 18: Run Integration Tests
 
 ```bash
-cd ~/metabridge/metabridge-engine-hub
+cd ~/articium/articium
 
 # Set test environment
 export TEST_ENV=production
@@ -1158,7 +1158,7 @@ curl http://localhost:8080/v1/chains/status
 # Test authentication
 curl -X POST http://localhost:8080/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@metabridge.local","password":"<YOUR_ADMIN_PASSWORD>"}'
+  -d '{"email":"admin@articium.local","password":"<YOUR_ADMIN_PASSWORD>"}'
 # Expected: JWT token in response
 ```
 
@@ -1179,7 +1179,7 @@ global:
   scrape_interval: 15s
 
 scrape_configs:
-  - job_name: 'metabridge'
+  - job_name: 'articium'
     static_configs:
       - targets: ['localhost:8080']
 EOF
@@ -1224,8 +1224,8 @@ sudo systemctl start grafana-server
 
 ```bash
 # Check all services are running
-sudo systemctl status metabridge-api
-sudo systemctl status metabridge-relayer
+sudo systemctl status articium-api
+sudo systemctl status articium-relayer
 sudo systemctl status prometheus
 sudo systemctl status grafana-server
 
@@ -1238,11 +1238,11 @@ curl http://localhost:8080/v1/chains/status
 curl http://localhost:8080/v1/stats
 
 # Check database
-docker exec -it metabridge-postgres psql -U bridge_user -d metabridge_production -c "SELECT COUNT(*) FROM messages;"
+docker exec -it articium-postgres psql -U bridge_user -d articium_production -c "SELECT COUNT(*) FROM messages;"
 
 # Check logs for errors
-sudo journalctl -u metabridge-api --since "10 minutes ago" | grep -i error
-sudo journalctl -u metabridge-relayer --since "10 minutes ago" | grep -i error
+sudo journalctl -u articium-api --since "10 minutes ago" | grep -i error
+sudo journalctl -u articium-relayer --since "10 minutes ago" | grep -i error
 
 # Monitor resource usage
 htop  # Or: sudo apt install htop && htop
@@ -1270,27 +1270,27 @@ After deployment, verify:
 
 ```bash
 # Restart all services
-sudo systemctl restart metabridge-api metabridge-relayer
+sudo systemctl restart articium-api articium-relayer
 
 # View live logs
-sudo journalctl -u metabridge-api -f
-sudo journalctl -u metabridge-relayer -f
+sudo journalctl -u articium-api -f
+sudo journalctl -u articium-relayer -f
 
 # Check resource usage
 docker stats
 htop
 
 # Database backup
-docker exec metabridge-postgres pg_dump -U bridge_user metabridge_production > backup_$(date +%Y%m%d).sql
+docker exec articium-postgres pg_dump -U bridge_user articium_production > backup_$(date +%Y%m%d).sql
 
 # Update code
-cd ~/metabridge/metabridge-engine-hub
+cd ~/articium/articium
 git pull origin main
-go build -o bin/metabridge-api cmd/api/main.go
-sudo systemctl restart metabridge-api
+go build -o bin/articium-api cmd/api/main.go
+sudo systemctl restart articium-api
 
 # View all bridge transactions
-docker exec -it metabridge-postgres psql -U bridge_user -d metabridge_production -c \
+docker exec -it articium-postgres psql -U bridge_user -d articium_production -c \
   "SELECT id, source_chain, destination_chain, status, created_at FROM messages ORDER BY created_at DESC LIMIT 10;"
 ```
 
@@ -1298,7 +1298,7 @@ docker exec -it metabridge-postgres psql -U bridge_user -d metabridge_production
 
 **Service won't start**:
 ```bash
-sudo journalctl -u metabridge-api -n 100 --no-pager
+sudo journalctl -u articium-api -n 100 --no-pager
 # Check for configuration errors or missing environment variables
 ```
 
@@ -1307,7 +1307,7 @@ sudo journalctl -u metabridge-api -n 100 --no-pager
 # Verify PostgreSQL is running
 docker compose ps postgres
 # Check connection
-docker exec -it metabridge-postgres psql -U bridge_user -d metabridge_production -c "SELECT 1;"
+docker exec -it articium-postgres psql -U bridge_user -d articium_production -c "SELECT 1;"
 ```
 
 **Out of memory**:
@@ -1337,8 +1337,8 @@ nano config/config.mainnet.yaml
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/EmekaIwuagwu/metabridge-hub.git
-cd metabridge-hub
+git clone https://github.com/EmekaIwuagwu/articium-hub.git
+cd articium-hub
 ```
 
 ### 2. Install Dependencies
@@ -1393,10 +1393,10 @@ docker-compose -f docker-compose.testnet.yaml ps
 
 ```bash
 # Apply database schema
-psql -h localhost -U bridge_user -d metabridge_testnet -f internal/database/schema.sql
+psql -h localhost -U bridge_user -d articium_testnet -f internal/database/schema.sql
 
 # Or use Docker
-docker exec -i metabridge-postgres-testnet psql -U bridge_user -d metabridge_testnet < internal/database/schema.sql
+docker exec -i articium-postgres-testnet psql -U bridge_user -d articium_testnet < internal/database/schema.sql
 ```
 
 ---
@@ -1563,12 +1563,12 @@ near deploy --accountId bridge.near --wasmFile res/bridge_release.wasm
 
 ```bash
 # Use Kubernetes for production
-kubectl create namespace metabridge-mainnet
+kubectl create namespace articium-mainnet
 
 # Create secrets
 kubectl create secret generic bridge-secrets \
   --from-env-file=.env.mainnet \
-  -n metabridge-mainnet
+  -n articium-mainnet
 
 # Deploy services
 kubectl apply -f deployments/kubernetes/mainnet/
@@ -1667,7 +1667,7 @@ Pre-built dashboards:
 npx hardhat run scripts/emergency-pause.js --network polygon-mainnet
 
 # Stop relayer services
-kubectl scale deployment relayer --replicas=0 -n metabridge-mainnet
+kubectl scale deployment relayer --replicas=0 -n articium-mainnet
 ```
 
 ---

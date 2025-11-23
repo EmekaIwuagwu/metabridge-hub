@@ -1,7 +1,7 @@
 [package]
 name = "solana-bridge"
 version = "0.1.0"
-description = "Metabridge Engine Solana Bridge Program"
+description = "Articium Engine Solana Bridge Program"
 edition = "2021"
 
 [lib]

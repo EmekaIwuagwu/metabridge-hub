@@ -4,9 +4,9 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
-    container_name: metabridge-postgres-testnet
+    container_name: articium-postgres-testnet
     environment:
-      POSTGRES_DB: metabridge_testnet
+      POSTGRES_DB: articium_testnet
       POSTGRES_USER: bridge_user
       POSTGRES_PASSWORD: ${DB_PASSWORD:-bridge_password}
     ports:
@@ -15,17 +15,17 @@ services:
       - postgres_data_testnet:/var/lib/postgresql/data
       - ./internal/database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U bridge_user -d metabridge_testnet"]
+      test: ["CMD-SHELL", "pg_isready -U bridge_user -d articium_testnet"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - metabridge-testnet
+      - articium-testnet
 
   # NATS Message Queue
   nats:
     image: nats:2.10-alpine
-    container_name: metabridge-nats-testnet
+    container_name: articium-nats-testnet
     ports:
       - "4222:4222"
       - "8222:8222"
@@ -41,12 +41,12 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - metabridge-testnet
+      - articium-testnet
 
   # Redis Cache
   redis:
     image: redis:7-alpine
-    container_name: metabridge-redis-testnet
+    container_name: articium-redis-testnet
     ports:
       - "6379:6379"
     volumes:
@@ -58,14 +58,14 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - metabridge-testnet
+      - articium-testnet
 
   # Listener Service
   listener:
     build:
       context: .
       dockerfile: ./deployments/docker/Dockerfile.listener
-    container_name: metabridge-listener-testnet
+    container_name: articium-listener-testnet
     environment:
       BRIDGE_ENVIRONMENT: testnet
       DB_HOST: postgres
@@ -85,7 +85,7 @@ services:
       - ./config:/app/config:ro
       - ./keystore/testnet:/app/keystore/testnet:ro
     networks:
-      - metabridge-testnet
+      - articium-testnet
     restart: unless-stopped
 
   # Relayer Service
@@ -93,7 +93,7 @@ services:
     build:
       context: .
       dockerfile: ./deployments/docker/Dockerfile.relayer
-    container_name: metabridge-relayer-testnet
+    container_name: articium-relayer-testnet
     environment:
       BRIDGE_ENVIRONMENT: testnet
       DB_HOST: postgres
@@ -113,7 +113,7 @@ services:
       - ./config:/app/config:ro
       - ./keystore/testnet:/app/keystore/testnet:ro
     networks:
-      - metabridge-testnet
+      - articium-testnet
     restart: unless-stopped
 
   # API Service
@@ -121,7 +121,7 @@ services:
     build:
       context: .
       dockerfile: ./deployments/docker/Dockerfile.api
-    container_name: metabridge-api-testnet
+    container_name: articium-api-testnet
     environment:
       BRIDGE_ENVIRONMENT: testnet
       DB_HOST: postgres
@@ -138,7 +138,7 @@ services:
     volumes:
       - ./config:/app/config:ro
     networks:
-      - metabridge-testnet
+      - articium-testnet
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
@@ -149,7 +149,7 @@ services:
   # Prometheus Monitoring
   prometheus:
     image: prom/prometheus:latest
-    container_name: metabridge-prometheus-testnet
+    container_name: articium-prometheus-testnet
     ports:
       - "9090:9090"
     volumes:
@@ -159,12 +159,12 @@ services:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
     networks:
-      - metabridge-testnet
+      - articium-testnet
 
   # Grafana Dashboards
   grafana:
     image: grafana/grafana:latest
-    container_name: metabridge-grafana-testnet
+    container_name: articium-grafana-testnet
     ports:
       - "3000:3000"
     environment:
@@ -175,12 +175,12 @@ services:
       - ./config/monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
       - ./config/monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
     networks:
-      - metabridge-testnet
+      - articium-testnet
     depends_on:
       - prometheus
 
 networks:
-  metabridge-testnet:
+  articium-testnet:
     driver: bridge
 
 volumes:

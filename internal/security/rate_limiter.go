@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/config"
+	"github.com/EmekaIwuagwu/articium-hub/internal/config"
 	"github.com/rs/zerolog"
 )
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "╔════════════════════════════════════════════════════════════╗"
-echo "║          Metabridge Service Diagnostics                   ║"
+echo "║          Articium Service Diagnostics                   ║"
 echo "╚════════════════════════════════════════════════════════════╝"
 echo ""
 
@@ -28,10 +28,10 @@ check_service() {
 }
 
 # Check all services
-check_service "metabridge-api" "API Server"
-check_service "metabridge-relayer" "Relayer Service"
-check_service "metabridge-listener" "Listener Service"
-check_service "metabridge-batcher" "Batcher Service"
+check_service "articium-api" "API Server"
+check_service "articium-relayer" "Relayer Service"
+check_service "articium-listener" "Listener Service"
+check_service "articium-batcher" "Batcher Service"
 
 # Test API health
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -52,7 +52,7 @@ echo ""
 # PostgreSQL
 if systemctl is-active postgresql@16-main > /dev/null 2>&1; then
     echo "✅ PostgreSQL: RUNNING"
-    PGPASSWORD=metabridge psql -h /var/run/postgresql -p 5433 -U metabridge -d metabridge_prod -c "SELECT COUNT(*) as message_count FROM messages;" 2>&1 | grep -v "^$"
+    PGPASSWORD=articium psql -h /var/run/postgresql -p 5433 -U articium -d articium_prod -c "SELECT COUNT(*) as message_count FROM messages;" 2>&1 | grep -v "^$"
 else
     echo "❌ PostgreSQL: NOT RUNNING"
 fi

@@ -1,12 +1,12 @@
-# Metabridge Deployment Diagnosis & Fix Guide
+# Articium Deployment Diagnosis & Fix Guide
 
 ## Root Cause Analysis
 
 Your systemd service is failing with a "resources" error. After analyzing the codebase, I've identified **5 critical issues**:
 
 ### Issue 1: Database Name Mismatch
-- **Expected**: `metabridge_testnet` (from config/config.testnet.yaml:14)
-- **Actual**: `metabridge_production` (your Docker setup)
+- **Expected**: `articium_testnet` (from config/config.testnet.yaml:14)
+- **Actual**: `articium_production` (your Docker setup)
 - **Impact**: API server can't connect to the database
 
 ### Issue 2: Missing Production Config File
@@ -34,7 +34,7 @@ Your systemd service is failing with a "resources" error. After analyzing the co
 
 ### Step 1: Verify Binary Names
 ```bash
-cd /root/projects/metabridge-engine-hub
+cd /root/projects/articium
 ls -lh bin/
 ```
 
@@ -61,7 +61,7 @@ server:
 database:
   host: "localhost"
   port: 5432
-  database: "metabridge_production"
+  database: "articium_production"
   username: "bridge_user"
   password: "secure_bridge_pass_2024"
   ssl_mode: "disable"
@@ -157,23 +157,23 @@ EOF
 Run all schema files in order:
 
 ```bash
-cd /root/projects/metabridge-engine-hub
+cd /root/projects/articium
 
 # Main schema
-docker exec -i metabridge-postgres psql -U bridge_user -d metabridge_production < internal/database/schema.sql
+docker exec -i articium-postgres psql -U bridge_user -d articium_production < internal/database/schema.sql
 
 # Auth schema
-docker exec -i metabridge-postgres psql -U bridge_user -d metabridge_production < internal/database/auth.sql
+docker exec -i articium-postgres psql -U bridge_user -d articium_production < internal/database/auth.sql
 
 # Additional schemas
-docker exec -i metabridge-postgres psql -U bridge_user -d metabridge_production < internal/database/batches.sql
-docker exec -i metabridge-postgres psql -U bridge_user -d metabridge_production < internal/database/webhooks.sql
-docker exec -i metabridge-postgres psql -U bridge_user -d metabridge_production < internal/database/routes.sql
+docker exec -i articium-postgres psql -U bridge_user -d articium_production < internal/database/batches.sql
+docker exec -i articium-postgres psql -U bridge_user -d articium_production < internal/database/webhooks.sql
+docker exec -i articium-postgres psql -U bridge_user -d articium_production < internal/database/routes.sql
 ```
 
 **Verify tables were created:**
 ```bash
-docker exec -i metabridge-postgres psql -U bridge_user -d metabridge_production -c "\dt"
+docker exec -i articium-postgres psql -U bridge_user -d articium_production -c "\dt"
 ```
 
 You should see tables like: chains, messages, validators, transactions, etc.
@@ -182,21 +182,21 @@ You should see tables like: chains, messages, validators, transactions, etc.
 
 ### Step 4: Update Systemd Service Files
 
-**For API Service** (`/etc/systemd/system/metabridge-api.service`):
+**For API Service** (`/etc/systemd/system/articium-api.service`):
 
 ```bash
-cat > /etc/systemd/system/metabridge-api.service << 'EOF'
+cat > /etc/systemd/system/articium-api.service << 'EOF'
 [Unit]
-Description=Metabridge API Server
+Description=Articium API Server
 After=network.target docker.service
 Requires=docker.service
 
 [Service]
 Type=simple
 User=root
-WorkingDirectory=/root/projects/metabridge-engine-hub
+WorkingDirectory=/root/projects/articium
 Environment="PATH=/usr/local/go/bin:/usr/local/bin:/usr/bin:/bin"
-ExecStart=/root/projects/metabridge-engine-hub/bin/api -config config/config.production.yaml
+ExecStart=/root/projects/articium/bin/api -config config/config.production.yaml
 Restart=always
 RestartSec=10
 StandardOutput=journal
@@ -207,22 +207,22 @@ WantedBy=multi-user.target
 EOF
 ```
 
-**For Relayer Service** (`/etc/systemd/system/metabridge-relayer.service`):
+**For Relayer Service** (`/etc/systemd/system/articium-relayer.service`):
 
 ```bash
-cat > /etc/systemd/system/metabridge-relayer.service << 'EOF'
+cat > /etc/systemd/system/articium-relayer.service << 'EOF'
 [Unit]
-Description=Metabridge Relayer Service
-After=network.target docker.service metabridge-api.service
+Description=Articium Relayer Service
+After=network.target docker.service articium-api.service
 Requires=docker.service
-Wants=metabridge-api.service
+Wants=articium-api.service
 
 [Service]
 Type=simple
 User=root
-WorkingDirectory=/root/projects/metabridge-engine-hub
+WorkingDirectory=/root/projects/articium
 Environment="PATH=/usr/local/go/bin:/usr/local/bin:/usr/bin:/bin"
-ExecStart=/root/projects/metabridge-engine-hub/bin/relayer -config config/config.production.yaml
+ExecStart=/root/projects/articium/bin/relayer -config config/config.production.yaml
 Restart=always
 RestartSec=10
 StandardOutput=journal
@@ -242,19 +242,19 @@ EOF
 systemctl daemon-reload
 
 # Start API service
-systemctl start metabridge-api
+systemctl start articium-api
 
 # Check status
-systemctl status metabridge-api
+systemctl status articium-api
 
 # View detailed logs if it fails
-journalctl -xeu metabridge-api -n 100
+journalctl -xeu articium-api -n 100
 ```
 
 **If successful**, start the relayer:
 ```bash
-systemctl start metabridge-relayer
-systemctl status metabridge-relayer
+systemctl start articium-relayer
+systemctl status articium-relayer
 ```
 
 ---
@@ -281,10 +281,10 @@ After services start successfully:
 
 ```bash
 # Check all services
-systemctl status metabridge-api metabridge-relayer
+systemctl status articium-api articium-relayer
 
 # View live logs
-journalctl -u metabridge-api -f
+journalctl -u articium-api -f
 
 # Test API endpoint
 curl http://localhost:8080/health
@@ -293,7 +293,7 @@ curl http://localhost:8080/health
 docker ps
 
 # Check database connection
-docker exec -i metabridge-postgres psql -U bridge_user -d metabridge_production -c "SELECT COUNT(*) FROM chains;"
+docker exec -i articium-postgres psql -U bridge_user -d articium_production -c "SELECT COUNT(*) FROM chains;"
 ```
 
 ---
@@ -313,7 +313,7 @@ After following these steps, you should see:
 ## Next Actions After Success
 
 1. Test API: `curl http://159.65.73.133:8080/health`
-2. Enable on boot: `systemctl enable metabridge-api metabridge-relayer`
+2. Enable on boot: `systemctl enable articium-api articium-relayer`
 3. Configure proper SSL/TLS for production
 4. Set up monitoring and alerting
 5. Deploy smart contracts to testnets

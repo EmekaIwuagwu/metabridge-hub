@@ -11,12 +11,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/auth"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/config"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/database"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/routing"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/types"
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/webhooks"
+	"github.com/EmekaIwuagwu/articium-hub/internal/auth"
+	"github.com/EmekaIwuagwu/articium-hub/internal/config"
+	"github.com/EmekaIwuagwu/articium-hub/internal/database"
+	"github.com/EmekaIwuagwu/articium-hub/internal/routing"
+	"github.com/EmekaIwuagwu/articium-hub/internal/types"
+	"github.com/EmekaIwuagwu/articium-hub/internal/webhooks"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog"
 )
@@ -210,7 +210,7 @@ func (s *Server) Stop(ctx context.Context) error {
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusOK, map[string]interface{}{
 		"status":      "healthy",
-		"service":     "metabridge-api",
+		"service":     "articium-api",
 		"environment": s.config.Environment,
 		"timestamp":   time.Now().UTC(),
 	})

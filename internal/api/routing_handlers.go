@@ -5,7 +5,7 @@ import (
 	"math/big"
 	"net/http"
 
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/routing"
+	"github.com/EmekaIwuagwu/articium-hub/internal/routing"
 	"github.com/gorilla/mux"
 )
 

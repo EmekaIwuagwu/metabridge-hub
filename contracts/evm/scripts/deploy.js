@@ -4,7 +4,7 @@ const path = require("path");
 
 async function main() {
   console.log("========================================");
-  console.log("  Metabridge Bridge Contract Deployment");
+  console.log("  Articium Bridge Contract Deployment");
   console.log("========================================");
   console.log("");
 

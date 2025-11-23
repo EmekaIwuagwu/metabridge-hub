@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# Start all required dependencies for Metabridge
+# Start all required dependencies for Articium
 
 set -e
 
-echo "🚀 Starting Metabridge Dependencies..."
+echo "🚀 Starting Articium Dependencies..."
 echo ""
 
 # Start PostgreSQL
@@ -64,7 +64,7 @@ else
     # Check if NATS is installed
     if command -v nats-server &> /dev/null; then
         # Start NATS in background
-        nohup nats-server -js > /root/projects/metabridge-engine-hub/logs/nats.log 2>&1 &
+        nohup nats-server -js > /root/projects/articium/logs/nats.log 2>&1 &
         sleep 2
         echo "   ✓ NATS started (running in background)"
     else
@@ -76,7 +76,7 @@ else
         rm -rf nats-server-v2.10.7-linux-amd64*
 
         # Start NATS
-        nohup nats-server -js > /root/projects/metabridge-engine-hub/logs/nats.log 2>&1 &
+        nohup nats-server -js > /root/projects/articium/logs/nats.log 2>&1 &
         sleep 2
         echo "   ✓ NATS installed and started"
     fi
@@ -88,8 +88,8 @@ echo ""
 echo "Next steps:"
 echo "  1. Run the dependency checker: bash scripts/check-dependencies.sh"
 echo "  2. Start the services:"
-echo "     sudo systemctl start metabridge-api"
-echo "     sudo systemctl start metabridge-relayer"
-echo "     sudo systemctl start metabridge-listener"
-echo "     sudo systemctl start metabridge-batcher"
+echo "     sudo systemctl start articium-api"
+echo "     sudo systemctl start articium-relayer"
+echo "     sudo systemctl start articium-listener"
+echo "     sudo systemctl start articium-batcher"
 echo ""

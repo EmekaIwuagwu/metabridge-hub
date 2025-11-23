@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# Metabridge Dependency Checker
+# Articium Dependency Checker
 # This script checks if all required services are running
 
 set -e
 
 echo "╔════════════════════════════════════════════════════════════╗"
-echo "║        Metabridge Dependency Checker                       ║"
+echo "║        Articium Dependency Checker                       ║"
 echo "╚════════════════════════════════════════════════════════════╝"
 echo ""
 
@@ -106,7 +106,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 echo "4️⃣  Binary Files"
 for binary in api relayer listener batcher migrator; do
-    if [ -x "/root/projects/metabridge-engine-hub/bin/$binary" ]; then
+    if [ -x "/root/projects/articium/bin/$binary" ]; then
         echo -e "  ${GREEN}✓${NC} bin/$binary exists and is executable"
     else
         echo -e "  ${RED}✗${NC} bin/$binary missing or not executable"
@@ -117,7 +117,7 @@ done
 # Check config
 echo ""
 echo "5️⃣  Configuration File"
-if [ -f "/root/projects/metabridge-engine-hub/config/config.production.yaml" ]; then
+if [ -f "/root/projects/articium/config/config.production.yaml" ]; then
     echo -e "  ${GREEN}✓${NC} config/config.production.yaml exists"
 else
     echo -e "  ${RED}✗${NC} config/config.production.yaml missing"
@@ -127,12 +127,12 @@ fi
 # Check logs directory
 echo ""
 echo "6️⃣  Logs Directory"
-if [ -d "/root/projects/metabridge-engine-hub/logs" ]; then
+if [ -d "/root/projects/articium/logs" ]; then
     echo -e "  ${GREEN}✓${NC} logs/ directory exists"
 else
     echo -e "  ${YELLOW}⚠${NC}  logs/ directory doesn't exist (will be created)"
-    mkdir -p /root/projects/metabridge-engine-hub/logs
-    chmod 755 /root/projects/metabridge-engine-hub/logs
+    mkdir -p /root/projects/articium/logs
+    chmod 755 /root/projects/articium/logs
     echo -e "  ${GREEN}✓${NC} logs/ directory created"
 fi
 
@@ -143,10 +143,10 @@ if [ $ISSUES -eq 0 ]; then
     echo -e "${GREEN}✅ All dependencies are ready!${NC}"
     echo ""
     echo "You can now start the services:"
-    echo "  sudo systemctl start metabridge-api"
-    echo "  sudo systemctl start metabridge-relayer"
-    echo "  sudo systemctl start metabridge-listener"
-    echo "  sudo systemctl start metabridge-batcher"
+    echo "  sudo systemctl start articium-api"
+    echo "  sudo systemctl start articium-relayer"
+    echo "  sudo systemctl start articium-listener"
+    echo "  sudo systemctl start articium-batcher"
 else
     echo -e "${RED}❌ Found $ISSUES issue(s) that need to be resolved${NC}"
     echo ""

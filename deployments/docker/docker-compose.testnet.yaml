@@ -6,16 +6,16 @@ services:
     build:
       context: ../..
       dockerfile: Dockerfile.api
-    container_name: metabridge-api
+    container_name: articium-api
     ports:
       - "8080:8080"
     environment:
       - CONFIG_PATH=/config/config.testnet.yaml
       - DB_HOST=postgres
       - DB_PORT=5432
-      - DB_USER=metabridge
-      - DB_PASSWORD=metabridge_password
-      - DB_NAME=metabridge_testnet
+      - DB_USER=articium
+      - DB_PASSWORD=articium_password
+      - DB_NAME=articium_testnet
       - NATS_URL=nats://nats:4222
       - REDIS_URL=redis://redis:6379
     volumes:
@@ -29,7 +29,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
     networks:
-      - metabridge-network
+      - articium-network
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
       interval: 30s
@@ -41,14 +41,14 @@ services:
     build:
       context: ../..
       dockerfile: Dockerfile.relayer
-    container_name: metabridge-relayer
+    container_name: articium-relayer
     environment:
       - CONFIG_PATH=/config/config.testnet.yaml
       - DB_HOST=postgres
       - DB_PORT=5432
-      - DB_USER=metabridge
-      - DB_PASSWORD=metabridge_password
-      - DB_NAME=metabridge_testnet
+      - DB_USER=articium
+      - DB_PASSWORD=articium_password
+      - DB_NAME=articium_testnet
       - NATS_URL=nats://nats:4222
       - REDIS_URL=redis://redis:6379
     volumes:
@@ -63,21 +63,21 @@ services:
         condition: service_healthy
     restart: unless-stopped
     networks:
-      - metabridge-network
+      - articium-network
 
   # Listener Service
   listener:
     build:
       context: ../..
       dockerfile: Dockerfile.listener
-    container_name: metabridge-listener
+    container_name: articium-listener
     environment:
       - CONFIG_PATH=/config/config.testnet.yaml
       - DB_HOST=postgres
       - DB_PORT=5432
-      - DB_USER=metabridge
-      - DB_PASSWORD=metabridge_password
-      - DB_NAME=metabridge_testnet
+      - DB_USER=articium
+      - DB_PASSWORD=articium_password
+      - DB_NAME=articium_testnet
       - NATS_URL=nats://nats:4222
     volumes:
       - ../../config:/config:ro
@@ -88,21 +88,21 @@ services:
         condition: service_healthy
     restart: unless-stopped
     networks:
-      - metabridge-network
+      - articium-network
 
   # Batcher Service
   batcher:
     build:
       context: ../..
       dockerfile: Dockerfile.batcher
-    container_name: metabridge-batcher
+    container_name: articium-batcher
     environment:
       - CONFIG_PATH=/config/config.testnet.yaml
       - DB_HOST=postgres
       - DB_PORT=5432
-      - DB_USER=metabridge
-      - DB_PASSWORD=metabridge_password
-      - DB_NAME=metabridge_testnet
+      - DB_USER=articium
+      - DB_PASSWORD=articium_password
+      - DB_NAME=articium_testnet
     volumes:
       - ../../config:/config:ro
     depends_on:
@@ -110,16 +110,16 @@ services:
         condition: service_healthy
     restart: unless-stopped
     networks:
-      - metabridge-network
+      - articium-network
 
   # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
-    container_name: metabridge-postgres
+    container_name: articium-postgres
     environment:
-      POSTGRES_USER: metabridge
-      POSTGRES_PASSWORD: metabridge_password
-      POSTGRES_DB: metabridge_testnet
+      POSTGRES_USER: articium
+      POSTGRES_PASSWORD: articium_password
+      POSTGRES_DB: articium_testnet
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
       - "5432:5432"
@@ -131,18 +131,18 @@ services:
       - ../../internal/database/routes.sql:/docker-entrypoint-initdb.d/04-routes.sql:ro
       - ../../internal/database/webhooks.sql:/docker-entrypoint-initdb.d/05-webhooks.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U metabridge"]
+      test: ["CMD-SHELL", "pg_isready -U articium"]
       interval: 10s
       timeout: 5s
       retries: 5
     restart: unless-stopped
     networks:
-      - metabridge-network
+      - articium-network
 
   # NATS with JetStream
   nats:
     image: nats:2.10-alpine
-    container_name: metabridge-nats
+    container_name: articium-nats
     command: ["-js", "-m", "8222"]
     ports:
       - "4222:4222"  # Client connections
@@ -156,12 +156,12 @@ services:
       retries: 5
     restart: unless-stopped
     networks:
-      - metabridge-network
+      - articium-network
 
   # Redis Cache
   redis:
     image: redis:7-alpine
-    container_name: metabridge-redis
+    container_name: articium-redis
     ports:
       - "6379:6379"
     volumes:
@@ -174,12 +174,12 @@ services:
       retries: 5
     restart: unless-stopped
     networks:
-      - metabridge-network
+      - articium-network
 
   # Prometheus
   prometheus:
     image: prom/prometheus:latest
-    container_name: metabridge-prometheus
+    container_name: articium-prometheus
     ports:
       - "9090:9090"
     volumes:
@@ -193,12 +193,12 @@ services:
       - '--web.enable-lifecycle'
     restart: unless-stopped
     networks:
-      - metabridge-network
+      - articium-network
 
   # Grafana
   grafana:
     image: grafana/grafana:latest
-    container_name: metabridge-grafana
+    container_name: articium-grafana
     ports:
       - "3000:3000"
     environment:
@@ -212,12 +212,12 @@ services:
       - prometheus
     restart: unless-stopped
     networks:
-      - metabridge-network
+      - articium-network
 
   # Adminer (Database UI)
   adminer:
     image: adminer:latest
-    container_name: metabridge-adminer
+    container_name: articium-adminer
     ports:
       - "8081:8080"
     environment:
@@ -226,12 +226,12 @@ services:
       - postgres
     restart: unless-stopped
     networks:
-      - metabridge-network
+      - articium-network
 
 networks:
-  metabridge-network:
+  articium-network:
     driver: bridge
-    name: metabridge-testnet
+    name: articium-testnet
 
 volumes:
   postgres_data:

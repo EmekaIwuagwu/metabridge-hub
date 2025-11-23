@@ -1,4 +1,4 @@
-# Multi-stage Dockerfile for Metabridge services
+# Multi-stage Dockerfile for Articium services
 FROM golang:1.21-alpine AS builder
 
 # Install build dependencies

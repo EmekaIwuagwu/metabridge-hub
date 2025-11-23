@@ -1,15 +1,15 @@
 #!/bin/bash
 
 echo "=== API Service Logs (last 50 lines) ==="
-sudo journalctl -u metabridge-api -n 50 --no-pager
+sudo journalctl -u articium-api -n 50 --no-pager
 echo ""
 
 echo "=== Listener Service Logs (last 50 lines) ==="
-sudo journalctl -u metabridge-listener -n 50 --no-pager
+sudo journalctl -u articium-listener -n 50 --no-pager
 echo ""
 
 echo "=== Batcher Service Logs (last 50 lines) ==="
-sudo journalctl -u metabridge-batcher -n 50 --no-pager
+sudo journalctl -u articium-batcher -n 50 --no-pager
 echo ""
 
 echo "=== NATS Status ==="

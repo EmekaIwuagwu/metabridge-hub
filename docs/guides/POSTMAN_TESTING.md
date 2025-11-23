@@ -1,6 +1,6 @@
-# Postman Testing Guide for Metabridge Engine
+# Postman Testing Guide for Articium
 
-Complete guide to test the Metabridge API using Postman.
+Complete guide to test the Articium API using Postman.
 
 ## Table of Contents
 
@@ -19,7 +19,7 @@ Complete guide to test the Metabridge API using Postman.
    - Download: https://www.postman.com/downloads/
    - Or use web version: https://web.postman.com/
 
-2. **Metabridge running locally**
+2. **Articium running locally**
    ```bash
    ./deploy-testnet.sh
    ```
@@ -36,9 +36,9 @@ Complete guide to test the Metabridge API using Postman.
 1. Open Postman
 2. Click "Import" button (top left)
 3. Import these files:
-   - `postman/Metabridge_API.postman_collection.json`
-   - `postman/Metabridge_Local.postman_environment.json`
-4. Select "Metabridge Local" environment (top right dropdown)
+   - `postman/Articium_API.postman_collection.json`
+   - `postman/Articium_Local.postman_environment.json`
+4. Select "Articium Local" environment (top right dropdown)
 
 **Method 2: Import via URL** (after files are committed)
 

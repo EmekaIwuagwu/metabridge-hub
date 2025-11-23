@@ -1,4 +1,4 @@
--- Metabridge Database Schema
+-- Articium Database Schema
 -- Supports multi-chain bridge operations for EVM, Solana, and NEAR
 
 -- ============================================================

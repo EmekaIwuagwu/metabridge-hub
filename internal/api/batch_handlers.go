@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/EmekaIwuagwu/metabridge-hub/internal/database"
+	"github.com/EmekaIwuagwu/articium-hub/internal/database"
 	"github.com/gorilla/mux"
 )
 
