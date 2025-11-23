@@ -732,6 +732,543 @@ PGPASSWORD=articium psql -h /var/run/postgresql -p 5433 -U articium articium_pro
 
 ---
 
+## Setting Up a Custom Domain (articium.xyz)
+
+### Prerequisites
+- A domain name (e.g., articium.xyz) registered and managed in DigitalOcean
+- Your droplet's public IP address
+- SSH access to your server
+
+### Step 1: Add Domain to DigitalOcean
+
+```bash
+# Get your droplet's IP
+ip addr show | grep "inet " | grep -v 127.0.0.1
+
+# Example output: 192.168.1.100
+```
+
+1. **In DigitalOcean Dashboard**:
+   - Go to "Networking" → "Domains"
+   - Click "Add Domain"
+   - Enter your domain: `articium.xyz`
+   - Select your droplet from the dropdown
+   - Click "Add Domain"
+
+### Step 2: Configure DNS Records
+
+Add the following DNS records in DigitalOcean:
+
+**A Records (Required)**:
+```
+Hostname: @
+Will Direct To: <YOUR_DROPLET_IP>
+TTL: 3600
+
+Hostname: www
+Will Direct To: <YOUR_DROPLET_IP>
+TTL: 3600
+
+Hostname: api
+Will Direct To: <YOUR_DROPLET_IP>
+TTL: 3600
+```
+
+**CNAME Records (Optional for subdomains)**:
+```
+Hostname: bridge
+Is an Alias Of: @
+TTL: 3600
+
+Hostname: app
+Is an Alias Of: @
+TTL: 3600
+```
+
+### Step 3: Wait for DNS Propagation
+
+```bash
+# Check DNS propagation (usually takes 5-30 minutes)
+dig articium.xyz +short
+dig www.articium.xyz +short
+dig api.articium.xyz +short
+
+# Should return your droplet IP address
+```
+
+### Step 4: Install Nginx (Web Server)
+
+```bash
+# Update package lists
+sudo apt update
+
+# Install Nginx
+sudo apt install -y nginx
+
+# Start and enable Nginx
+sudo systemctl start nginx
+sudo systemctl enable nginx
+
+# Check status
+sudo systemctl status nginx
+
+# Allow Nginx through firewall
+sudo ufw allow 'Nginx Full'
+sudo ufw status
+```
+
+### Step 5: Configure Nginx for Articium API
+
+```bash
+# Create Nginx configuration for API subdomain
+sudo tee /etc/nginx/sites-available/articium-api > /dev/null <<'EOF'
+server {
+    listen 80;
+    server_name api.articium.xyz;
+
+    # Increase timeouts for long-running requests
+    proxy_connect_timeout 300;
+    proxy_send_timeout 300;
+    proxy_read_timeout 300;
+    send_timeout 300;
+
+    location / {
+        proxy_pass http://localhost:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Health check endpoint
+    location /health {
+        proxy_pass http://localhost:8080/health;
+        access_log off;
+    }
+}
+EOF
+
+# Create Nginx configuration for main domain (optional - for frontend)
+sudo tee /etc/nginx/sites-available/articium-web > /dev/null <<'EOF'
+server {
+    listen 80;
+    server_name articium.xyz www.articium.xyz;
+
+    root /var/www/articium;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+
+    # If you have a frontend app, proxy to it instead
+    # location / {
+    #     proxy_pass http://localhost:3000;
+    #     proxy_http_version 1.1;
+    #     proxy_set_header Upgrade $http_upgrade;
+    #     proxy_set_header Connection 'upgrade';
+    #     proxy_set_header Host $host;
+    #     proxy_cache_bypass $http_upgrade;
+    # }
+}
+EOF
+
+# Enable sites
+sudo ln -s /etc/nginx/sites-available/articium-api /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/articium-web /etc/nginx/sites-enabled/
+
+# Remove default site (optional)
+sudo rm -f /etc/nginx/sites-enabled/default
+
+# Test Nginx configuration
+sudo nginx -t
+
+# If test passes, reload Nginx
+sudo systemctl reload nginx
+```
+
+### Step 6: Install SSL Certificate (Let's Encrypt)
+
+```bash
+# Install Certbot
+sudo apt install -y certbot python3-certbot-nginx
+
+# Get SSL certificate for API subdomain
+sudo certbot --nginx -d api.articium.xyz
+
+# Get SSL certificate for main domain
+sudo certbot --nginx -d articium.xyz -d www.articium.xyz
+
+# Follow prompts:
+# 1. Enter email address
+# 2. Agree to terms
+# 3. Choose whether to share email (optional)
+# 4. Choose redirect (option 2: Redirect HTTP to HTTPS)
+
+# Test auto-renewal
+sudo certbot renew --dry-run
+```
+
+**Expected Output**:
+```
+Congratulations! You have successfully enabled HTTPS for:
+- api.articium.xyz
+- articium.xyz
+- www.articium.xyz
+```
+
+### Step 7: Verify Domain Setup
+
+```bash
+# Test HTTP to HTTPS redirect
+curl -I http://api.articium.xyz
+# Should return: 301 Moved Permanently
+
+# Test HTTPS
+curl -I https://api.articium.xyz
+# Should return: 200 OK
+
+# Test API health endpoint
+curl https://api.articium.xyz/health
+# Should return: {"status":"healthy","environment":"testnet"...}
+
+# Test from browser
+# Visit: https://api.articium.xyz/health
+```
+
+### Step 8: Update Articium Configuration
+
+Update your application configuration to use the new domain:
+
+```bash
+cd /root/projects/articium
+
+# Update config file
+sudo nano config/config.production.yaml
+```
+
+Add/update the following:
+
+```yaml
+server:
+  host: "0.0.0.0"
+  port: 8080
+  public_url: "https://api.articium.xyz"
+  allowed_origins:
+    - "https://articium.xyz"
+    - "https://www.articium.xyz"
+    - "https://app.articium.xyz"
+
+# CORS configuration
+cors:
+  allowed_origins:
+    - "https://articium.xyz"
+    - "https://www.articium.xyz"
+    - "https://app.articium.xyz"
+  allow_credentials: true
+```
+
+Restart services:
+
+```bash
+sudo systemctl restart articium-api
+sudo systemctl restart articium-relayer
+```
+
+### Step 9: Configure Additional Subdomains (Optional)
+
+**For Grafana (Monitoring Dashboard)**:
+
+```bash
+sudo tee /etc/nginx/sites-available/articium-grafana > /dev/null <<'EOF'
+server {
+    listen 80;
+    server_name metrics.articium.xyz;
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+EOF
+
+sudo ln -s /etc/nginx/sites-available/articium-grafana /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl reload nginx
+sudo certbot --nginx -d metrics.articium.xyz
+```
+
+**For Prometheus (Metrics)**:
+
+```bash
+sudo tee /etc/nginx/sites-available/articium-prometheus > /dev/null <<'EOF'
+server {
+    listen 80;
+    server_name prometheus.articium.xyz;
+
+    # Add basic auth for security
+    auth_basic "Restricted Access";
+    auth_basic_user_file /etc/nginx/.htpasswd;
+
+    location / {
+        proxy_pass http://localhost:9090;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+EOF
+
+# Create password file
+sudo apt install -y apache2-utils
+sudo htpasswd -c /etc/nginx/.htpasswd admin
+
+sudo ln -s /etc/nginx/sites-available/articium-prometheus /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl reload nginx
+sudo certbot --nginx -d prometheus.articium.xyz
+```
+
+### Step 10: DNS Records Summary
+
+After setup, your DNS should look like this:
+
+```
+A Records:
+- @ → YOUR_DROPLET_IP
+- www → YOUR_DROPLET_IP
+- api → YOUR_DROPLET_IP
+
+Optional A Records:
+- metrics → YOUR_DROPLET_IP (for Grafana)
+- prometheus → YOUR_DROPLET_IP (for Prometheus)
+- app → YOUR_DROPLET_IP (for frontend)
+```
+
+### Troubleshooting Domain Issues
+
+**Issue 1: DNS not resolving**
+
+```bash
+# Check DNS
+dig articium.xyz +short
+
+# Check nameservers
+dig articium.xyz NS +short
+
+# Should show DigitalOcean nameservers:
+# ns1.digitalocean.com
+# ns2.digitalocean.com
+# ns3.digitalocean.com
+```
+
+**Solution**: Ensure domain nameservers point to DigitalOcean:
+- ns1.digitalocean.com
+- ns2.digitalocean.com
+- ns3.digitalocean.com
+
+**Issue 2: SSL certificate failed**
+
+```bash
+# Check Nginx is listening on port 80
+sudo netstat -tlnp | grep :80
+
+# Check if port 80 is accessible
+curl -I http://api.articium.xyz
+
+# Re-try certificate
+sudo certbot --nginx -d api.articium.xyz --force-renewal
+```
+
+**Issue 3: 502 Bad Gateway**
+
+```bash
+# Check if Articium API is running
+sudo systemctl status articium-api
+
+# Check if it's listening on port 8080
+sudo netstat -tlnp | grep :8080
+
+# Check Nginx error logs
+sudo tail -f /var/log/nginx/error.log
+```
+
+**Issue 4: CORS errors**
+
+Update CORS configuration in config file and restart:
+
+```bash
+sudo nano config/config.production.yaml
+# Update allowed_origins
+sudo systemctl restart articium-api
+```
+
+### Testing Your Domain Setup
+
+```bash
+# Create a test script
+cat > test-domain.sh << 'EOF'
+#!/bin/bash
+
+echo "Testing Articium Domain Setup"
+echo "=============================="
+echo ""
+
+# Test DNS
+echo "1. Testing DNS resolution..."
+echo "   api.articium.xyz: $(dig api.articium.xyz +short)"
+echo "   articium.xyz: $(dig articium.xyz +short)"
+echo ""
+
+# Test HTTP redirect
+echo "2. Testing HTTP to HTTPS redirect..."
+curl -s -o /dev/null -w "   HTTP Status: %{http_code}\n" http://api.articium.xyz
+echo ""
+
+# Test HTTPS
+echo "3. Testing HTTPS..."
+curl -s -o /dev/null -w "   HTTPS Status: %{http_code}\n" https://api.articium.xyz
+echo ""
+
+# Test API health
+echo "4. Testing API health endpoint..."
+curl -s https://api.articium.xyz/health | jq '.'
+echo ""
+
+# Test SSL certificate
+echo "5. Testing SSL certificate..."
+echo | openssl s_client -servername api.articium.xyz -connect api.articium.xyz:443 2>/dev/null | \
+  openssl x509 -noout -dates
+echo ""
+
+echo "✅ Domain setup test complete!"
+EOF
+
+chmod +x test-domain.sh
+./test-domain.sh
+```
+
+### Nginx Configuration Best Practices
+
+```bash
+# Enable gzip compression
+sudo nano /etc/nginx/nginx.conf
+```
+
+Add in `http` block:
+
+```nginx
+http {
+    # ... existing config ...
+
+    # Gzip compression
+    gzip on;
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_comp_level 6;
+    gzip_types text/plain text/css text/xml text/javascript application/json application/javascript application/xml+rss application/rss+xml font/truetype font/opentype application/vnd.ms-fontobject image/svg+xml;
+
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+
+    # Rate limiting
+    limit_req_zone $binary_remote_addr zone=api_limit:10m rate=10r/s;
+    limit_req_status 429;
+}
+```
+
+Apply rate limiting to API:
+
+```nginx
+server {
+    server_name api.articium.xyz;
+
+    location / {
+        limit_req zone=api_limit burst=20 nodelay;
+        proxy_pass http://localhost:8080;
+        # ... rest of proxy config ...
+    }
+}
+```
+
+Reload Nginx:
+
+```bash
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+### Certificate Auto-Renewal
+
+Certbot automatically installs a systemd timer for renewal. Verify it:
+
+```bash
+# Check certbot timer
+sudo systemctl status certbot.timer
+
+# Test renewal
+sudo certbot renew --dry-run
+
+# Manual renewal if needed
+sudo certbot renew --force-renewal
+```
+
+### Monitoring Domain Health
+
+Create a monitoring script:
+
+```bash
+cat > /root/monitor-domain.sh << 'EOF'
+#!/bin/bash
+
+# Check if SSL certificate is expiring soon
+EXPIRY=$(echo | openssl s_client -servername api.articium.xyz -connect api.articium.xyz:443 2>/dev/null | \
+         openssl x509 -noout -enddate | cut -d= -f2)
+EXPIRY_EPOCH=$(date -d "$EXPIRY" +%s)
+NOW_EPOCH=$(date +%s)
+DAYS_UNTIL_EXPIRY=$(( ($EXPIRY_EPOCH - $NOW_EPOCH) / 86400 ))
+
+if [ $DAYS_UNTIL_EXPIRY -lt 30 ]; then
+    echo "WARNING: SSL certificate expires in $DAYS_UNTIL_EXPIRY days!"
+else
+    echo "SSL certificate is valid for $DAYS_UNTIL_EXPIRY days"
+fi
+
+# Check API health
+if curl -sf https://api.articium.xyz/health > /dev/null; then
+    echo "✅ API is healthy"
+else
+    echo "❌ API health check failed"
+fi
+EOF
+
+chmod +x /root/monitor-domain.sh
+
+# Add to crontab (check every hour)
+(crontab -l 2>/dev/null; echo "0 * * * * /root/monitor-domain.sh >> /var/log/domain-monitor.log") | crontab -
+```
+
+### Domain Setup Complete!
+
+Your Articium deployment is now accessible at:
+
+- **API**: https://api.articium.xyz
+- **Health Check**: https://api.articium.xyz/health
+- **Documentation**: https://api.articium.xyz/docs (if configured)
+- **Main Site**: https://articium.xyz
+- **Grafana**: https://metrics.articium.xyz (if configured)
+
+---
+
 ## Support
 
 For issues:
@@ -741,4 +1278,4 @@ For issues:
 
 ---
 
-**✅ Your Articium deployment on DigitalOcean is now complete!**
+**✅ Your Articium deployment on DigitalOcean with custom domain is now complete!**
