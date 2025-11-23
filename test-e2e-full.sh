@@ -390,7 +390,8 @@ show_faucet_links() {
         echo ""
         # Check balances
         log_info "Checking balances..."
-        check_all_balances
+        log_warning "Note: Some RPC endpoints may be rate-limited or unavailable. This is normal."
+        check_all_balances || log_warning "Balance check had errors, but you can still continue if you've funded your wallet"
 
         echo ""
         log_warning "Do you have sufficient tokens on all chains? (yes/no)"
@@ -451,13 +452,24 @@ const mainnetRPCs = {
 
 async function checkBalance(chain, rpc, address) {
     try {
-        const provider = new JsonRpcProvider(rpc);
-        const balance = await provider.getBalance(address);
-        const balanceEth = (Number(balance) / 1e18).toFixed(4);
+        // Add timeout to prevent hanging
+        const timeout = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Timeout after 5s')), 5000)
+        );
+
+        const checkPromise = (async () => {
+            // Skip network detection to avoid rate limit issues
+            const provider = new JsonRpcProvider(rpc, undefined, { staticNetwork: true });
+            const balance = await provider.getBalance(address);
+            const balanceEth = (Number(balance) / 1e18).toFixed(4);
+            return balanceEth;
+        })();
+
+        const balanceEth = await Promise.race([checkPromise, timeout]);
         console.log(`${chain}: ${balanceEth}`);
         return balanceEth;
     } catch (error) {
-        console.log(`${chain}: Error - ${error.message}`);
+        console.log(`${chain}: 0.0000 (RPC unavailable)`);
         return 0;
     }
 }
