@@ -240,7 +240,7 @@ echo ""
 
 echo "6️⃣  Building all services..."
 
-cd /root/projects/articium
+cd "$PROJECT_ROOT"
 mkdir -p bin
 
 echo "   Building API..."
