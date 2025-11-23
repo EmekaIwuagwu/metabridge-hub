@@ -1088,7 +1088,7 @@ Net Profit:              $600,000
 
 ### 8.3 Token Utility (Optional Future Enhancement)
 
-**Potential $BRIDGE Token Use Cases**:
+**Potential $ARTICIUM Token Use Cases**:
 
 1. **Governance**:
    - Vote on protocol parameters (fee structure, validator thresholds)
@@ -1096,12 +1096,12 @@ Net Profit:              $600,000
    - Treasury management decisions
 
 2. **Staking**:
-   - Validators stake $BRIDGE tokens for participation rights
+   - Validators stake $ARTICIUM tokens for participation rights
    - Slashing mechanism for malicious behavior
    - Staking rewards: 5-10% APY
 
 3. **Fee Discounts**:
-   - 25% discount on protocol fees when paying with $BRIDGE
+   - 25% discount on protocol fees when paying with $ARTICIUM
    - Volume-based tier system for larger users
 
 4. **Liquidity Mining**:
@@ -1134,7 +1134,7 @@ Vesting Schedule:
 | Feature | Articium | Wormhole | LayerZero | Multichain | Axelar |
 |---------|-----------|----------|-----------|------------|--------|
 | **EVM Chains** | ✅ 4 | ✅ 7 | ✅ 15+ | ✅ 50+ | ✅ 20+ |
-| **Non-EVM** | ✅ Solana, NEAR | ✅ Solana | ✅ Aptos | ❌ Limited | ✅ Cosmos |
+| **Non-EVM** | ✅ Solana | ✅ Near | ✅ Aptos | ❌ Limited | ✅ Cosmos |  
 | **Self-Hosted** | ✅ Yes | ❌ No | ❌ No | ❌ No | ❌ No |
 | **Open Source** | ✅ Yes | ⚠️ Partial | ❌ No | ⚠️ Partial | ✅ Yes |
 | **Multi-Sig Validators** | ✅ 3-of-5 | ✅ 13-of-19 | ⚠️ Oracles | ❌ MPC | ✅ Delegated PoS |
@@ -1142,6 +1142,7 @@ Vesting Schedule:
 | **NFT Support** | ✅ Yes | ✅ Yes | ✅ Yes | ✅ Yes | ⚠️ Limited |
 | **Protocol Fee** | 0.1% | 0.0% | Variable | 0.1% | Variable |
 | **Average Latency** | 3-5 min | 15-20 min | 5-10 min | 5-10 min | 10-15 min |
+*TRON support availability will be announced*
 
 ### 9.2 Unique Value Propositions
 
@@ -1200,7 +1201,7 @@ Vesting Schedule:
 
 ### Q4 2025: Ecosystem Growth
 
-- [ ] Token launch ($BRIDGE)
+- [ ] Token launch ($ARTICIUM)
 - [ ] Liquidity mining program
 - [ ] Grant program for developers
 - [ ] Hackathons and developer events
