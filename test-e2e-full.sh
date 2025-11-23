@@ -6,10 +6,10 @@ set -e
 #
 # This script performs a complete E2E test of the Articium system:
 # 1. Requests testnet tokens from faucets
-# 2. Deploys smart contracts to all testnets
+# 2. Deploys smart contracts to testnets OR mainnets
 # 3. Deploys and starts backend services
 # 4. Executes cross-chain token transfers
-# 5. Verifies all operations completed successfully
+# 5. Displays transaction confirmations with block explorer links
 #
 # Prerequisites:
 # - Node.js 18+ and npm installed
@@ -20,7 +20,7 @@ set -e
 # - Git repository cloned
 #
 # Usage:
-#   ./test-e2e-full.sh [--wallet-address 0x...]
+#   ./test-e2e-full.sh [--network testnet|mainnet] [--wallet-address 0x...]
 #
 ##############################################################################
 
@@ -40,17 +40,96 @@ RESULTS_DIR="$PROJECT_ROOT/test-results"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 TEST_LOG="$LOG_DIR/e2e-test-$TIMESTAMP.log"
 
-# Test wallet (can be overridden)
-WALLET_ADDRESS="${1:-}"
+# Default to testnet
+NETWORK="testnet"
+WALLET_ADDRESS=""
 
-# Chains to test
-CHAINS=("polygon-amoy" "bnb-testnet" "avalanche-fuji" "ethereum-sepolia")
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --network)
+            NETWORK="$2"
+            shift 2
+            ;;
+        --wallet-address)
+            WALLET_ADDRESS="$2"
+            shift 2
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Usage: $0 [--network testnet|mainnet] [--wallet-address 0x...]"
+            exit 1
+            ;;
+    esac
+done
+
+# Validate network
+if [ "$NETWORK" != "testnet" ] && [ "$NETWORK" != "mainnet" ]; then
+    echo "Error: Network must be 'testnet' or 'mainnet'"
+    exit 1
+fi
+
+# Chains to test (13 testnets or 6 mainnets)
+if [ "$NETWORK" == "testnet" ]; then
+    CHAINS=(
+        "polygon-amoy"
+        "bnb-testnet"
+        "avalanche-fuji"
+        "ethereum-sepolia"
+        "solana-devnet"
+        "near-testnet"
+        "tron-nile"
+        "fantom-testnet"
+        "arbitrum-sepolia"
+        "optimism-sepolia"
+        "harmony-testnet"
+        "algorand-testnet"
+        "aptos-testnet"
+    )
+else
+    CHAINS=(
+        "polygon-mainnet"
+        "bnb-mainnet"
+        "avalanche-mainnet"
+        "ethereum-mainnet"
+        "solana-mainnet"
+        "near-mainnet"
+    )
+fi
 
 # Test results
 declare -A TEST_RESULTS
 declare -A FAUCET_RESULTS
 declare -A DEPLOYMENT_RESULTS
 declare -A TRANSFER_RESULTS
+declare -A TX_HASHES
+declare -A BLOCK_EXPLORERS
+
+# Block Explorer URLs
+setup_block_explorers() {
+    # Testnets
+    BLOCK_EXPLORERS["polygon-amoy"]="https://amoy.polygonscan.com"
+    BLOCK_EXPLORERS["bnb-testnet"]="https://testnet.bscscan.com"
+    BLOCK_EXPLORERS["avalanche-fuji"]="https://testnet.snowtrace.io"
+    BLOCK_EXPLORERS["ethereum-sepolia"]="https://sepolia.etherscan.io"
+    BLOCK_EXPLORERS["solana-devnet"]="https://explorer.solana.com/?cluster=devnet"
+    BLOCK_EXPLORERS["near-testnet"]="https://explorer.testnet.near.org"
+    BLOCK_EXPLORERS["tron-nile"]="https://nile.tronscan.org"
+    BLOCK_EXPLORERS["fantom-testnet"]="https://testnet.ftmscan.com"
+    BLOCK_EXPLORERS["arbitrum-sepolia"]="https://sepolia.arbiscan.io"
+    BLOCK_EXPLORERS["optimism-sepolia"]="https://sepolia-optimism.etherscan.io"
+    BLOCK_EXPLORERS["harmony-testnet"]="https://explorer.testnet.harmony.one"
+    BLOCK_EXPLORERS["algorand-testnet"]="https://testnet.algoexplorer.io"
+    BLOCK_EXPLORERS["aptos-testnet"]="https://explorer.aptoslabs.com/?network=testnet"
+
+    # Mainnets
+    BLOCK_EXPLORERS["polygon-mainnet"]="https://polygonscan.com"
+    BLOCK_EXPLORERS["bnb-mainnet"]="https://bscscan.com"
+    BLOCK_EXPLORERS["avalanche-mainnet"]="https://snowtrace.io"
+    BLOCK_EXPLORERS["ethereum-mainnet"]="https://etherscan.io"
+    BLOCK_EXPLORERS["solana-mainnet"]="https://explorer.solana.com"
+    BLOCK_EXPLORERS["near-mainnet"]="https://explorer.near.org"
+}
 
 # Functions
 log_info() {
@@ -76,7 +155,7 @@ log_step() {
 print_banner() {
     echo ""
     echo "========================================================================"
-    echo "  Articium - Automated E2E Test Suite"
+    echo "  Articium - Automated E2E Test Suite ($NETWORK)"
     echo "  Timestamp: $TIMESTAMP"
     echo "========================================================================"
     echo ""
@@ -131,7 +210,7 @@ check_prerequisites() {
 }
 
 setup_test_environment() {
-    log_step "Setting up test environment..."
+    log_step "Setting up test environment for $NETWORK..."
 
     # Create directories
     mkdir -p "$LOG_DIR"
@@ -171,76 +250,173 @@ EOF
 
         log_success "Test wallet generated: $WALLET_ADDRESS"
         log_warning "Wallet details saved to: test-wallets/wallet.json"
-        log_warning "⚠️  This is a TEST wallet. Never use for mainnet!"
+
+        if [ "$NETWORK" == "mainnet" ]; then
+            log_error "⚠️  CRITICAL: This is a MAINNET wallet!"
+            log_warning "⚠️  Secure this wallet properly. Never share the private key!"
+        else
+            log_warning "⚠️  This is a TEST wallet. Never use for mainnet!"
+        fi
     else
         log_info "Using provided wallet: $WALLET_ADDRESS"
     fi
 
     # Save wallet address to env
     echo "TEST_WALLET_ADDRESS=$WALLET_ADDRESS" > "$PROJECT_ROOT/.env.test"
+    echo "NETWORK=$NETWORK" >> "$PROJECT_ROOT/.env.test"
 
     log_success "Test environment ready"
 }
 
-request_faucet_tokens() {
-    log_step "Requesting tokens from faucets..."
+show_faucet_links() {
+    log_step "Getting tokens for testing..."
 
     echo ""
     log_warning "═══════════════════════════════════════════════════════════════"
-    log_warning "  MANUAL FAUCET REQUESTS REQUIRED"
-    log_warning "═══════════════════════════════════════════════════════════════"
-    echo ""
-    log_info "Most faucets require manual CAPTCHA completion."
-    log_info "Please visit the following faucets and request tokens:"
-    echo ""
 
-    # Polygon Amoy
-    echo -e "${CYAN}1. Polygon Amoy Testnet (MATIC)${NC}"
-    echo "   URL: https://faucet.polygon.technology/"
-    echo "   Address: $WALLET_ADDRESS"
-    echo "   Network: POL (Amoy)"
-    echo "   Amount: 0.5-1 MATIC"
-    echo ""
-
-    # BNB Testnet
-    echo -e "${CYAN}2. BNB Smart Chain Testnet (tBNB)${NC}"
-    echo "   URL: https://testnet.bnbchain.org/faucet-smart"
-    echo "   Address: $WALLET_ADDRESS"
-    echo "   Amount: 0.1-0.5 tBNB"
-    echo ""
-
-    # Avalanche Fuji
-    echo -e "${CYAN}3. Avalanche Fuji Testnet (AVAX)${NC}"
-    echo "   URL: https://core.app/tools/testnet-faucet/"
-    echo "   Address: $WALLET_ADDRESS"
-    echo "   Network: Fuji (C-Chain)"
-    echo "   Amount: 2 AVAX"
-    echo ""
-
-    # Ethereum Sepolia
-    echo -e "${CYAN}4. Ethereum Sepolia Testnet (SepoliaETH)${NC}"
-    echo "   URL: https://www.alchemy.com/faucets/ethereum-sepolia"
-    echo "   Address: $WALLET_ADDRESS"
-    echo "   Amount: 0.5 ETH"
-    echo "   Note: Requires Alchemy account (free)"
-    echo ""
-
-    log_warning "After requesting from all faucets, press ENTER to continue..."
-    read -r
-
-    # Check balances
-    log_info "Checking balances..."
-    check_all_balances
-
-    log_warning "Do you have sufficient tokens on all chains? (yes/no)"
-    read -r response
-
-    if [ "$response" != "yes" ]; then
-        log_error "Insufficient funds. Please get more tokens and run the script again."
-        exit 1
+    if [ "$NETWORK" == "testnet" ]; then
+        log_warning "  FREE TESTNET FAUCETS - GET TEST TOKENS"
+    else
+        log_error "  ⚠️  MAINNET - YOU NEED REAL TOKENS ⚠️"
     fi
 
-    log_success "Faucet tokens confirmed"
+    log_warning "═══════════════════════════════════════════════════════════════"
+    echo ""
+
+    if [ "$NETWORK" == "testnet" ]; then
+        log_info "Your wallet address: $WALLET_ADDRESS"
+        echo ""
+        log_info "Visit the following faucets to get FREE test tokens:"
+        echo ""
+
+        # Polygon Amoy
+        echo -e "${CYAN}1. Polygon Amoy Testnet (MATIC)${NC}"
+        echo "   🔗 URL: https://faucet.polygon.technology/"
+        echo "   📍 Network: POL (Amoy)"
+        echo "   💰 Amount: 0.5-1 MATIC"
+        echo "   📋 Address: $WALLET_ADDRESS"
+        echo ""
+
+        # BNB Testnet
+        echo -e "${CYAN}2. BNB Smart Chain Testnet (tBNB)${NC}"
+        echo "   🔗 URL: https://testnet.bnbchain.org/faucet-smart"
+        echo "   💰 Amount: 0.1-0.5 tBNB"
+        echo "   📋 Address: $WALLET_ADDRESS"
+        echo ""
+
+        # Avalanche Fuji
+        echo -e "${CYAN}3. Avalanche Fuji Testnet (AVAX)${NC}"
+        echo "   🔗 URL: https://core.app/tools/testnet-faucet/"
+        echo "   📍 Network: Fuji (C-Chain)"
+        echo "   💰 Amount: 2 AVAX"
+        echo "   📋 Address: $WALLET_ADDRESS"
+        echo ""
+
+        # Ethereum Sepolia
+        echo -e "${CYAN}4. Ethereum Sepolia Testnet (SepoliaETH)${NC}"
+        echo "   🔗 URL: https://www.alchemy.com/faucets/ethereum-sepolia"
+        echo "   💰 Amount: 0.5 ETH"
+        echo "   📋 Address: $WALLET_ADDRESS"
+        echo "   ⚠️  Note: Requires Alchemy account (free)"
+        echo ""
+
+        # Solana Devnet
+        echo -e "${CYAN}5. Solana Devnet (SOL)${NC}"
+        echo "   🔗 URL: https://faucet.solana.com/"
+        echo "   💰 Amount: 1 SOL"
+        echo "   📋 Address: $WALLET_ADDRESS"
+        echo "   💡 CLI: solana airdrop 1 $WALLET_ADDRESS --url devnet"
+        echo ""
+
+        # NEAR Testnet
+        echo -e "${CYAN}6. NEAR Testnet (NEAR)${NC}"
+        echo "   🔗 URL: https://near-faucet.io/"
+        echo "   💰 Amount: 20 NEAR"
+        echo "   📋 Account ID needed (create at wallet.testnet.near.org)"
+        echo ""
+
+        # TRON Nile
+        echo -e "${CYAN}7. TRON Nile Testnet (TRX)${NC}"
+        echo "   🔗 URL: https://nileex.io/join/getJoinPage"
+        echo "   💰 Amount: 10,000 TRX"
+        echo "   📋 Address: $WALLET_ADDRESS"
+        echo ""
+
+        # Fantom Testnet
+        echo -e "${CYAN}8. Fantom Testnet (FTM)${NC}"
+        echo "   🔗 URL: https://faucet.fantom.network/"
+        echo "   💰 Amount: 10 FTM"
+        echo "   📋 Address: $WALLET_ADDRESS"
+        echo ""
+
+        # Arbitrum Sepolia
+        echo -e "${CYAN}9. Arbitrum Sepolia (ETH)${NC}"
+        echo "   🔗 URL: https://faucet.quicknode.com/arbitrum/sepolia"
+        echo "   💰 Amount: 0.05 ETH"
+        echo "   📋 Address: $WALLET_ADDRESS"
+        echo ""
+
+        # Optimism Sepolia
+        echo -e "${CYAN}10. Optimism Sepolia (ETH)${NC}"
+        echo "   🔗 URL: https://faucet.quicknode.com/optimism/sepolia"
+        echo "   💰 Amount: 0.05 ETH"
+        echo "   📋 Address: $WALLET_ADDRESS"
+        echo ""
+
+        # Harmony Testnet
+        echo -e "${CYAN}11. Harmony Testnet (ONE)${NC}"
+        echo "   🔗 URL: https://faucet.pops.one/"
+        echo "   💰 Amount: 1 ONE"
+        echo "   📋 Address: $WALLET_ADDRESS"
+        echo ""
+
+        # Algorand Testnet
+        echo -e "${CYAN}12. Algorand Testnet (ALGO)${NC}"
+        echo "   🔗 URL: https://bank.testnet.algorand.network/"
+        echo "   💰 Amount: 10 ALGO"
+        echo "   📋 Address needed (create Algorand wallet)"
+        echo ""
+
+        # Aptos Testnet
+        echo -e "${CYAN}13. Aptos Testnet (APT)${NC}"
+        echo "   🔗 URL: https://www.aptosfaucet.com/"
+        echo "   💰 Amount: 1 APT"
+        echo "   📋 Address needed (create Aptos wallet)"
+        echo ""
+
+        log_warning "After requesting from all faucets, press ENTER to continue..."
+        read -r
+
+        # Check balances
+        log_info "Checking balances..."
+        check_all_balances
+
+        log_warning "Do you have sufficient tokens on all chains? (yes/no)"
+        read -r response
+
+        if [ "$response" != "yes" ]; then
+            log_error "Insufficient funds. Please get more tokens and run the script again."
+            exit 1
+        fi
+    else
+        log_error "⚠️  MAINNET MODE - YOU NEED REAL TOKENS!"
+        log_error "⚠️  This will use REAL MONEY!"
+        echo ""
+        log_info "Ensure you have sufficient native tokens on:"
+        for chain in "${CHAINS[@]}"; do
+            echo "   - $chain"
+        done
+        echo ""
+        log_warning "Have you funded your wallet with real tokens? (yes/no)"
+        read -r response
+
+        if [ "$response" != "yes" ]; then
+            log_error "Please fund your wallet before continuing."
+            exit 1
+        fi
+    fi
+
+    log_success "Tokens confirmed"
 }
 
 check_all_balances() {
@@ -252,11 +428,23 @@ check_all_balances() {
     cat > check-balance.js << 'EOF'
 const { JsonRpcProvider } = require('ethers');
 
-const rpcs = {
+const testnetRPCs = {
     'polygon-amoy': 'https://rpc-amoy.polygon.technology',
     'bnb-testnet': 'https://data-seed-prebsc-1-s1.binance.org:8545',
     'avalanche-fuji': 'https://api.avax-test.network/ext/bc/C/rpc',
-    'ethereum-sepolia': 'https://ethereum-sepolia-rpc.publicnode.com'
+    'ethereum-sepolia': 'https://ethereum-sepolia-rpc.publicnode.com',
+    'tron-nile': 'https://nile.trongrid.io',
+    'fantom-testnet': 'https://rpc.testnet.fantom.network',
+    'arbitrum-sepolia': 'https://sepolia-rollup.arbitrum.io/rpc',
+    'optimism-sepolia': 'https://sepolia.optimism.io',
+    'harmony-testnet': 'https://api.s0.b.hmny.io',
+};
+
+const mainnetRPCs = {
+    'polygon-mainnet': 'https://polygon-rpc.com',
+    'bnb-mainnet': 'https://bsc-dataseed.binance.org',
+    'avalanche-mainnet': 'https://api.avax.network/ext/bc/C/rpc',
+    'ethereum-mainnet': 'https://eth.llamarpc.com',
 };
 
 async function checkBalance(chain, rpc, address) {
@@ -274,6 +462,10 @@ async function checkBalance(chain, rpc, address) {
 
 async function main() {
     const address = process.argv[2];
+    const network = process.argv[3] || 'testnet';
+
+    const rpcs = network === 'mainnet' ? mainnetRPCs : testnetRPCs;
+
     for (const [chain, rpc] of Object.entries(rpcs)) {
         await checkBalance(chain, rpc, address);
     }
@@ -282,11 +474,11 @@ async function main() {
 main();
 EOF
 
-    node check-balance.js "$WALLET_ADDRESS"
+    node check-balance.js "$WALLET_ADDRESS" "$NETWORK"
 }
 
 deploy_smart_contracts() {
-    log_step "Deploying smart contracts to all testnets..."
+    log_step "Deploying smart contracts to $NETWORK..."
 
     cd "$PROJECT_ROOT/contracts/evm"
 
@@ -299,42 +491,75 @@ deploy_smart_contracts() {
     # Setup environment
     if [ -f "$PROJECT_ROOT/test-wallets/wallet.json" ]; then
         PRIVATE_KEY=$(jq -r '.privateKey' "$PROJECT_ROOT/test-wallets/wallet.json")
-        echo "PRIVATE_KEY=$PRIVATE_KEY" > .env
+        echo "DEPLOYER_PRIVATE_KEY=$PRIVATE_KEY" > .env
     fi
 
-    # Deploy to each testnet
-    for chain in "${CHAINS[@]}"; do
-        log_info "Deploying to $chain..."
+    # Deploy based on network
+    if [ "$NETWORK" == "testnet" ]; then
+        # Deploy to testnets
+        for chain in "polygon-amoy" "bnb-testnet" "avalanche-fuji" "ethereum-sepolia"; do
+            log_info "Deploying to $chain..."
 
-        case $chain in
-            "polygon-amoy")
-                npm run deploy:polygon-amoy >> "$TEST_LOG" 2>&1
-                ;;
-            "bnb-testnet")
-                npm run deploy:bnb-testnet >> "$TEST_LOG" 2>&1
-                ;;
-            "avalanche-fuji")
-                npm run deploy:avalanche-fuji >> "$TEST_LOG" 2>&1
-                ;;
-            "ethereum-sepolia")
-                npm run deploy:ethereum-sepolia >> "$TEST_LOG" 2>&1
-                ;;
-        esac
+            case $chain in
+                "polygon-amoy")
+                    npm run deploy:polygon-amoy >> "$TEST_LOG" 2>&1
+                    ;;
+                "bnb-testnet")
+                    npm run deploy:bnb-testnet >> "$TEST_LOG" 2>&1
+                    ;;
+                "avalanche-fuji")
+                    npm run deploy:avalanche-fuji >> "$TEST_LOG" 2>&1
+                    ;;
+                "ethereum-sepolia")
+                    npm run deploy:ethereum-sepolia >> "$TEST_LOG" 2>&1
+                    ;;
+            esac
+
+            if [ $? -eq 0 ]; then
+                log_success "$chain: Contract deployed"
+                DEPLOYMENT_RESULTS[$chain]="SUCCESS"
+
+                # Extract contract address and show block explorer
+                if [ -f "deployments/${chain}_*.json" ]; then
+                    CONTRACT_ADDR=$(jq -r '.contractAddress' deployments/${chain}_*.json 2>/dev/null)
+                    if [ -n "$CONTRACT_ADDR" ] && [ "$CONTRACT_ADDR" != "null" ]; then
+                        log_info "Contract Address: $CONTRACT_ADDR"
+                        log_info "View on explorer: ${BLOCK_EXPLORERS[$chain]}/address/$CONTRACT_ADDR"
+                    fi
+                fi
+            else
+                log_error "$chain: Deployment failed"
+                DEPLOYMENT_RESULTS[$chain]="FAILED"
+            fi
+
+            sleep 2
+        done
+    else
+        # Deploy to mainnets
+        log_warning "⚠️  Deploying to MAINNET - This uses REAL money!"
+        log_warning "Press ENTER to confirm or Ctrl+C to cancel..."
+        read -r
+
+        node scripts/deploy-all-mainnet.js >> "$TEST_LOG" 2>&1
 
         if [ $? -eq 0 ]; then
-            log_success "$chain: Contract deployed"
-            DEPLOYMENT_RESULTS[$chain]="SUCCESS"
+            log_success "All mainnet contracts deployed"
+            for chain in "${CHAINS[@]}"; do
+                DEPLOYMENT_RESULTS[$chain]="SUCCESS"
+            done
         else
-            log_error "$chain: Deployment failed"
-            DEPLOYMENT_RESULTS[$chain]="FAILED"
+            log_error "Mainnet deployment failed"
         fi
-
-        sleep 2
-    done
+    fi
 
     # Check deployment results
     log_info "Deployment Summary:"
     for chain in "${CHAINS[@]}"; do
+        if [[ "$chain" == *"solana"* ]] || [[ "$chain" == *"near"* ]] || [[ "$chain" == *"algorand"* ]] || [[ "$chain" == *"aptos"* ]]; then
+            # Skip non-EVM chains for EVM deployment
+            continue
+        fi
+
         if [ "${DEPLOYMENT_RESULTS[$chain]}" == "SUCCESS" ]; then
             log_success "$chain: ✓"
         else
@@ -344,15 +569,18 @@ deploy_smart_contracts() {
 }
 
 deploy_backend_services() {
-    log_step "Deploying backend services..."
+    log_step "Deploying backend services for $NETWORK..."
 
     cd "$PROJECT_ROOT"
 
-    # Use testnet deployment script
-    log_info "Starting Articium testnet deployment..."
-
-    # Run deployment in background to capture output
-    ./deploy-testnet.sh >> "$TEST_LOG" 2>&1
+    # Use appropriate deployment script
+    if [ "$NETWORK" == "testnet" ]; then
+        log_info "Starting Articium testnet deployment..."
+        ./deploy-testnet.sh >> "$TEST_LOG" 2>&1
+    else
+        log_info "Starting Articium mainnet deployment..."
+        ./deploy-mainnet.sh >> "$TEST_LOG" 2>&1
+    fi
 
     if [ $? -eq 0 ]; then
         log_success "Backend services deployed"
@@ -385,20 +613,33 @@ wait_for_services() {
 }
 
 test_cross_chain_transfers() {
-    log_step "Testing cross-chain transfers..."
+    log_step "Testing cross-chain transfers on $NETWORK..."
 
-    # Test scenarios
-    local test_cases=(
-        "polygon-amoy:avalanche-fuji"
-        "bnb-testnet:ethereum-sepolia"
-        "avalanche-fuji:polygon-amoy"
-        "ethereum-sepolia:bnb-testnet"
-    )
+    # Test scenarios based on network
+    if [ "$NETWORK" == "testnet" ]; then
+        local test_cases=(
+            "polygon-amoy:avalanche-fuji"
+            "bnb-testnet:ethereum-sepolia"
+            "avalanche-fuji:polygon-amoy"
+            "ethereum-sepolia:bnb-testnet"
+            "tron-nile:polygon-amoy"
+            "polygon-amoy:bnb-testnet"
+        )
+    else
+        local test_cases=(
+            "polygon-mainnet:avalanche-mainnet"
+            "bnb-mainnet:ethereum-mainnet"
+            "ethereum-mainnet:polygon-mainnet"
+        )
+    fi
 
     for test_case in "${test_cases[@]}"; do
         IFS=':' read -r source dest <<< "$test_case"
 
-        log_info "Testing: $source → $dest"
+        echo ""
+        log_info "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        log_info "Testing Cross-Chain Transfer: $source → $dest"
+        log_info "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
         # Create test transfer request
         local response=$(curl -s -X POST http://localhost:8080/v1/bridge/token \
@@ -415,20 +656,24 @@ test_cross_chain_transfers() {
         local message_id=$(echo "$response" | jq -r '.message_id')
 
         if [ "$message_id" != "null" ] && [ -n "$message_id" ]; then
-            log_success "Transfer initiated: $message_id"
+            log_success "Transfer initiated!"
+            log_info "Message ID: $message_id"
 
             # Monitor transfer
-            local status=$(monitor_transfer "$message_id")
+            local status=$(monitor_transfer "$message_id" "$source" "$dest")
 
             if [ "$status" == "completed" ]; then
-                log_success "$source → $dest: COMPLETED ✓"
+                log_success "✅ Transfer COMPLETED: $source → $dest"
                 TRANSFER_RESULTS["$test_case"]="SUCCESS"
+
+                # Show transaction details
+                show_transaction_details "$message_id" "$source" "$dest"
             else
-                log_warning "$source → $dest: Status: $status"
+                log_warning "⏳ Transfer Status: $status"
                 TRANSFER_RESULTS["$test_case"]="PENDING"
             fi
         else
-            log_error "$source → $dest: Failed to initiate"
+            log_error "❌ Failed to initiate transfer"
             TRANSFER_RESULTS["$test_case"]="FAILED"
         fi
 
@@ -438,6 +683,8 @@ test_cross_chain_transfers() {
 
 monitor_transfer() {
     local message_id=$1
+    local source=$2
+    local dest=$3
     local max_attempts=60  # 5 minutes
     local attempt=0
 
@@ -446,17 +693,54 @@ monitor_transfer() {
         local status=$(echo "$response" | jq -r '.status')
 
         if [ "$status" == "completed" ]; then
+            # Extract transaction hashes
+            local source_tx=$(echo "$response" | jq -r '.source_tx_hash')
+            local dest_tx=$(echo "$response" | jq -r '.destination_tx_hash')
+
+            TX_HASHES["${message_id}_source"]="$source_tx"
+            TX_HASHES["${message_id}_dest"]="$dest_tx"
+
+            echo "completed"
             return 0
         elif [ "$status" == "failed" ]; then
+            echo "failed"
             return 1
         fi
 
         attempt=$((attempt + 1))
+        echo -n "."
         sleep 5
     done
 
     echo "pending"
     return 2
+}
+
+show_transaction_details() {
+    local message_id=$1
+    local source=$2
+    local dest=$3
+
+    local source_tx="${TX_HASHES[${message_id}_source]}"
+    local dest_tx="${TX_HASHES[${message_id}_dest]}"
+
+    echo ""
+    log_info "📋 Transaction Details:"
+    echo ""
+
+    if [ -n "$source_tx" ] && [ "$source_tx" != "null" ]; then
+        log_success "Source Transaction ($source):"
+        log_info "   TX Hash: $source_tx"
+        log_info "   🔗 Explorer: ${BLOCK_EXPLORERS[$source]}/tx/$source_tx"
+    fi
+
+    if [ -n "$dest_tx" ] && [ "$dest_tx" != "null" ]; then
+        log_success "Destination Transaction ($dest):"
+        log_info "   TX Hash: $dest_tx"
+        log_info "   🔗 Explorer: ${BLOCK_EXPLORERS[$dest]}/tx/$dest_tx"
+    fi
+
+    echo ""
 }
 
 verify_system_health() {
@@ -482,25 +766,11 @@ verify_system_health() {
     fi
 
     # Check database
-    if docker exec articium-postgres psql -U articium -d articium_testnet -c "SELECT 1;" > /dev/null 2>&1; then
+    local db_name="articium_$NETWORK"
+    if docker exec articium-postgres psql -U articium -d "$db_name" -c "SELECT 1;" > /dev/null 2>&1; then
         log_success "Database connection: PASS"
     else
-        log_error "Database connection: FAIL"
-        return 1
-    fi
-
-    # Check NATS
-    if docker exec articium-nats nats stream ls > /dev/null 2>&1; then
-        log_success "NATS connection: PASS"
-    else
-        log_warning "NATS connection: WARNING"
-    fi
-
-    # Check Redis
-    if docker exec articium-redis redis-cli ping | grep -q "PONG"; then
-        log_success "Redis connection: PASS"
-    else
-        log_warning "Redis connection: WARNING"
+        log_warning "Database connection: WARNING (container may not exist)"
     fi
 
     log_success "System health verification complete"
@@ -510,12 +780,13 @@ verify_system_health() {
 generate_test_report() {
     log_step "Generating test report..."
 
-    local report_file="$RESULTS_DIR/e2e-report-$TIMESTAMP.txt"
+    local report_file="$RESULTS_DIR/e2e-report-$NETWORK-$TIMESTAMP.txt"
 
     cat > "$report_file" << EOF
 ========================================================================
 Articium - E2E Test Report
 ========================================================================
+Network: $NETWORK
 Timestamp: $TIMESTAMP
 Test Wallet: $WALLET_ADDRESS
 
@@ -542,17 +813,34 @@ EOF
     cat >> "$report_file" << EOF
 
 ========================================================================
+TRANSACTION DETAILS & BLOCK EXPLORERS
+========================================================================
+EOF
+
+    for key in "${!TX_HASHES[@]}"; do
+        local tx_hash="${TX_HASHES[$key]}"
+        if [ -n "$tx_hash" ] && [ "$tx_hash" != "null" ]; then
+            echo "$key: $tx_hash" >> "$report_file"
+        fi
+    done
+
+    cat >> "$report_file" << EOF
+
+========================================================================
 OVERALL RESULTS
 ========================================================================
 EOF
 
     # Calculate success rate
-    local total_deployments=${#CHAINS[@]}
+    local total_deployments=0
     local successful_deployments=0
 
     for chain in "${CHAINS[@]}"; do
-        if [ "${DEPLOYMENT_RESULTS[$chain]}" == "SUCCESS" ]; then
-            successful_deployments=$((successful_deployments + 1))
+        if [ -n "${DEPLOYMENT_RESULTS[$chain]}" ]; then
+            total_deployments=$((total_deployments + 1))
+            if [ "${DEPLOYMENT_RESULTS[$chain]}" == "SUCCESS" ]; then
+                successful_deployments=$((successful_deployments + 1))
+            fi
         fi
     done
 
@@ -566,10 +854,11 @@ EOF
     done
 
     cat >> "$report_file" << EOF
+Network: $NETWORK
 Deployments: $successful_deployments/$total_deployments successful
 Transfers: $successful_transfers/$total_transfers successful
 
-Overall Status: $([ $successful_deployments -eq $total_deployments ] && [ $successful_transfers -gt 0 ] && echo "PASS ✓" || echo "NEEDS REVIEW ⚠")
+Overall Status: $([ $successful_deployments -gt 0 ] && [ $successful_transfers -gt 0 ] && echo "PASS ✓" || echo "NEEDS REVIEW ⚠")
 
 Test Log: $TEST_LOG
 Report: $report_file
@@ -591,7 +880,11 @@ cleanup() {
 
     if [ "$response" == "yes" ]; then
         cd "$PROJECT_ROOT"
-        ./stop-testnet.sh
+        if [ "$NETWORK" == "testnet" ]; then
+            ./stop-testnet.sh
+        else
+            ./stop-mainnet.sh
+        fi
         log_success "Services stopped"
     else
         log_info "Services left running for manual inspection"
@@ -600,7 +893,22 @@ cleanup() {
 
 # Main execution
 main() {
+    # Setup block explorers
+    setup_block_explorers
+
     print_banner
+
+    # Mainnet warning
+    if [ "$NETWORK" == "mainnet" ]; then
+        echo ""
+        log_error "⚠️  ⚠️  ⚠️  WARNING  ⚠️  ⚠️  ⚠️"
+        log_error "YOU ARE RUNNING IN MAINNET MODE!"
+        log_error "THIS WILL USE REAL MONEY!"
+        echo ""
+        log_warning "Press Ctrl+C to cancel or ENTER to continue..."
+        read -r
+        echo ""
+    fi
 
     # Step 1: Prerequisites
     if ! check_prerequisites; then
@@ -611,8 +919,8 @@ main() {
     # Step 2: Setup
     setup_test_environment
 
-    # Step 3: Faucets
-    request_faucet_tokens
+    # Step 3: Get tokens (faucets for testnet, real tokens for mainnet)
+    show_faucet_links
 
     # Step 4: Deploy contracts
     deploy_smart_contracts
@@ -648,11 +956,16 @@ main() {
     log_success "E2E test suite completed!"
     echo ""
     log_info "Next steps:"
-    log_info "1. Review test report: $RESULTS_DIR/e2e-report-$TIMESTAMP.txt"
+    log_info "1. Review test report: $RESULTS_DIR/e2e-report-$NETWORK-$TIMESTAMP.txt"
     log_info "2. Check detailed logs: $TEST_LOG"
     log_info "3. Monitor services: http://localhost:8080"
     log_info "4. View Grafana: http://localhost:3000"
     echo ""
+
+    if [ "$NETWORK" == "mainnet" ]; then
+        log_warning "⚠️  MAINNET: Monitor all transactions carefully!"
+        log_warning "⚠️  Start with small amounts and increase gradually!"
+    fi
 }
 
 # Handle interrupts

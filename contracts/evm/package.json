@@ -18,6 +18,7 @@
     "verify:bnb-testnet": "hardhat verify --network bnb-testnet",
     "verify:avalanche-fuji": "hardhat verify --network avalanche-fuji",
     "deploy-all-testnet": "npm run deploy:polygon-amoy && npm run deploy:bnb-testnet && npm run deploy:avalanche-fuji && npm run deploy:ethereum-sepolia",
+    "deploy-all-mainnet": "node scripts/deploy-all-mainnet.js",
     "flatten": "hardhat flatten contracts/BridgeBase.sol > flattened/BridgeBase_flat.sol"
   },
   "keywords": [

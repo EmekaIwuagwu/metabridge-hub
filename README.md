@@ -1266,6 +1266,41 @@ After deployment, verify:
 - [ ] Automated backups are scheduled
 - [ ] Monitoring alerts are configured
 
+### Custom Domain Setup (Optional)
+
+Set up a custom domain (e.g., articium.xyz) for your DigitalOcean deployment:
+
+**What you'll get:**
+- ✅ Professional domain (articium.xyz)
+- ✅ SSL certificates (HTTPS) via Let's Encrypt
+- ✅ Subdomains (api.articium.xyz, metrics.articium.xyz)
+- ✅ Automatic certificate renewal
+- ✅ Nginx reverse proxy with rate limiting
+- ✅ Security headers and CORS configuration
+
+**Example domains:**
+- Main API: `https://api.articium.xyz`
+- Health check: `https://api.articium.xyz/health`
+- Metrics (Grafana): `https://metrics.articium.xyz`
+- Prometheus: `https://prometheus.articium.xyz`
+- Main site: `https://articium.xyz`
+
+**Quick setup:**
+```bash
+# See complete instructions in DIGITALOCEAN_DEPLOYMENT.md
+# Section: "Setting Up a Custom Domain (articium.xyz)"
+
+# Summary of steps:
+# 1. Add domain to DigitalOcean
+# 2. Configure DNS A records
+# 3. Install Nginx
+# 4. Configure reverse proxy
+# 5. Install SSL with Certbot
+# 6. Update Articium config
+```
+
+📖 **Full Instructions**: See [DIGITALOCEAN_DEPLOYMENT.md](./DIGITALOCEAN_DEPLOYMENT.md#setting-up-a-custom-domain-articiumxyz) for step-by-step setup.
+
 ### Common Commands
 
 ```bash
@@ -1403,28 +1438,70 @@ docker exec -i articium-postgres-testnet psql -U bridge_user -d articium_testnet
 
 ## 🧪 Testnet Deployment
 
-### Step 1: Deploy Smart Contracts
+### Automated End-to-End Testing
+
+Articium now includes a comprehensive E2E test suite that supports both **testnet** and **mainnet** deployments with automatic faucet integration and block explorer transaction tracking.
+
+```bash
+# Run full E2E test on testnet (default)
+./test-e2e-full.sh
+
+# Run with custom wallet
+./test-e2e-full.sh --wallet-address 0xYourAddress
+
+# Run on mainnet (⚠️  uses real money!)
+./test-e2e-full.sh --network mainnet
+
+# Run on mainnet with custom wallet
+./test-e2e-full.sh --network mainnet --wallet-address 0xYourAddress
+```
+
+**What the E2E Script Does:**
+
+1. ✅ **Generates test wallets** or uses your provided wallet
+2. ✅ **Shows faucet links** for all 13 supported testnets
+3. ✅ **Deploys smart contracts** to EVM chains
+4. ✅ **Starts backend services** (API, relayer, listener, batcher)
+5. ✅ **Executes cross-chain transfers** between multiple chains
+6. ✅ **Displays transaction hashes** with block explorer links
+7. ✅ **Generates detailed test reports** with success/failure metrics
+
+**Supported Testnets (13 Chains):**
+- Polygon Amoy, BNB Testnet, Avalanche Fuji, Ethereum Sepolia
+- Solana Devnet, NEAR Testnet, TRON Nile
+- Fantom Testnet, Arbitrum Sepolia, Optimism Sepolia
+- Harmony Testnet, Algorand Testnet, Aptos Testnet
+
+**Supported Mainnets (6 Chains):**
+- Polygon, BNB Smart Chain, Avalanche, Ethereum
+- Solana, NEAR Protocol
+
+### Manual Contract Deployment
+
+If you prefer manual deployment:
 
 #### EVM Contracts (Polygon, BNB, Avalanche, Ethereum)
 
 ```bash
 cd contracts/evm
 
-# Deploy to Polygon Amoy Testnet
+# Deploy to testnets
 npx hardhat deploy --network polygon-amoy --tags Bridge
-export POLYGON_AMOY_BRIDGE_CONTRACT=$(cat deployments/polygon-amoy/Bridge.json | jq -r '.address')
-
-# Deploy to BNB Testnet
 npx hardhat deploy --network bnb-testnet --tags Bridge
-export BNB_TESTNET_BRIDGE_CONTRACT=$(cat deployments/bnb-testnet/Bridge.json | jq -r '.address')
-
-# Deploy to Avalanche Fuji
 npx hardhat deploy --network avalanche-fuji --tags Bridge
-export AVALANCHE_FUJI_BRIDGE_CONTRACT=$(cat deployments/avalanche-fuji/Bridge.json | jq -r '.address')
-
-# Deploy to Ethereum Sepolia
 npx hardhat deploy --network ethereum-sepolia --tags Bridge
-export ETHEREUM_SEPOLIA_BRIDGE_CONTRACT=$(cat deployments/ethereum-sepolia/Bridge.json | jq -r '.address')
+
+# Deploy to mainnets (⚠️  WARNING: Uses real money!)
+npx hardhat deploy --network polygon-mainnet --tags Bridge
+npx hardhat deploy --network bnb-mainnet --tags Bridge
+npx hardhat deploy --network avalanche-mainnet --tags Bridge
+npx hardhat deploy --network ethereum-mainnet --tags Bridge
+
+# Or deploy to all testnets at once
+npm run deploy-all-testnet
+
+# Or deploy to all mainnets at once (⚠️  WARNING!)
+node scripts/deploy-all-mainnet.js
 
 # Verify contracts
 npx hardhat verify --network polygon-amoy $POLYGON_AMOY_BRIDGE_CONTRACT
