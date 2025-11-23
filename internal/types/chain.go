@@ -10,9 +10,11 @@ import (
 type ChainType string
 
 const (
-	ChainTypeEVM    ChainType = "EVM"
-	ChainTypeSolana ChainType = "SOLANA"
-	ChainTypeNEAR   ChainType = "NEAR"
+	ChainTypeEVM      ChainType = "EVM"
+	ChainTypeSolana   ChainType = "SOLANA"
+	ChainTypeNEAR     ChainType = "NEAR"
+	ChainTypeAlgorand ChainType = "ALGORAND"
+	ChainTypeAptos    ChainType = "APTOS"
 )
 
 // Environment represents the deployment environment

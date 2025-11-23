@@ -258,6 +258,22 @@ func validateChainConfig(chain *types.ChainConfig, env types.Environment) error 
 			return fmt.Errorf("NEAR chain must have bridge_contract")
 		}
 
+	case types.ChainTypeAlgorand:
+		if chain.NetworkID == "" {
+			return fmt.Errorf("Algorand chain must have network_id")
+		}
+		if chain.BridgeContract == "" {
+			return fmt.Errorf("Algorand chain must have bridge_contract (application ID)")
+		}
+
+	case types.ChainTypeAptos:
+		if chain.NetworkID == "" {
+			return fmt.Errorf("Aptos chain must have network_id")
+		}
+		if chain.BridgeContract == "" {
+			return fmt.Errorf("Aptos chain must have bridge_contract (module address)")
+		}
+
 	default:
 		return fmt.Errorf("unsupported chain type: %s", chain.ChainType)
 	}

@@ -192,3 +192,119 @@ chains:
     block_time: "1s"
     poll_interval: "2s"
     enabled: true
+
+  # TRON Nile Testnet
+  - name: "tron-nile"
+    chain_type: "EVM"
+    environment: "testnet"
+    chain_id: "3448148188"
+    rpc_endpoints:
+      - "https://api.nileex.io"
+      - "https://nile.trongrid.io"
+    bridge_contract: "${TRON_NILE_BRIDGE_CONTRACT}"
+    start_block: 0
+    confirmation_blocks: 19
+    block_time: "3s"
+    max_gas_price: "1000"
+    gas_limit_multiplier: 1.2
+    max_reorg_depth: 30
+    enabled: true
+
+  # Fantom Testnet
+  - name: "fantom-testnet"
+    chain_type: "EVM"
+    environment: "testnet"
+    chain_id: "4002"
+    rpc_endpoints:
+      - "https://rpc.testnet.fantom.network"
+      - "https://fantom-testnet.publicnode.com"
+    ws_endpoint: "wss://ws.testnet.fantom.network"
+    bridge_contract: "${FANTOM_TESTNET_BRIDGE_CONTRACT}"
+    start_block: 0
+    confirmation_blocks: 10
+    block_time: "1s"
+    max_gas_price: "100"
+    gas_limit_multiplier: 1.2
+    max_reorg_depth: 20
+    enabled: true
+
+  # Arbitrum Sepolia
+  - name: "arbitrum-sepolia"
+    chain_type: "EVM"
+    environment: "testnet"
+    chain_id: "421614"
+    rpc_endpoints:
+      - "https://sepolia-rollup.arbitrum.io/rpc"
+      - "https://arbitrum-sepolia.publicnode.com"
+    bridge_contract: "${ARBITRUM_SEPOLIA_BRIDGE_CONTRACT}"
+    start_block: 0
+    confirmation_blocks: 10
+    block_time: "250ms"
+    max_gas_price: "2"
+    gas_limit_multiplier: 1.3
+    max_reorg_depth: 20
+    enabled: true
+
+  # Optimism Sepolia
+  - name: "optimism-sepolia"
+    chain_type: "EVM"
+    environment: "testnet"
+    chain_id: "11155420"
+    rpc_endpoints:
+      - "https://sepolia.optimism.io"
+      - "https://optimism-sepolia.publicnode.com"
+    bridge_contract: "${OPTIMISM_SEPOLIA_BRIDGE_CONTRACT}"
+    start_block: 0
+    confirmation_blocks: 10
+    block_time: "2s"
+    max_gas_price: "0.1"
+    gas_limit_multiplier: 1.2
+    max_reorg_depth: 20
+    enabled: true
+
+  # Harmony Testnet
+  - name: "harmony-testnet"
+    chain_type: "EVM"
+    environment: "testnet"
+    chain_id: "1666700000"
+    rpc_endpoints:
+      - "https://api.s0.b.hmny.io"
+      - "https://api.s0.pops.one"
+    bridge_contract: "${HARMONY_TESTNET_BRIDGE_CONTRACT}"
+    start_block: 0
+    confirmation_blocks: 10
+    block_time: "2s"
+    max_gas_price: "100"
+    gas_limit_multiplier: 1.2
+    max_reorg_depth: 20
+    enabled: true
+
+  # Algorand Testnet
+  - name: "algorand-testnet"
+    chain_type: "ALGORAND"
+    environment: "testnet"
+    network_id: "testnet"
+    rpc_endpoints:
+      - "https://testnet-api.algonode.cloud"
+      - "https://testnet-api.4160.nodely.io"
+    bridge_contract: "${ALGORAND_TESTNET_BRIDGE_APP}"
+    start_block: 0
+    confirmation_blocks: 1
+    block_time: "4.5s"
+    poll_interval: "5s"
+    enabled: true
+
+  # Aptos Testnet
+  - name: "aptos-testnet"
+    chain_type: "APTOS"
+    environment: "testnet"
+    network_id: "testnet"
+    rpc_endpoints:
+      - "https://fullnode.testnet.aptoslabs.com/v1"
+      - "https://aptos-testnet.public.blastapi.io"
+    bridge_contract: "${APTOS_TESTNET_BRIDGE_MODULE}"
+    start_block: 0
+    confirmation_blocks: 1
+    block_time: "1s"
+    poll_interval: "2s"
+    enabled: true

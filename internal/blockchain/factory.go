@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/EmekaIwuagwu/articium-hub/internal/blockchain/algorand"
+	"github.com/EmekaIwuagwu/articium-hub/internal/blockchain/aptos"
 	"github.com/EmekaIwuagwu/articium-hub/internal/blockchain/evm"
 	"github.com/EmekaIwuagwu/articium-hub/internal/blockchain/near"
 	"github.com/EmekaIwuagwu/articium-hub/internal/blockchain/solana"
@@ -41,6 +43,10 @@ func (f *ClientFactory) CreateClient(
 		return f.createSolanaClient(ctx, config)
 	case types.ChainTypeNEAR:
 		return f.createNEARClient(ctx, config)
+	case types.ChainTypeAlgorand:
+		return f.createAlgorandClient(ctx, config)
+	case types.ChainTypeAptos:
+		return f.createAptosClient(ctx, config)
 	default:
 		return nil, fmt.Errorf("unsupported chain type: %s", config.ChainType)
 	}
@@ -141,6 +147,42 @@ func (f *ClientFactory) createNEARClient(
 	// Wrap in adapter
 	return &NEARClientAdapter{
 		client: nearClient,
+		config: config,
+		logger: f.logger,
+	}, nil
+}
+
+// createAlgorandClient creates an Algorand blockchain client
+func (f *ClientFactory) createAlgorandClient(
+	ctx context.Context,
+	config *types.ChainConfig,
+) (types.UniversalClient, error) {
+	algorandClient, err := algorand.NewClient(config, f.logger)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Algorand client: %w", err)
+	}
+
+	// Wrap in adapter
+	return &AlgorandClientAdapter{
+		client: algorandClient,
+		config: config,
+		logger: f.logger,
+	}, nil
+}
+
+// createAptosClient creates an Aptos blockchain client
+func (f *ClientFactory) createAptosClient(
+	ctx context.Context,
+	config *types.ChainConfig,
+) (types.UniversalClient, error) {
+	aptosClient, err := aptos.NewClient(config, f.logger)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Aptos client: %w", err)
+	}
+
+	// Wrap in adapter
+	return &AptosClientAdapter{
+		client: aptosClient,
 		config: config,
 		logger: f.logger,
 	}, nil
