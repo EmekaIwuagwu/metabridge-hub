@@ -15,10 +15,11 @@ echo "This script will:"
 echo "  1. Install all dependencies (PostgreSQL, NATS, Redis)"
 echo "  2. Configure PostgreSQL for password authentication"
 echo "  3. Create database and user"
-echo "  4. Build all services"
-echo "  5. Run database migrations"
-echo "  6. Install and start systemd services"
-echo "  7. Verify deployment"
+echo "  4. Install Go 1.21"
+echo "  5. Build all services"
+echo "  6. Run database migrations"
+echo "  7. Install and start systemd services"
+echo "  8. Verify deployment"
 echo ""
 
 read -p "Continue with automated deployment? (yes/no): " confirm
@@ -235,10 +236,44 @@ PGPASSWORD=articium psql -h /var/run/postgresql -p 5433 -U articium -d articium_
 echo ""
 
 # ==============================================================================
-# Step 6: Build All Services
+# Step 6: Install Go
 # ==============================================================================
 
-echo "6️⃣  Building all services..."
+echo "6️⃣  Installing Go 1.21..."
+
+if ! command -v go &> /dev/null; then
+    GO_VERSION="1.21.5"
+
+    # Download and install Go
+    cd /tmp
+    wget -q https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz
+    sudo rm -rf /usr/local/go
+    sudo tar -C /usr/local -xzf go${GO_VERSION}.linux-amd64.tar.gz
+    rm go${GO_VERSION}.linux-amd64.tar.gz
+
+    # Add Go to PATH
+    echo 'export PATH=$PATH:/usr/local/go/bin' | sudo tee -a /etc/profile
+    echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
+    export PATH=$PATH:/usr/local/go/bin
+
+    echo "   ✓ Go ${GO_VERSION} installed"
+else
+    echo "   ✓ Go already installed ($(go version | awk '{print $3}'))"
+fi
+
+# Verify Go installation
+if ! command -v go &> /dev/null; then
+    echo "   ❌ Go installation failed"
+    exit 1
+fi
+
+echo ""
+
+# ==============================================================================
+# Step 7: Build All Services
+# ==============================================================================
+
+echo "7️⃣  Building all services..."
 
 cd "$PROJECT_ROOT"
 mkdir -p bin
@@ -271,7 +306,7 @@ echo ""
 # Step 7: Run Database Migrations
 # ==============================================================================
 
-echo "7️⃣  Running database migrations..."
+echo "8️⃣  Running database migrations..."
 
 ./bin/migrator -config config/config.production.yaml 2>&1 | grep -E "(Starting|loaded|established|Schema applied|All database)" || {
     echo "   ❌ Migrations failed"
@@ -293,7 +328,7 @@ echo ""
 # Step 8: Install Systemd Services
 # ==============================================================================
 
-echo "8️⃣  Installing systemd services..."
+echo "9️⃣  Installing systemd services..."
 
 # Copy service files
 sudo cp systemd/articium-api.service /etc/systemd/system/
@@ -311,7 +346,7 @@ echo ""
 # Step 9: Start All Services
 # ==============================================================================
 
-echo "9️⃣  Starting all services..."
+echo "🔟 Starting all services..."
 
 # Start services
 sudo systemctl start articium-api
