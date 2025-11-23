@@ -212,11 +212,6 @@ check_prerequisites() {
 setup_test_environment() {
     log_step "Setting up test environment for $NETWORK..."
 
-    # Create directories
-    mkdir -p "$LOG_DIR"
-    mkdir -p "$RESULTS_DIR"
-    mkdir -p "$PROJECT_ROOT/test-wallets"
-
     # Create or load test wallet
     if [ -z "$WALLET_ADDRESS" ]; then
         log_info "No wallet address provided, generating test wallet..."
@@ -893,6 +888,11 @@ cleanup() {
 
 # Main execution
 main() {
+    # Create log directories first (before any logging)
+    mkdir -p "$LOG_DIR"
+    mkdir -p "$RESULTS_DIR"
+    mkdir -p "$PROJECT_ROOT/test-wallets"
+
     # Setup block explorers
     setup_block_explorers
 
