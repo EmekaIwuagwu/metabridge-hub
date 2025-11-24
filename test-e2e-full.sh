@@ -388,13 +388,15 @@ show_faucet_links() {
         read -r -p "Press ENTER when ready: " < /dev/tty
 
         echo ""
-        # Check balances
-        log_info "Checking balances..."
-        log_warning "Note: Some RPC endpoints may be rate-limited or unavailable. This is normal."
-        check_all_balances || log_warning "Balance check had errors, but you can still continue if you've funded your wallet"
-
+        # Skip automatic balance check due to unreliable public RPC endpoints
+        log_warning "⚠️  IMPORTANT: Please verify you have requested tokens from the faucets above"
+        log_warning "You can manually check your balances at these block explorers:"
+        log_info "  • Polygon Amoy: https://amoy.polygonscan.com/address/$WALLET_ADDRESS"
+        log_info "  • BNB Testnet: https://testnet.bscscan.com/address/$WALLET_ADDRESS"
+        log_info "  • Avalanche Fuji: https://testnet.snowtrace.io/address/$WALLET_ADDRESS"
+        log_info "  • Ethereum Sepolia: https://sepolia.etherscan.io/address/$WALLET_ADDRESS"
         echo ""
-        log_warning "Do you have sufficient tokens on all chains? (yes/no)"
+        log_warning "Have you requested tokens from the faucets and verified your balance? (yes/no)"
         read -r -p "Enter 'yes' to continue or 'no' to exit: " response < /dev/tty
 
         if [ "$response" != "yes" ]; then
