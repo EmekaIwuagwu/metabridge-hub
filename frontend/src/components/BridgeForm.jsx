@@ -152,7 +152,7 @@ const BridgeForm = () => {
           chains={TESTNET_CHAINS}
           selectedChain={fromChain}
           onSelect={setFromChain}
-          disabled={TESTNET_CHAINS.filter(c => c.id !== toChain.id)}
+          disabled={[toChain]}
         />
       </div>
 
@@ -173,7 +173,7 @@ const BridgeForm = () => {
           chains={TESTNET_CHAINS}
           selectedChain={toChain}
           onSelect={setToChain}
-          disabled={TESTNET_CHAINS.filter(c => c.id !== fromChain.id)}
+          disabled={[fromChain]}
         />
       </div>
 
