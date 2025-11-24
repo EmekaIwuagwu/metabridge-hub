@@ -632,7 +632,12 @@ deploy_smart_contracts() {
     # Install dependencies
     if [ ! -d "node_modules" ]; then
         log_info "Installing contract dependencies..."
-        npm install > /dev/null 2>&1
+        if npm install >> "$TEST_LOG" 2>&1; then
+            log_success "Dependencies installed successfully"
+        else
+            log_error "Failed to install dependencies. Check $TEST_LOG for details"
+            log_warning "Attempting to continue anyway..."
+        fi
     fi
 
     # Setup environment
