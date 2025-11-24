@@ -20,6 +20,14 @@ const ChainSelector = ({ chains, selectedChain, onSelect, disabled = [] }) => {
     !disabled.find(d => d.id === chain.id)
   );
 
+  // Debug: Log chains
+  console.log('ChainSelector Debug:', {
+    totalChains: chains.length,
+    disabledChains: disabled.length,
+    availableChains: availableChains.length,
+    chainNames: availableChains.map(c => c.name)
+  });
+
   return (
     <div className="relative" ref={dropdownRef}>
       <button

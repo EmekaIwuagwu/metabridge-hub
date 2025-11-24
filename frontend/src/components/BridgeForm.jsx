@@ -18,6 +18,12 @@ const BridgeForm = () => {
   const [txHash, setTxHash] = useState('');
   const [bridgeStatus, setBridgeStatus] = useState(null);
 
+  // Debug: Log loaded chains
+  console.log('BridgeForm loaded with chains:', {
+    totalChains: TESTNET_CHAINS.length,
+    chainList: TESTNET_CHAINS.map(c => ({ id: c.id, name: c.name }))
+  });
+
   useEffect(() => {
     if (account && provider) {
       fetchBalance();
