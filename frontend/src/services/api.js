@@ -1,6 +1,28 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/v1';
+// Auto-detect API URL based on current host
+const getApiBaseUrl = () => {
+  // If environment variable is set, use it
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+
+  // Auto-detect based on current hostname
+  const protocol = window.location.protocol; // http: or https:
+  const hostname = window.location.hostname; // localhost, IP, or domain
+
+  // If running on localhost, use localhost:8080
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'http://localhost:8080/v1';
+  }
+
+  // Otherwise, use same host with port 8080
+  return `${protocol}//${hostname}:8080/v1`;
+};
+
+const API_BASE_URL = getApiBaseUrl();
+
+console.log('API Base URL:', API_BASE_URL);
 
 const api = axios.create({
   baseURL: API_BASE_URL,
